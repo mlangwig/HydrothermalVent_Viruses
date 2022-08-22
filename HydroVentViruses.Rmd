@@ -1,0 +1,36 @@
+---
+title: "Hydrothermal Vent Viruses Protocol"
+author: "Maggie Langwig"
+date: "8/21/2022"
+output:
+  html_document: rmdformats::downcute
+  toc: yes
+  toc_float: yes
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Organizing the 43 assemblies
+
+11 assemblies do not have the sample name associated with the file so I am adding it.
+```{bash, eval = FALSE}
+cd /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed
+
+for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
+```
+
+Special naming for S009:
+```{bash, eval = FALSE}
+for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\_metaspades_scaffolds.min1000.fasta/,x)}1' $i >> $i.renamed; done
+```
+
+
+
+
+
+
+
+
