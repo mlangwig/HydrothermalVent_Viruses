@@ -44,6 +44,8 @@ overview <- mp +
         axis.title = element_text(size = 12))
 overview
 
+ggsave(overview, filename = "Overview_Map.png", width = 12, height = 6)
+
 # Zoom in Lau
 
 dat_Lau <- BR[BR$Site2=="Eastern Lau Spreading Center",]

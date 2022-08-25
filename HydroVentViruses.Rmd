@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Organizing the 43 assemblies
 
+## Renaming
 11 assemblies do not have the sample name associated with the file so I am adding it.
 ```{bash, eval = FALSE}
 cd /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed
@@ -27,6 +28,11 @@ Special naming for S009:
 for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\_metaspades_scaffolds.min1000.fasta/,x)}1' $i >> $i.renamed; done
 ```
 
+## Identifying viruses in the assemblies using VIBRANT
+VIBRANT filters for scaffolds >1kb so not filtering assembly before. ID's dsDNA, ssDNA, and RNA viruses
+```{bash, eval = FALSE}
+for i in Assemblies_Renamed/*.fasta; do VIBRANT_run.py -i $i -t 15; done
+```
 
 
 
