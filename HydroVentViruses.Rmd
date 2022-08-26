@@ -16,20 +16,160 @@ knitr::opts_chunk$set(echo = TRUE)
 # Organizing the 43 assemblies
 
 ## Renaming
-11 assemblies do not have the sample name associated with the file so I am adding it.
+1. 11 assemblies do not have the sample name associated with the file so I am adding it.
 ```{bash, eval = FALSE}
 cd /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed
 
 for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
 ```
 
-Special naming for S009:
+2. Special naming for S009:
 ```{bash, eval = FALSE}
 for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\_metaspades_scaffolds.min1000.fasta/,x)}1' $i >> $i.renamed; done
 ```
 
-## Identifying viruses in the assemblies using VIBRANT
-VIBRANT filters for scaffolds >1kb so not filtering assembly before. ID's dsDNA, ssDNA, and RNA viruses
+3. Adding site identifier to assembly names (after checking your sed first!)
+### Brothers UC
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_UC_/g' S010_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_UC_/g' S011_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_UC_/g' S147_metaspades_scaffolds.min1000.fasta
+```
+### Brothers LC
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_LC_/g' S014_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_LC_/g' S016_metaspades_scaffolds.min1000.fasta
+```
+### Brothers NWCA
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCA_/g' S013_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCA_/g' S017_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCA_/g' S142_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCA_/g' S143_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCA_/g' S144_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCA_/g' S145_metaspades_scaffolds.min1000.fasta
+```
+### Brothers NWCB
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCB_/g' S012_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCB_/g' S139_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCB_/g' S140_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCB_/g' S141_metaspades_scaffolds.min1000.fasta
+```
+
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_NWCB_/g' S146_metaspades_scaffolds.min1000.fasta
+```
+### Brothers Diffuse
+```{bash, eval = FALSE}
+sed -i 's/>/>Brothers_Diffuse_/g' S009_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>Brothers_Diffuse_/g' S015_metaspades_scaffolds.min1000.fasta
+```
+### ELSC Abe
+```{bash, eval = FALSE}
+sed -i 's/>/>ELSC_Abe_/g' A1_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>ELSC_Abe_/g' A3_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>ELSC_Abe_/g' 128-326.fasta
+```
+### ELSC Tui Malila
+```{bash, eval = FALSE}
+sed -i 's/>/>ELSC_Tui_Malila_/g' T10_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>ELSC_Tui_Malila_/g' T11_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>ELSC_Tui_Malila_/g' T2_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>ELSC_Tui_Malila_/g' 132-544.fasta
+
+sed -i 's/>/>ELSC_Tui_Malila_/g' 134-614.fasta
+```
+### ELSC Bowl
+```{bash, eval = FALSE}
+sed -i 's/>/>ELSC_Bowl_/g' M1_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>ELSC_Bowl_/g' M2_metaspades_scaffolds.min1000.fasta
+```
+### ELSC Mariner
+```{bash, eval = FALSE}
+sed -i 's/>/>ELSC_Mariner_/g' 131-447.fasta
+
+sed -i 's/>/>ELSC_Mariner_/g' M10_metaspades_scaffolds.min1000.fasta
+
+sed -i 's/>/>ELSC_Mariner_/g' M17_metaspades_scaffolds.min1000.fasta
+```
+### ELSC Vai Lili
+```{bash, eval = FALSE}
+sed -i 's/>/>ELSC_Vai_Lili_/g' V2_metaspades_scaffolds.min1000.fasta
+```
+### Guaymas
+```{bash, eval = FALSE}
+sed -i 's/>/>Guaymas_/g' 4559-240.fasta
+
+sed -i 's/>/>Guaymas_/g' 4561-380.fasta
+
+sed -i 's/>/>Guaymas_/g' 4561-384.fasta
+
+sed -i 's/>/>Guaymas_/g' 4571-419.fasta
+```
+### EPR
+```{bash, eval = FALSE}
+sed -i 's/>/>EPR_/g' 4281-140.fasta
+
+sed -i 's/>/>EPR_/g' PIR-30.fasta
+```
+### MAR Rainbow
+```{bash, eval = FALSE}
+sed -i 's/>/>MAR_Rainbow_/g' 354-166.fasta
+
+sed -i 's/>/>MAR_Rainbow_/g' 355-202.fasta
+```
+### MAR Lucky
+```{bash, eval = FALSE}
+sed -i 's/>/>MAR_Lucky_/g' 356-284.fasta
+
+sed -i 's/>/>MAR_Lucky_/g' 356-308.fasta
+```
+
+After scaffold renaming, I used `mv` commands to rename files.
+
+# Identifying viruses using VIBRANT
+VIBRANT filters to remove scaffolds <1kb so not filtering assembly before. ID's dsDNA, ssDNA, and RNA viruses
 ```{bash, eval = FALSE}
 for i in Assemblies_Renamed/*.fasta; do VIBRANT_run.py -i $i -t 15; done
 ```
