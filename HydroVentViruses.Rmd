@@ -174,9 +174,105 @@ VIBRANT filters to remove scaffolds <1kb so not filtering assembly before. ID's 
 for i in Assemblies_Renamed/*.fasta; do VIBRANT_run.py -i $i -t 15; done
 ```
 
+## Count the number of viruses identified by VIBRANT
+```{bash, eval = FALSE}
+grep ">" -c VIBRANT_*/VIBRANT_phages*/*combined.fna | cut -f2 -d : | paste -sd+ | bc
+```
+Total of 53,135 viruses identified
 
+# Run CheckV
+CheckV provides quality estimates of viral genomes. I'm running this first to determine how many medium and high confidence viruses we have. If it's a lot I'll only focus on these.
+```{bash, eval = FALSE}
+find -type f -name "*combined.fna" | xargs cp -t ../Virus_Genomes/fna/
 
+nohup checkv end_to_end Virus_Genomes/fna/All_Viruses.fna CheckV_Output -t 20 &
+```
 
+Check how many medium and high quality viruses:
+```{bash,  eval = FALSE}
+grep -v 'Low-quality\|Not-determined' quality_summary.tsv | wc
+```
+Result: 1,165 medium and high quality viruses (exclude header)
+146 complete viruses
+1,031 proviruses, or integrated viruses
 
+# Grab only the medium and high quality viruses
+Grab only the medium and high quality viruses predicted by CheckV
+```{bash,  eval = FALSE}
+grep -v 'Low-quality\|Not-determined' quality_summary.tsv > MedHighQual_Viruses.tsv
 
+cut -f1 MedHighQual_Viruses.tsv > MedHighQual_Viruses_list.txt 
+
+perl /storage1/data12/scripts/screen_list_new.pl CheckV_Output/MedHighQual_Viruses_list.txt Virus_Genomes/fna/All_Viruses.fna keep > MedHighQual_Viruses.fna
+```
+
+Cp the faa viruses into a new folder
+
+```{bash,  eval = FALSE}
+find -type f -name "*combined.faa" | xargs cp -t ../Virus_Genomes/faa
+```
+
+Get a list of the faa scaffold names for medium and high quality viruses:
+```{bash,  eval = FALSE}
+for i in `cat ../../CheckV_Output/MedHighQual_Viruses_list.txt`; do grep $i *.faa >> MedHighQual_faa_list.txt; done
+
+sed 's/>/\t/g' MedHighQual_faa_list.txt | cut -f2 > MedHighQual_faa_list_final.txt
+```
+
+Extract the faa seqs by name:
+```{bash,  eval = FALSE}
+perl /storage1/data12/scripts/screen_list_new.pl MedHighQual_faa_list_final.txt All_Viruses.faa keep > MedHighQual_Viruses.faa
+```
+
+# Organizing the MAGs
+I want to associate the site names and file name of each MAG to the scaffold header. I am not being as careful about renaming for the MAGs as I was for the assemblies, meaning I am just using general site name and not specific (e.g. Brothers vs Brothers_UC).
+
+## Brothers Volcano
+```{bash,  eval = FALSE}
+pwd
+
+/storage1/data12/Projects/Vent_Viruses/MAGs_Renamed/Brothers_Volcano
+
+rename 's/scaf2bin.//g' *.fasta
+
+rename 's/^/Brothers_/g' *.fasta
+
+for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
+```
+
+## ELSC
+```{bash,  eval = FALSE}
+rename 's/scaf2bin.//g' *.fasta
+
+rename 's/^/ELSC_/g' *.fasta
+
+for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
+```
+
+## EPR
+```{bash,  eval = FALSE}
+rename 's/scaf2bin.//g' *.fasta
+
+rename 's/^/EPR_/g' *.fasta
+
+for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
+```
+
+## Guaymas
+```{bash,  eval = FALSE}
+rename 's/scaf2bin.//g' *.fasta
+
+rename 's/^/Guaymas_/g' *.fasta
+
+for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
+```
+
+## MAR
+```{bash,  eval = FALSE}
+rename 's/scaf2bin.//g' *.fasta
+
+rename 's/^/MAR_/g' *.fasta
+
+for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
+```
 
