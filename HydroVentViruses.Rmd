@@ -276,3 +276,33 @@ rename 's/^/MAR_/g' *.fasta
 for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
 ```
 
+# Read Mapping
+
+## EPR
+```{bash,  eval = FALSE}
+conda activate
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/EPR/EPR_4281-140.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/EPR/*.fastq.gz -o Read_Mapping/EPR -t 20 &
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/EPR/EPR_PIR-30.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/EPR/*.fastq.gz -o Read_Mapping/EPR -t 20 &
+```
+
+## Guaymas
+```{bash,  eval = FALSE}
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4559-240.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4561-380.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4561-384.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4571-419.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &
+```
+
+## MAR
+
+```{bash,  eval = FALSE}
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/MAR_Lucky_356-284.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4561-380.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &
+```
+

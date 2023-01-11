@@ -132,6 +132,14 @@
             <ul>
             <li><a href="#brothers-volcano">Brothers Volcano</a></li>
             <li><a href="#elsc">ELSC</a></li>
+            <li><a href="#epr-1">EPR</a></li>
+            <li><a href="#guaymas-1">Guaymas</a></li>
+            <li><a href="#mar">MAR</a></li>
+            </ul></li>
+            <li><a href="#read-mapping">Read Mapping</a>
+            <ul>
+            <li><a href="#epr-2">EPR</a></li>
+            <li><a href="#guaymas-2">Guaymas</a></li>
             </ul></li>
             </ul>
           </div>
@@ -331,6 +339,47 @@ for i in *.fasta; do awk &#39;/&gt;/{sub(&quot;&gt;&quot;,&quot;&amp;&quot;FILEN
 rename &#39;s/^/ELSC_/g&#39; *.fasta
 
 for i in *.fasta; do awk &#39;/&gt;/{sub(&quot;&gt;&quot;,&quot;&amp;&quot;FILENAME&quot;_&quot;);sub(/\.fasta/,x)}1&#39; $i &gt;&gt; $i.renamed; done</code></pre>
+</div>
+<div id="epr-1" class="section level2">
+<h2>EPR</h2>
+<pre class="bash"><code>rename &#39;s/scaf2bin.//g&#39; *.fasta
+
+rename &#39;s/^/EPR_/g&#39; *.fasta
+
+for i in *.fasta; do awk &#39;/&gt;/{sub(&quot;&gt;&quot;,&quot;&amp;&quot;FILENAME&quot;_&quot;);sub(/\.fasta/,x)}1&#39; $i &gt;&gt; $i.renamed; done</code></pre>
+</div>
+<div id="guaymas-1" class="section level2">
+<h2>Guaymas</h2>
+<pre class="bash"><code>rename &#39;s/scaf2bin.//g&#39; *.fasta
+
+rename &#39;s/^/Guaymas_/g&#39; *.fasta
+
+for i in *.fasta; do awk &#39;/&gt;/{sub(&quot;&gt;&quot;,&quot;&amp;&quot;FILENAME&quot;_&quot;);sub(/\.fasta/,x)}1&#39; $i &gt;&gt; $i.renamed; done</code></pre>
+</div>
+<div id="mar" class="section level2">
+<h2>MAR</h2>
+<pre class="bash"><code>rename &#39;s/scaf2bin.//g&#39; *.fasta
+
+rename &#39;s/^/MAR_/g&#39; *.fasta
+
+for i in *.fasta; do awk &#39;/&gt;/{sub(&quot;&gt;&quot;,&quot;&amp;&quot;FILENAME&quot;_&quot;);sub(/\.fasta/,x)}1&#39; $i &gt;&gt; $i.renamed; done</code></pre>
+</div>
+</div>
+<div id="read-mapping" class="section level1">
+<h1>Read Mapping</h1>
+<div id="epr-2" class="section level2">
+<h2>EPR</h2>
+<pre class="bash"><code>conda activate
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/EPR/EPR_4281-140.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/EPR/*.fastq.gz -o Read_Mapping/EPR -t 20 &amp;
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/EPR/EPR_PIR-30.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/EPR/*.fastq.gz -o Read_Mapping/EPR -t 20 &amp;</code></pre>
+</div>
+<div id="guaymas-2" class="section level2">
+<h2>Guaymas</h2>
+<pre class="bash"><code>nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4559-240.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &amp;
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4561-380.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &amp;</code></pre>
 </div>
 </div>
 </div>

@@ -138,6 +138,7 @@ Backup[ ]of[ ]*.numbers/
 *.css
 *.js
 *.ttf
+*.html
 
 ### sequences
 *.aln
