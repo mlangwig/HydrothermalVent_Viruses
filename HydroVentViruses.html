@@ -140,6 +140,14 @@
             <ul>
             <li><a href="#epr-2">EPR</a></li>
             <li><a href="#guaymas-2">Guaymas</a></li>
+            <li><a href="#mar-1">MAR</a></li>
+            <li><a href="#brothers-and-elsc">Brothers and ELSC</a></li>
+            </ul></li>
+            <li><a href="#remove-viral-contamination-from-mags">Remove viral contamination from MAGs</a></li>
+            <li><a href="#viwrap">ViWrap</a>
+            <ul>
+            <li><a href="#brothers-diffuse-1">Brothers Diffuse</a></li>
+            <li><a href="#running-viwrap-using-codys-wrapper">Running ViWrap using Cody’s wrapper</a></li>
             </ul></li>
             </ul>
           </div>
@@ -379,7 +387,96 @@ nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/
 <h2>Guaymas</h2>
 <pre class="bash"><code>nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4559-240.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &amp;
 
-nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4561-380.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &amp;</code></pre>
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4561-380.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &amp;
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4561-384.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &amp;
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4571-419.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &amp;</code></pre>
+</div>
+<div id="mar-1" class="section level2">
+<h2>MAR</h2>
+<pre class="bash"><code>nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/MAR_Lucky_356-284.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/MAR/*.fastq.gz -o Read_Mapping/MAR -t 20 &amp;
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/MAR_Lucky_356-308.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/MAR/*.fastq.gz -o Read_Mapping/MAR -t 15 &amp;
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/MAR_Rainbow_354-166.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/MAR/*.fastq.gz -o Read_Mapping/MAR -t 20 &amp;
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/MAR_Rainbow_355-202.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/MAR/*.fastq.gz -o Read_Mapping/MAR -t 20 &amp;</code></pre>
+</div>
+<div id="brothers-and-elsc" class="section level2">
+<h2>Brothers and ELSC</h2>
+<p>Now trying with Cody’s mapping wrapper</p>
+<pre class="bash"><code>conda activate
+
+nohup python3 /storage1/data14/software/mapping/mapper.py -i AssembliesToReadsFinal.txt --batch -o Read_Mapping/BrothersELSC -rd /storage1/Reads/HydroVents_ZhouReysenbach -fd /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed -t 20 &amp;</code></pre>
+</div>
+</div>
+<div id="remove-viral-contamination-from-mags" class="section level1">
+<h1>Remove viral contamination from MAGs</h1>
+<p>BLAST all viruses against all the MAGs. You are looking for 100% matches and 100% coverage. Unless it is a lysogenic virus, it should be contamination. Just because a virus is binned with a MAG does not mean it belongs to that virus.</p>
+<ol style="list-style-type: decimal">
+<li>Run BLAST search</li>
+</ol>
+<pre class="bash"><code>cat *.fasta &gt; All_VentMAGs.fna
+
+makeblastdb -in All_VentMAGs.fna -title &quot;Vent_MAGs&quot; -dbtype nucl
+
+nohup blastn -query  /storage1/data12/Projects/Vent_Viruses/Virus_Genomes/fna/All_Viruses.fna -db /storage1/data12/Projects/Vent_Viruses/MAGs_Renamed/Remove_ViralContam/All_VentMAGs.fna -out MAGs_Renamed/Remove_ViralContam/VirusHits_toMAGs.txt -num_threads 20 -outfmt &quot;6 qseqid length qlen slen pident bitscore stitle&quot; &amp;</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Filter blast hits and subset from MAGs</li>
+</ol>
+<pre class="bash"><code>python3 /storage1/data12/scripts/filter_blast_100c_pi.py VirusHits_toMAGs.txt VirusHits_toMAGs_filtered.txt
+
+cut -f7 VirusHits_toMAGs_filtered.txt &gt; Viral_Contam.txt
+
+for i in *.fasta; do perl /storage1/data12/scripts/screen_list_new.pl Remove_ViralContam/Viral_Contam.txt $i &gt;&gt; Remove_ViralContam/$i.noVirusContam.fna; done
+
+cat *noVirusContam* &gt; All_VentMAGs_noViralContam.fna</code></pre>
+</div>
+<div id="viwrap" class="section level1">
+<h1>ViWrap</h1>
+<p><strong>Unfortunately this ended up not being an option because it would take a month to run through all my samples. One smaller scale sample took 10 hours, times 42 samples = inefficient.</strong></p>
+<p>Testing ViWrap - it would be nice if I could use it to get all the output I need :)</p>
+<div id="brothers-diffuse-1" class="section level2">
+<h2>Brothers Diffuse</h2>
+<pre class="bash"><code>conda activate /storage1/data22/ViWrap_conda_environments/ViWrap
+
+ViWrap run --input_metagenome /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed/Brothers_Volcano/Brothers_Diffuse_S009_metaspades_scaffolds.min1000.fasta \
+               --input_reads /storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane2-s009-indexN705-S505-GGACTCCT-CTCCTTAC-279_debarcode_1.fastq.gz,/storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane2-s009-indexN705-S505-GGACTCCT-CTCCTTAC-279_debarcode_2.fastq.gz,/storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane4-s015-indexN703-S517-AGGCAGAA-TCTTACGC-Green_debarcode_1.fastq.gz,/storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane4-s015-indexN703-S517-AGGCAGAA-TCTTACGC-Green_debarcode_2.fastq.gz \
+               --input_reads_type illumina \
+               --reads_mapping_identity_cutoff 0.97 \
+               --out_dir /storage1/data12/Projects/Vent_Viruses/ViWrap/Brothers_Diffuse \
+               --db_dir /storage1/data22/ViWrap/ViWrap_db \
+               --identify_method  vb \
+               --conda_env_dir /storage1/data22/ViWrap_conda_environments \
+               --threads 20 \
+               --input_length_limit 2000 \
+               --custom_MAGs_dir /storage1/data12/Projects/Vent_Viruses/MAGs_Renamed/Remove_ViralContam/Brothers/Diffuse
+               
+
+nohup ./bash_BD.sh &amp;</code></pre>
+<p>I decided to leave off the custom MAG option for iphop since that takes a lot of time. I can take all the viruses and all the MAGs and run that on my own after I have all the vMAGs and unbinned viruses.</p>
+<pre class="bash"><code>conda activate /storage1/data22/ViWrap_conda_environments/ViWrap
+
+ViWrap run --input_metagenome /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed/Brothers_Volcano/Brothers_Diffuse_S015_metaspades_scaffolds.min1000.fasta \
+               --input_reads /storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane2-s009-indexN705-S505-GGACTCCT-CTCCTTAC-279_debarcode_1.fastq.gz,/storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane2-s009-indexN705-S505-GGACTCCT-CTCCTTAC-279_debarcode_2.fastq.gz,/storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane4-s015-indexN703-S517-AGGCAGAA-TCTTACGC-Green_debarcode_1.fastq.gz,/storage1/Reads/HydroVents_ZhouReysenbach/Brothers_Volcano/Diffuse_Flow/lane4-s015-indexN703-S517-AGGCAGAA-TCTTACGC-Green_debarcode_2.fastq.gz \
+               --input_reads_type illumina \
+               --reads_mapping_identity_cutoff 0.97 \
+               --out_dir /storage1/data12/Projects/Vent_Viruses/ViWrap/Brothers_Diffuse_S015 \
+               --db_dir /storage1/data22/ViWrap/ViWrap_db \
+               --identify_method  vb \
+               --conda_env_dir /storage1/data22/ViWrap_conda_environments \
+               --threads 20 \
+               --input_length_limit 2000
+               
+
+nohup ./bash_BD_S015.sh &amp;</code></pre>
+</div>
+<div id="running-viwrap-using-codys-wrapper" class="section level2">
+<h2>Running ViWrap using Cody’s wrapper</h2>
+<pre class="bash"><code>conda activate
+
+nohup python3 /storage1/data14/for_maggie/ViWrap_loop.py -s AssembliesToReads_ViWrap.txt -a /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed/ -r /storage1/Reads/HydroVents_ZhouReysenbach/ &amp;</code></pre>
 </div>
 </div>
 </div>
