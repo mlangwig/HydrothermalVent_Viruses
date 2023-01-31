@@ -397,3 +397,254 @@ nohup python3 /storage1/data14/for_maggie/ViWrap_loop.py -s AssembliesToReads_Vi
 
 
 
+
+
+# vRhyme Binning
+
+Don't judge me for running this one by one...I was doing it as the bam files were coming out from the read mapping because I'm impatient :)
+
+## EPR
+```{bash,  eval = FALSE}
+conda activate vRhyme
+
+vRhyme -i VIBRANT_output/VIBRANT_EPR_4281-140/VIBRANT_phages_EPR_4281-140/EPR_4281-140.phages_combined.fna -b Read_Mapping/EPR/EPR_4281-140/*.bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_EPR_PIR-30/VIBRANT_phages_EPR_PIR-30/EPR_PIR-30.phages_combined.fna -b Read_Mapping/EPR/EPR_PIR-30/*.bam -t 5
+```
+
+## Guaymas
+```{bash,  eval = FALSE}
+conda activate vRhyme
+
+vRhyme -i VIBRANT_output/VIBRANT_Guaymas_4559-240/VIBRANT_phages_Guaymas_4559-240/Guaymas_4559-240.phages_combined.fna   -b Read_Mapping/Guaymas/Guaymas_4559-240/*.bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Guaymas_4561-380/VIBRANT_phages_Guaymas_4561-380/Guaymas_4561-380.phages_combined.fna  -b Read_Mapping/Guaymas/Guaymas_4561-380/*.bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Guaymas_4561-384/VIBRANT_phages_Guaymas_4561-384/Guaymas_4561-384.phages_combined.fna -b Read_Mapping/Guaymas/Guaymas_4561-384/*.bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Guaymas_4571-419/VIBRANT_phages_Guaymas_4571-419/Guaymas_4571-419.phages_combined.fna  -b Read_Mapping/Guaymas/Guaymas_4571-419/*.bam -t 5
+```
+
+## MAR
+```{bash,  eval = FALSE}
+conda activate vRhyme
+
+vRhyme -i VIBRANT_output/VIBRANT_MAR_Lucky_356-284/VIBRANT_phages_MAR_Lucky_356-284/MAR_Lucky_356-284.phages_combined.fna  -b Read_Mapping/MAR/MAR_Lucky_356-284/*.bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_MAR_Lucky_356-308/VIBRANT_phages_MAR_Lucky_356-308/MAR_Lucky_356-308.phages_combined.fna -b Read_Mapping/MAR/MAR_Lucky_356-308/*.bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_MAR_Rainbow_354-166/VIBRANT_phages_MAR_Rainbow_354-166/MAR_Rainbow_354-166.phages_combined.fna -b Read_Mapping/MAR/MAR_Rainbow_354-166/*.bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_MAR_Rainbow_355-202/VIBRANT_phages_MAR_Rainbow_355-202/MAR_Rainbow_355-202.phages_combined.fna -b Read_Mapping/MAR/MAR_Rainbow_355-202/*.bam -t 5
+```
+
+
+
+## Brothers
+### Diffuse
+```{bash,  eval = FALSE}
+conda activate vRhyme
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_Diffuse_S009_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_Diffuse_S009_metaspades_scaffolds.min1000/Brothers_Diffuse_S009_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_Diffuse_S009* -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_Diffuse_S015_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_Diffuse_S015_metaspades_scaffolds.min1000/Brothers_Diffuse_S015_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_Diffuse_S015/*bam -t 5
+```
+
+### LC
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_LC_S014_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_LC_S014_metaspades_scaffolds.min1000/Brothers_LC_S014_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_LC_S014/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_LC_S016_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_LC_S016_metaspades_scaffolds.min1000/Brothers_LC_S016_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_LC_S016/*bam -t 5
+```
+
+### NWCA
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S013_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S013_metaspades_scaffolds.min1000/Brothers_NWCA_S013_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S013/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S017_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S017_metaspades_scaffolds.min1000/Brothers_NWCA_S017_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S017/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S142_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S142_metaspades_scaffolds.min1000/Brothers_NWCA_S142_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S142/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S143_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S143_metaspades_scaffolds.min1000/Brothers_NWCA_S143_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S143/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S144_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S144_metaspades_scaffolds.min1000/Brothers_NWCA_S144_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S144/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S145_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S145_metaspades_scaffolds.min1000/Brothers_NWCA_S145_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S145/*bam -t 5
+```
+
+
+### NWCB
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCB_S012_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCB_S012_metaspades_scaffolds.min1000/Brothers_NWCB_S012_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCB_S012/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCB_S139_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCB_S139_metaspades_scaffolds.min1000/Brothers_NWCB_S139_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCB_S139/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCB_S140_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCB_S140_metaspades_scaffolds.min1000/Brothers_NWCB_S140_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCB_S140/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCB_S141_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCB_S141_metaspades_scaffolds.min1000/Brothers_NWCB_S141_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCB_S141/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCB_S146_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCB_S146_metaspades_scaffolds.min1000/Brothers_NWCB_S146_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCB_S146/*bam -t 5
+```
+
+### UC
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_UC_S010_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_UC_S010_metaspades_scaffolds.min1000/Brothers_UC_S010_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_UC_S010/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_UC_S011_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_UC_S011_metaspades_scaffolds.min1000/Brothers_UC_S011_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_UC_S011/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_Brothers_UC_S147_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_UC_S147_metaspades_scaffolds.min1000/Brothers_UC_S147_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_UC_S147/*bam -t 5
+```
+
+### ELSC Abe
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_128-326/VIBRANT_phages_ELSC_Abe_128-326/ELSC_Abe_128-326.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_128-326/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A1_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Abe_A1_metaspades_scaffolds.min1000/ELSC_Abe_A1_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_A1/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A3_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Abe_A3_metaspades_scaffolds.min1000/ELSC_Abe_A3_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_A3/*bam -t 5
+```
+### ELSC Mariner
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Bowl_M1_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Bowl_M1_metaspades_scaffolds.min1000/ELSC_Bowl_M1_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Bowl_M1/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Bowl_M2_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Bowl_M2_metaspades_scaffolds.min1000/ELSC_Bowl_M2_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Bowl_M2/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Mariner_131-447/VIBRANT_phages_ELSC_Mariner_131-447/ELSC_Mariner_131-447.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Mariner_131-447/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Mariner_M10_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Mariner_M10_metaspades_scaffolds.min1000/ELSC_Mariner_M10_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Mariner_M10/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Mariner_M17_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Mariner_M17_metaspades_scaffolds.min1000/ELSC_Mariner_M17_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Mariner_M17/*bam -t 5
+```
+
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_128-326/VIBRANT_phages_ELSC_Abe_128-326/ELSC_Abe_128-326.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_128-326/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A1_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Abe_A1_metaspades_scaffolds.min1000/ELSC_Abe_A1_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_A1/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A3_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Abe_A3_metaspades_scaffolds.min1000/ELSC_Abe_A3_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_A3/*bam -t 5
+```
+
+
+### ELSC Tui Malila
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Tui_Malila_132-544/VIBRANT_phages_ELSC_Tui_Malila_132-544/ELSC_Tui_Malila_132-544.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Tui_Malila_132-544/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Tui_Malila_134-614/VIBRANT_phages_ELSC_Tui_Malila_134-614/ELSC_Tui_Malila_134-614.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Tui_Malila_134-614/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Tui_Malila_T10_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Tui_Malila_T10_metaspades_scaffolds.min1000/ELSC_Tui_Malila_T10_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Tui_Malila_T10/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Tui_Malila_T11_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Tui_Malila_T11_metaspades_scaffolds.min1000/ELSC_Tui_Malila_T11_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Tui_Malila_T11/*bam -t 5
+
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Tui_Malila_T2_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Tui_Malila_T2_metaspades_scaffolds.min1000/ELSC_Tui_Malila_T2_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Tui_Malila_T2/*bam -t 5
+```
+
+### Vai Lili
+```{bash,  eval = FALSE}
+vRhyme -i VIBRANT_output/VIBRANT_ELSC_Vai_Lili_V2_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Vai_Lili_V2_metaspades_scaffolds.min1000/ELSC_Vai_Lili_V2_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Vai_Lili_V2/*bam -t 5
+```
+
+
+
+# Renaming vMAGs
+```{bash,  eval = FALSE}
+mkdir originals_vMAGs
+```
+
+1. Run bash script with the following contents to find vMAGs, rename them, cp them 1 dir up:
+```{bash,  eval = FALSE}
+./rename_vMAGs.sh
+
+#!/bin/bash
+
+find . -maxdepth 3 -type f -name "*fasta" -exec sh -c '
+  for img; do
+    parentdir=${img%/*/*}      # leave the parent dir (remove the last `/` and filename)
+    dirname=${parentdir##*/} # leave the parent directory name (remove all parent paths `*/`)
+    cp -i "$img" "$parentdir/${dirname}_${img##*/}"
+  done
+' sh {} +
+```
+
+2. Find renamed vMAGs, put them in 1 folder, clean up the names
+```{bash,  eval = FALSE}
+find -maxdepth 2 -name "*.fasta" | xargs -i mv {} fna/
+
+rename 's/vRhyme_results_//' *.fasta
+rename 's/.phages_combined//' *.fasta
+rename 's/_metaspades_scaffolds.min1000//' *.fasta
+```
+
+# Use vRhyme to get the N-linked scaffolds of vMAGs
+You'll need this to run CheckV, iphop, and other programs on the vMAGs
+
+```{bash,  eval = FALSE}
+conda activate vRhyme
+
+link_bin_sequences.py -i fna/ -o fna_Nlinked_scaffolds
+```
+
+# Get a file of unbinned viruses for the same 42 samples
+
+1. Concatenate the viruses into 1 file
+```{bash,  eval = FALSE}
+cat *fasta > ../all_vMAGs.fna
+```
+
+2. Make a mapping file to use in the future for mapping vMAG file name: scaffold names
+```{bash,  eval = FALSE}
+grep ">" *.fasta | sed 's/:>/\t/g' | sed 's/.fasta/\t/g' | cut -f1,3 | sed 's/__/\t/g' | cut -f1,3 > ../vMAG_scaffold_mapping.txt
+
+cut -f2 vMAG_scaffold_mapping.txt > binned_viral_scaffolds.txt
+```
+
+3. Subset the file of all viruses for unbinned viruses using the txt file of binned viral scaffolds
+```{bash,  eval = FALSE}
+screen_list_new.pl ../../../vRhyme/binned_viral_scaffolds.txt All_Viruses.fna > unbinned_VentViruses.fna
+```
+
+# Run iphop on the vUnbinned and vMAGs
+Run iphop on the 1500N-concatenated vMAGs and unbinned viruses so you can compare host predictions with the plume viruses.
+
+**If you're doing this again, do step 2 first if you anticipate any illegal characters in your MAGs. Then proceed**
+
+First, make a custom iphop database using the MAGs from the 42 vents
+1. Run gtdbtk 1.5.0 on the MAGs
+```{bash,  eval = FALSE}
+conda activate gtdbtk-1.5.0
+
+nohup gtdbtk de_novo_wf --genome_dir MAGs_Renamed/No_ViralContam/ --bacteria --outgroup_taxon p__Bdellovibrionota --out_dir Vent_MAGs_gtdbtk_denovo_wf/ --cpus 20 --force --extension fna &
+
+nohup gtdbtk de_novo_wf --genome_dir MAGs_Renamed/No_ViralContam/ --archaea --outgroup_taxon p__Altarchaeota --out_dir Vent_MAGs_gtdbtk_denovo_wf/ --cpus 20 --force --extension fna &
+```
+
+2. Create iphop database. I ran into the same problem that James did where iphop complained about illegal characters so I'm going to follow his steps to fix it. In the second command we are running iphop predict with the MAGs as the input viruses to get the "cleaned file" since my MAGs are giving me errors for illegal characters. Then use the split_MAGs.py script to split up the MAGs back into individual files.
+```{bash,  eval = FALSE}
+conda activate iphop
+
+nohup iphop predict --fa_file MAGs_Renamed/All_VentMAGs_noViralContam.fna --out_dir clean_iphop_MAGs --db_dir /storage1/databases/iPHoP/Sept_2021_pub/ --num_threads 20 &
+
+python3 split_MAGs.py
+```
+
+3. Rerun GTDBtk stuff with new names/cleaned MAGs. Remember the outgroups should be something you do not have in your dataset. So remember to check the GTDBtk taxonomy of your MAGs, then choose an outgroup that is distant.
+```{bash,  eval = FALSE}
+conda activate gtdbtk-1.5.0
+
+nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/clean_fnas/ --bacteria --outgroup_taxon p__Bdellovibrionota --out_dir Vent_MAGs_gtdbtk_denovo_wf_clean/ --cpus 20 &
+
+nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/clean_fnas/ --archaea --outgroup_taxon p__Huberarchaeota --out_dir Vent_MAGs_gtdbtk_denovo_wf_clean/ --cpus 20 &
+```
+
+4. Add MAGs finally to iphop db
+```{bash,  eval = FALSE}
+nohup iphop add_to_db --fna_dir clean_iphop_MAGs/clean_fnas/ --gtdb_dir Vent_MAGs_gtdbtk_denovo_wf_clean/ --out_dir iPHoP_Sept_2021_w_VentMAGs --db_dir /storage1/databases/iPHoP/Sept_2021_pub/ &
+```
+
+5. Run iphop using your custom database
+```{bash,  eval = FALSE}
+nohup iphop predict --fa_file Virus_Genomes/fna/vUnbinned_vMAG_1500Ns_VentViruses.fna --db_dir iPHoP_Sept_2021_w_VentMAGs/ --out_dir iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb -t 20 --no_qc &
+```
+
+# Analyze the VIBRANT gene annotations output
+
+
