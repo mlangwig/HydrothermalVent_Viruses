@@ -29,6 +29,7 @@ for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\_metaspades_scaffold
 ```
 
 3. Adding site identifier to assembly names (after checking your sed first!)
+
 ### Brothers UC
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_UC_/g' S010_metaspades_scaffolds.min1000.fasta
@@ -196,7 +197,7 @@ Result: 1,165 medium and high quality viruses (exclude header)
 146 complete viruses
 1,031 proviruses, or integrated viruses
 
-# Grab only the medium and high quality viruses
+## Grab only the medium and high quality viruses
 Grab only the medium and high quality viruses predicted by CheckV
 ```{bash,  eval = FALSE}
 grep -v 'Low-quality\|Not-determined' quality_summary.tsv > MedHighQual_Viruses.tsv
@@ -544,7 +545,6 @@ vRhyme -i VIBRANT_output/VIBRANT_ELSC_Vai_Lili_V2_metaspades_scaffolds.min1000/V
 ```
 
 
-
 # Renaming vMAGs
 ```{bash,  eval = FALSE}
 mkdir originals_vMAGs
@@ -646,5 +646,27 @@ nohup iphop predict --fa_file Virus_Genomes/fna/vUnbinned_vMAG_1500Ns_VentViruse
 ```
 
 # Analyze the VIBRANT gene annotations output
+```{bash,  eval = FALSE}
+find VIBRANT* -name "*AMG_individuals*" | xargs -i cp {} AMG_VIBRANT_output/AMG_individuals/
+
+find VIBRANT* -name "*AMG_counts*" | xargs -i cp {} AMG_VIBRANT_output/AMG_counts/
+
+find VIBRANT* -name "*annotations*" | xargs -i cp {} AMG_VIBRANT_output/AMG_counts/
+```
+
+# Run CheckV on the vMAGs
+
+```{bash, eval = FALSE}
+nohup checkv end_to_end Virus_Genomes/fna/all_vMAGs_1500Ns.fna CheckV_vMAGs -t 20 &
+```
+
+## Make a file of unbinned CheckV results
+
+```{bash, eval = FALSE}
+screen_list_new.pl ../vRhyme/binned_viral_scaffolds.txt quality_summary.tsv > quality_summary_vUnbinned_Vents.tsv
+```
+I ended up doing this with vlookup in excel because this was not behaving as expected/not working
+
+
 
 
