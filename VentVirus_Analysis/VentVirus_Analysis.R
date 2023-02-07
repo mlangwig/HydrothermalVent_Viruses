@@ -75,11 +75,153 @@ master_table_vMAGs<-master_table_vMAGs %>% anti_join(scafs_to_remove, by = c("pr
 #notice now that the vMAG table is missing 15 protein scaffolds. This doesn't matter for the purposes
 #of these plots/analyses but will be included for gene annotation-focused analyses
 
+#remove old checkV
+master_table_vMAGs <- select(master_table_vMAGs, -contig_length, -checkv_quality, -provirus,
+                             -completeness, -contamination, -warnings)
+
+#map new CheckV (VLOOKUP)
+master_table_vMAGs <- checkV %>%
+  dplyr::select(contig_id, contig_length, checkv_quality, provirus, completeness, contamination, warnings) %>%
+  right_join(master_table_vMAGs, by = c("contig_id" = "vMAG")) 
+#rename some columns
+master_table_vMAGs<-rename(master_table_vMAGs, "vMAG"  = "contig_id")
+
+##################### vUnbinned master table #####################
+
+master_table_unbinned <- master_table[!is.na(master_table$checkv_quality),]
+master_table_unbinned <- select(master_table_unbinned, -vMAG)
+
+################# master tables without proteins for counting ###############
+############## plus determing lytic lysogenic type for vMAGs ###############
+
+#################vMAGs
+master_table_vMAGs_noProtein<-master_table_vMAGs %>%
+  select(vMAG, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
+master_table_vMAGs_noProtein<-unique(master_table_vMAGs_noProtein)
+
+#subset for vMAGs that have 2 type designations after binning
+dups<-master_table_vMAGs_noProtein[duplicated(master_table_vMAGs_noProtein$vMAG),]
+two_type_vMAGs<-master_table_vMAGs_noProtein[master_table_vMAGs_noProtein$vMAG %in% dups$vMAG,] #subset table using list of names
+
+###REPLACING ALL LYTIC/LYSOGENIC SAME SCAFFOLDS WITH LYSOGENIC ONLY ACCORDING TO VRHYME RULES
+#now grab the two types from the master vMAG table so you can change all of them to lysogenic
+two_type_to_one_vMAGs<-master_table_vMAGs[master_table_vMAGs$vMAG %in% dups$vMAG,]
+two_type_to_one_vMAGs<-two_type_to_one_vMAGs %>% 
+  mutate(type = str_replace(type, "lytic", "lysogenic"))
+
+#remove double lytic/lyso type scaffolds from master vMAG df
+`%notin%` <- Negate(`%in%`)
+master_table_vMAGs<-master_table_vMAGs[master_table_vMAGs$vMAG %notin% dups$vMAG,] #subset table using list of names
+#now add the vMAGs back in with their corrected VIBRANT type
+master_table_vMAGs<-rbind(master_table_vMAGs, two_type_to_one_vMAGs)
+
+master_table_vMAGs_noProtein<-master_table_vMAGs %>%
+  select(vMAG, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
+master_table_vMAGs_noProtein<-unique(master_table_vMAGs_noProtein)
+
+##################vUnbinned
+master_table_unbinned_noProtein<-master_table_unbinned %>%
+  select(scaffold, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
+master_table_unbinned_noProtein<-unique(master_table_unbinned_noProtein)
+
+####################Combine the tables into 1 for plots and counts of all viruses together
+#rename vMAG column to combine
+master_table_vMAGs_noProtein<-rename(master_table_vMAGs_noProtein, Virus = vMAG)
+master_table_unbinned_noProtein<-rename(master_table_unbinned_noProtein, Virus = scaffold)
+#combine them
+master_table_noProtein<-rbind(master_table_vMAGs_noProtein, master_table_unbinned_noProtein)
+
+############################## Useful counts with no protein ###################################
+
+#Count how many lytic and lysogenic predicted by VIBRANT
+
+table(master_table_vMAGs_noProtein['type']) 
+#VIBRANT - 823 lysogenic vMAGs, 4835 lytic
+table(master_table_vMAGs_noProtein['provirus']) 
+#CheckV - 141 lysogenic vMAGs, 5517 lytic
+
+table(master_table_unbinned_noProtein['type']) 
+#VIBRANT - 1146 lysogenic vMAGs, 24332 lytic
+table(master_table_unbinned_noProtein['provirus']) 
+#CheckV - 436 lysogenic vMAGs, 25042 lytic
+
+
+#Count checkv_quality
+table(master_table_vMAGs_noProtein['checkv_quality']) 
+#CheckV --> Complete: 24, High-qual: 526, Med-qual: 1041, Low-qual: 3616, Not-determ: 451
+
+table(master_table_unbinned_noProtein['checkv_quality'])
+#CheckV --> Complete: 145, High-qual: 185, Med-qual: 418, Low-qual: 16727, Not-determ: 8003
+
+################################# Mapping iphop to new tables ##################################
+#New tables to avoid duplicates
+
+master_table_unbinned_iphop <- iphop %>%
+  dplyr::select(Virus, Host.genus, List.of.methods) %>%
+  right_join(master_table_unbinned, by = c("Virus" = "scaffold")) 
+
+master_table_vMAGs_iphop <- iphop %>%
+  dplyr::select(Virus, Host.genus, List.of.methods) %>%
+  right_join(master_table_vMAGs, by = c("Virus" = "vMAG")) 
+
 ##################### writing outputs #####################
 
 # write.table(master_table_vMAGs, file = "output/master_table_vMAGs.tsv", col.names = TRUE,
 #             row.names = FALSE, sep = "\t")
 
+######################################## Visualize ##################################################
 
+############################### CheckV quality ##################################
 
-  
+master_table_fig <- master_table_noProtein %>% 
+  select(c("Virus", "checkv_quality", "Site")) %>%
+  unique() %>%
+  group_by(Site) %>%
+  count(checkv_quality) #%>%
+#filter(!grepl("Low-quality|Not-determined", 
+#             checkv_quality)) #drop low quality bc it's telling me nothing
+
+###plot
+dev.off()
+p <- ggplot(master_table_fig, aes(x = checkv_quality, y = n, fill = checkv_quality)) + 
+  geom_bar(stat = "identity") + 
+  facet_wrap(~Site) + 
+  xlab(element_blank())  +
+  ylab("Count") +
+  ggtitle("CheckV Quality") +
+  scale_fill_viridis_d() +
+  theme()
+#geom_text(aes(label = paste0(n), y = n),
+#          hjust = -.5, size = 2.5, color = "black" )
+p <- p + theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90,  hjust = 1)) +
+  coord_flip()
+p
+
+ggsave("output/CheckV_qual_perSite.pdf", p, width = 15, height = 10, dpi = 500)
+ggsave("output/CheckV_qual_perSite.png", p, width = 15, height = 10, dpi = 500)
+
+############################### Lytic and Lysogenic ##################################
+
+###subset just virus, site, type
+master_table_fig <- master_table_noProtein %>% 
+  select(c("Virus", "type", "Site"))
+
+#make a column of 1s for presence
+master_table_fig$value <- rep(c(1),each=nrow(master_table_fig)) 
+
+dev.off()
+p <- ggplot(master_table_fig, aes(x = type, y = value, fill = type)) + 
+  geom_bar(stat = "identity") + 
+  facet_wrap(~Site) + 
+  xlab("Type")  +
+  ylab("Count") +
+  ggtitle("Lytic and Lysogenic Viruses") +
+  scale_fill_viridis_d(direction = -1, begin = .25, end = .75)
+p <- p + theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90,  hjust = 1)) +
+  coord_flip()
+p
+
+ggsave("output/LyticLysogenic.png", p, width = 15, height = 10, dpi = 500)
+ggsave("output/LyticLysogenic.pdf", p, width = 15, height = 10, dpi = 500)

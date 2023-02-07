@@ -698,6 +698,60 @@ rename 's/.phages_combined//' *.faa
 rename 's/_metaspades_scaffolds.min1000//' *.faa
 ```
 
+# Using skani to compare ANI between viruses
+
+This utilizes a skani-vMAG.py script written by Cody
+```{bash, eval = FALSE}
+conda install -c bioconda skani
+
+nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c ../Virus_Genomes/fna/unbinned_VentViruses.fna -d ../vRhyme/fna -x .fasta --outdir . &
+```
+
+# Cluster the skani results using mcl
+
+1. Preprocess the file using polars. This utilizes preprocess.py written by Cody.
+```{bash, eval = FALSE}
+conda create --name mcl
+conda install -c "bioconda/label/cf201901" mcl
+conda install -c conda-forge polars
+
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_output_vUnbinned_vMAGs_Vents.tsv -o skani_PreprocessedOutput_vUnbinned_vMAGs_Vents.tsv
+```
+
+2. Pass the preprocessed file to mcxload
+```{bash, eval = FALSE}
+mcxload -abc skani/skani_PreprocessedOutput_vUnbinned_vMAGs_Vents.tsv -o mcl_clusters/vUnbinned_vMAGs_Vents.mci -write-tab mcl_clusters/vUnbinned_vMAGs_Vents.mcxload
+```
+
+3. Then to mcl
+```{bash, eval = FALSE}
+nohup mcl vUnbinned_vMAGs_Vents.mci -use-tab vUnbinned_vMAGs_Vents.mcxload -o out_vUnbinned_vMAGs_Vents.clusters &
+```
+That pipeline seems to work and I get 2,574 clusters. That seems reasonable for 31,136 viruses. The clusters look mixed by vent.
+
+# ANI clustering with skani and mcl using both Vent and Plume data
+
+1. Compare ANI using skani
+```{bash, eval = FALSE}
+conda activate
+
+nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c fna_vUnbinned/unbinned_PlumeVent_viruses.fna -d fna_vMAGs -x .fasta --outdir . -o skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv &
+```
+
+2. Preprocess
+```{bash, eval = FALSE}
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i ../../skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -o skani_ANI_vUnbinned_vMAGs_PlumeVents_processed.tsv
+```
+
+3. MCL
+```{bash, eval = FALSE}
+conda activate mcl
+
+mcxload -abc skani_ANI_vUnbinned_vMAGs_PlumeVents_processed.tsv -o vUnbinned_vMAGs_PlumeVents.mci -write-tab vUnbinned_vMAGs_PlumeVents.mcxload
+
+nohup mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcxload -o vUnbinned_vMAGs_PlumeVents.clusters &
+```
+This produced 3,294 clusters from 38,014 viruses
 
 
 
