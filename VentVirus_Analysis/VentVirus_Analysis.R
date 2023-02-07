@@ -59,8 +59,26 @@ master_table <- vib_type %>%
 
 ##################### vMAG master table #####################
 
+master_table_vMAGs <- master_table[is.na(master_table$checkv_quality),]
 
+#because the counts in the vMAG table were off, I noticed 50 scaffolds from VIBRANT disappeared
+#in the vMAGs. There are also 15 vMAG scaffolds that are new after binning so they aren't in the 
+#original VIBRANT files. I assume these differences are due to Prodigal translations from DNA
+#to protein and don't worry about it for the purposes of what I'm doing here. Detailed gene
+#analyses will not use or use more than original VIBRANT annotations for vMAGs.
 
+#removing scaffolds that are now gone after binning
+scafs_to_remove<-read.delim2(file = "input/vMAG_scaffoldsToRemove.txt", header = FALSE)
+scafs_to_remove<-rename(scafs_to_remove,"scaffold" = "V1")
+
+master_table_vMAGs<-master_table_vMAGs %>% anti_join(scafs_to_remove, by = c("protein" = "V1"))
+#notice now that the vMAG table is missing 15 protein scaffolds. This doesn't matter for the purposes
+#of these plots/analyses but will be included for gene annotation-focused analyses
+
+##################### writing outputs #####################
+
+# write.table(master_table_vMAGs, file = "output/master_table_vMAGs.tsv", col.names = TRUE,
+#             row.names = FALSE, sep = "\t")
 
 
 

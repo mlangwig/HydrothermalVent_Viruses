@@ -645,13 +645,15 @@ nohup iphop add_to_db --fna_dir clean_iphop_MAGs/clean_fnas/ --gtdb_dir Vent_MAG
 nohup iphop predict --fa_file Virus_Genomes/fna/vUnbinned_vMAG_1500Ns_VentViruses.fna --db_dir iPHoP_Sept_2021_w_VentMAGs/ --out_dir iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb -t 20 --no_qc &
 ```
 
-# Analyze the VIBRANT gene annotations output
+# Collect the VIBRANT output into single files
 ```{bash,  eval = FALSE}
 find VIBRANT* -name "*AMG_individuals*" | xargs -i cp {} AMG_VIBRANT_output/AMG_individuals/
 
 find VIBRANT* -name "*AMG_counts*" | xargs -i cp {} AMG_VIBRANT_output/AMG_counts/
 
 find VIBRANT* -name "*annotations*" | xargs -i cp {} AMG_VIBRANT_output/AMG_counts/
+
+find VIBRANT* -name "*genome_quality*" | xargs -i cp {} Quality_VIBRANT_output/
 ```
 
 # Run CheckV on the vMAGs
@@ -665,7 +667,36 @@ nohup checkv end_to_end Virus_Genomes/fna/all_vMAGs_1500Ns.fna CheckV_vMAGs -t 2
 ```{bash, eval = FALSE}
 screen_list_new.pl ../vRhyme/binned_viral_scaffolds.txt quality_summary.tsv > quality_summary_vUnbinned_Vents.tsv
 ```
-I ended up doing this with vlookup in excel because this was not behaving as expected/not working
+I ended up doing this quickly with vlookup in excel because this was not behaving as expected/not working
+
+# Rename the faa vMAG files
+
+1. Modify the bash script to find the faa vMAGs
+```{bash, eval = FALSE}
+./rename_vMAGs.sh
+
+#!/bin/bash
+
+find . -maxdepth 3 -type f -name "*[0-9].faa" -exec sh -c '
+  for img; do
+    parentdir=${img%/*/*}      # leave the parent dir (remove the last `/` and filename)
+    dirname=${parentdir##*/} # leave the parent directory name (remove all parent paths `*/`)
+    cp -i "$img" "$parentdir/${dirname}_${img##*/}"
+  done
+' sh {} +
+```
+
+2. Mv them to 1 dir
+```{bash, eval = FALSE}
+find -maxdepth 2 -name "*[0-9].faa" | xargs -i mv {} /storage1/data12/Projects/Vent_Viruses/vRhyme/faa/
+```
+
+3. Clean up the names
+```{bash, eval = FALSE}
+rename 's/vRhyme_results_//' *.faa
+rename 's/.phages_combined//' *.faa
+rename 's/_metaspades_scaffolds.min1000//' *.faa
+```
 
 
 
