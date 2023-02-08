@@ -698,7 +698,8 @@ rename 's/.phages_combined//' *.faa
 rename 's/_metaspades_scaffolds.min1000//' *.faa
 ```
 
-# Using skani to compare ANI between viruses
+# Clustering
+## Using skani to compare ANI between viruses
 
 This utilizes a skani-vMAG.py script written by Cody
 ```{bash, eval = FALSE}
@@ -707,7 +708,7 @@ conda install -c bioconda skani
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c ../Virus_Genomes/fna/unbinned_VentViruses.fna -d ../vRhyme/fna -x .fasta --outdir . &
 ```
 
-# Cluster the skani results using mcl
+## Cluster the skani results using mcl
 
 1. Preprocess the file using polars. This utilizes preprocess.py written by Cody.
 ```{bash, eval = FALSE}
@@ -729,7 +730,7 @@ nohup mcl vUnbinned_vMAGs_Vents.mci -use-tab vUnbinned_vMAGs_Vents.mcxload -o ou
 ```
 That pipeline seems to work and I get 2,574 clusters. That seems reasonable for 31,136 viruses. The clusters look mixed by vent.
 
-# ANI clustering with skani and mcl using both Vent and Plume data
+## ANI clustering with skani and mcl using both Vent and Plume data
 
 1. Compare ANI using skani
 ```{bash, eval = FALSE}
@@ -752,6 +753,123 @@ mcxload -abc skani_ANI_vUnbinned_vMAGs_PlumeVents_processed.tsv -o vUnbinned_vMA
 nohup mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcxload -o vUnbinned_vMAGs_PlumeVents.clusters &
 ```
 This produced 3,294 clusters from 38,014 viruses
+
+
+
+
+## Clustering based on blast and python scripts
+
+Trying the pipeline used in [paper](https://github.com/snayfach/MGV/blob/master/ani_cluster/README.md)
+
+1. Makeblastdb
+```{bash, eval = FALSE}
+makeblastdb -in SRS1735492.fna -out blastdb -dbtype nucl 
+
+blastn -query SRS1735492.fna -db blastdb -out blast.tsv -outfmt '6 std qlen slen' -max_target_seqs 25000 -perc_identity 90
+```
+
+2. Compute ANI from BLAST results
+```{bash, eval = FALSE}
+
+```
+
+3. Perform centroid-based clustering
+```{bash, eval = FALSE}
+
+```
+
+## Clustering using dRep
+
+1. Split the unbinned viruses into individual files. I realized I need to replace the "=" in the header name because Unix does not like it
+```{bash, eval = FALSE}
+splitfasta unbinned_VentViruses.fasta
+
+for i in $(ls)
+do
+  name1=$(cat "$i" | grep \> | sed 's/$/.fasta/g' | sed 's/>//g')
+  echo mv "$i" "${name1}"
+done
+
+./rename_script.sh
+```
+
+2. Symlink the individual virus genomes. Has to be done in a for loop because normal symlink method is too many arguments when bash is searching for the paths.
+```{bash, eval = FALSE}
+for i in /storage1/data12/Projects/Vent_Viruses/Virus_Genomes/fna/vUnbinned_fna/unbinned_VentViruses_split_files/*fasta; do ln -s $i .; done
+```
+
+3. Repeat for the Plume unbinned viruses. I think the "=" is a problem in the names so I am changing it to underscore for the purposes of dRep
+```{bash, eval = FALSE}
+sed 's/=/_/g' unbinned_PlumeViruses.fna > unbinned_PlumeViruses_renamed.fasta
+
+splitfasta unbinned_PlumeViruses_renamed.fasta
+
+for i in $(ls)
+do
+  name1=$(cat "$i" | grep \> | sed 's/$/.fasta/g' | sed 's/>//g')
+  echo mv "$i" "${name1}"
+done
+
+./rename_script.sh
+
+ln -s /storage1/data12/Projects/Plume_Viruses/Virus_Genomes/unbinned_PlumeViruses_renamed_split_files/*fasta .
+```
+
+To confirm have the expected total of viruses:
+```{bash, eval = FALSE}
+ls | wc -l
+```
+**38,014 viruses total**
+
+4. Compile the CheckV info to provide to dRep: genome,completeness,contamination
+
+```{bash, eval = FALSE}
+cat CheckV_Output/quality_summary.tsv CheckV_vMAGs/quality_summary_vMAGs_Vents.tsv > checkV_vUnbinned_vMAGs_Vents.tsv
+
+
+```
+
+5. Run dRep dereplicate - using the guidance provided at the bottom of [this page](https://drep.readthedocs.io/en/latest/choosing_parameters.html) for clustering bacteriophages and plasmids
+```{bash, eval = FALSE}
+nohup dRep dereplicate -g input_viruses_fna/*fasta --S_algorithm ANImf -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single &
+```
+
+# Using Seqkit to get genome size of vMAGs
+
+1. I have to run this because the CheckV contig length is going to be off since that was run on vMAGs that were N-linked.
+```{bash, eval = FALSE}
+conda activate seqkit
+
+mkdir Seqkit
+
+nohup sh -c 'for i in *.fasta ; do seqkit stats $i >> Seqkit/vMAG_Seqkit_stats.tsv ; done' &
+
+less vMAG_Seqkit_stats.tsv  | sed '/^file/d'  | sed 's/.fasta//g' | sed 's/\s\s*/\t/g' > vMAG_stats_parsed.tsv
+
+cut -f1,4-8 vMAG_stats_parsed.tsv | sed '1i Genome\tnum_seqs\tsum_len\tmin_len\tavg_len\tmax_len' > vMAG_stats_parsed_calc.tsv
+```
+Doing the above and getting the calc file is all you need, I did the part below thinking I need GB...but KB is fine.
+
+```{bash, eval = FALSE}
+sed 's/\,//g' vMAG_stats_parsed_calc.tsv | tail +2 | awk '{ printf "%.3f\n", $3/1e+06 }' | sed '1i Genome_Size_MB' > result.txt
+
+paste vMAG_stats_parsed_calc.tsv result.txt > vMAG_GenSizeMB.tsv
+```
+
+2. Download the file and combine vMAG genome size in KB with the length of the unbinned virus from column 2 of the CheckV output. Now you have the file of all viruses, binned and unbinned, with genome size in KB to use for plotting and quality checking results.
+```{bash, eval = FALSE}
+cut -f1,2 quality_summary_vUnbinned_Vents.tsv > vUnbinned_GenSize_KB.tsv
+
+cat Vent_vMAG_GenSize_KB.tsv vUnbinned_GenSize_KB.tsv > Vent_vUnbinned_vMAG_GenSize_KB.tsv
+```
+
+# Run GTDBtk v1.5.0 on Vent MAGs
+
+```{bash, eval = FALSE}
+conda activate gtdbtk-1.5.0
+
+nohup gtdbtk classify_wf --genome_dir MAGs_Renamed/No_ViralContam/ --out_dir GTDBtk_v1.5.0/ --cpus 15 &
+```
 
 
 
