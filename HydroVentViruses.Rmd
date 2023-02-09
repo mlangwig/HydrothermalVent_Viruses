@@ -821,18 +821,25 @@ ls | wc -l
 ```
 **38,014 viruses total**
 
-4. Compile the CheckV info to provide to dRep: genome,completeness,contamination
+4. **Nevermind, this step isn't necessary because you can ignore Genome qual**.Compile the CheckV info to provide to dRep: genome,completeness,contamination
 
 ```{bash, eval = FALSE}
 cat CheckV_Output/quality_summary.tsv CheckV_vMAGs/quality_summary_vMAGs_Vents.tsv > checkV_vUnbinned_vMAGs_Vents.tsv
-
-
 ```
 
 5. Run dRep dereplicate - using the guidance provided at the bottom of [this page](https://drep.readthedocs.io/en/latest/choosing_parameters.html) for clustering bacteriophages and plasmids
+
+First, make a txt file of the paths to the vMAGs because list is too long to call with a wildcard.
 ```{bash, eval = FALSE}
-nohup dRep dereplicate -g input_viruses_fna/*fasta --S_algorithm ANImf -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single &
+ls > ../vMAG_paths.txt
+sed -i 's+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g' vMAG_paths.txt
 ```
+
+```{bash, eval = FALSE}
+nohup dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths.txt --S_algorithm ANImf -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 &
+```
+
+
 
 # Using Seqkit to get genome size of vMAGs
 

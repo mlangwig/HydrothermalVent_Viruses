@@ -21,6 +21,8 @@ vMAG_mapping <- read.delim2(file = "input/vMAG_scaffold_mapping.txt", header = F
 
 vib_type <- read.delim2(file = "input/All_GenQuality_Vents.tsv", header = TRUE)
 
+gensize_kb<-read.delim2(file = "input/GenSize_KB.tsv", header = TRUE)
+
 ##################### Create the master table #####################
 
 #select columns from vibrant amgs because has the scaffold and protein IDs
@@ -225,3 +227,39 @@ p
 
 ggsave("output/LyticLysogenic.png", p, width = 15, height = 10, dpi = 500)
 ggsave("output/LyticLysogenic.pdf", p, width = 15, height = 10, dpi = 500)
+
+############################### Genome Size ##################################
+
+gensize_kb$Site<-gensize_kb$Genome
+gensize_kb <- gensize_kb %>% separate(Site, c("Site", NA), 
+                                      sep= "_NODE|_scaffold|_vRhyme")
+
+#map quality so can filter. SKIP THIS TO SEE GENOME SIZES WITHOUT QC FILTERING
+gensize_kb <- checkV %>%
+  dplyr::select(contig_id, checkv_quality, provirus, completeness, contamination, warnings) %>%
+  right_join(gensize_kb, by = c("contig_id" = "Genome")) #%>%
+#filter(!grepl("Low-quality|Not-determined", checkv_quality)) #drop low quality bc it's telling me nothing
+
+gensize_kb$checkv_quality <- factor(gensize_kb$checkv_quality, levels=c("Complete", "High-quality", 
+                                                                        "Medium-quality", "Low-quality",
+                                                                        "Not-determined")) #set order of x axis 
+
+dev.off()
+p <- ggplot(gensize_kb, aes(x = checkv_quality, y = as.numeric(KB), fill = checkv_quality)) + 
+  geom_boxplot() + 
+  facet_wrap(~Site) + 
+  xlab("Site")  +
+  ylab("Genome Size (KB)") +
+  ggtitle("Viral Genome Size (KB)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
+  scale_x_discrete(limits = rev(levels(gensize_kb$checkv_quality))) +
+  #scale_y_continuous(limits = c(0, 1050), breaks = seq(0, 1050, by = 300)) +
+  scale_fill_viridis_d() +
+  ylim(0,1050) +
+  coord_flip()
+p
+
+ggsave("output/GenomeSizeKB.png", p, width = 12, height = 6, dpi = 500)
+ggsave("output/GenomeSizeKB.pdf", p, width = 12, dpi = 500)
+
