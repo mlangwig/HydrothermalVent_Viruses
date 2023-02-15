@@ -766,7 +766,7 @@ grep "," vUnbinned_vMAGs_PlumeVents.clusters.csv > vUnbinned_vMAGs_PlumeVents.cl
 
 cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc
 ```
-****
+**2,797 clusters with 2 or more viral genomes. 497 viral genomes are singletons**
 
 ## Clustering using dRep
 
@@ -840,7 +840,7 @@ Get the cluster ID of every cluster that has 2 or more representatives
 ```{bash, eval = FALSE}
 cut -d "," -f6 Cdb.csv | sort | uniq -c | sort -nr | head -n1657 > ../cdb_clusterIDs_2orMore.txt
 ```
-There are 1,657 clusters that have 2 or more representatives. 13,285 are singletons. 
+**There are 1,657 clusters that have 2 or more representatives. 13,285 are singletons.** 
 
 Loop to get all the names of all the reps in a cluster
 ```{bash, eval = FALSE}
