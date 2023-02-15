@@ -754,29 +754,19 @@ nohup mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcx
 ```
 This produced 3,294 clusters from 38,014 viruses
 
-
-
-
-## Clustering based on blast and python scripts
-
-Trying the pipeline used in [paper](https://github.com/snayfach/MGV/blob/master/ani_cluster/README.md)
-
-1. Makeblastdb
+4. Analyze cluster output
+First convert file to comma separated for easier data wrangling.
 ```{bash, eval = FALSE}
-makeblastdb -in SRS1735492.fna -out blastdb -dbtype nucl 
-
-blastn -query SRS1735492.fna -db blastdb -out blast.tsv -outfmt '6 std qlen slen' -max_target_seqs 25000 -perc_identity 90
+sed 's/\t/,/g' vUnbinned_vMAGs_PlumeVents.clusters > vUnbinned_vMAGs_PlumeVents.clusters.csv
 ```
 
-2. Compute ANI from BLAST results
+Grab only comma separated lines to see how many clusters excluding singletons.
 ```{bash, eval = FALSE}
+grep "," vUnbinned_vMAGs_PlumeVents.clusters.csv > vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv
 
+cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc
 ```
-
-3. Perform centroid-based clustering
-```{bash, eval = FALSE}
-
-```
+****
 
 ## Clustering using dRep
 
@@ -821,7 +811,7 @@ ls | wc -l
 ```
 **38,014 viruses total**
 
-4. **Nevermind, this step isn't necessary because you can ignore Genome qual**.Compile the CheckV info to provide to dRep: genome,completeness,contamination
+4. **Nevermind, this step isn't necessary because you can ignore Genome qual**. Compile the CheckV info to provide to dRep: genome,completeness,contamination
 
 ```{bash, eval = FALSE}
 cat CheckV_Output/quality_summary.tsv CheckV_vMAGs/quality_summary_vMAGs_Vents.tsv > checkV_vUnbinned_vMAGs_Vents.tsv
@@ -838,7 +828,29 @@ sed -i 's+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g' vM
 ```{bash, eval = FALSE}
 nohup dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths.txt --S_algorithm ANImf -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 &
 ```
+**This run with ANImf (uses nucmer to align genomes) is estimated to take ~1 week with >30k viral genomes. So I am cancelling the run and switching to fastANI. I'll probably lose some accuracy but I guess it's necessary because a week per run won't allow me to tweak parameters if necessary.**
 
+6. Analyze dRep output. Use the following command to see how many representatives are in each cluster:
+```{bash, eval = FALSE}
+cut -d "," -f6 Cdb.csv | sort | uniq -c | sort -nr
+```
+14,942 clusters total.
+
+Get the cluster ID of every cluster that has 2 or more representatives
+```{bash, eval = FALSE}
+cut -d "," -f6 Cdb.csv | sort | uniq -c | sort -nr | head -n1657 > ../cdb_clusterIDs_2orMore.txt
+```
+There are 1,657 clusters that have 2 or more representatives. 13,285 are singletons. 
+
+Loop to get all the names of all the reps in a cluster
+```{bash, eval = FALSE}
+for i in `cat clusterIDs_toGrab.txt`; do grep -w $i Cdb.csv | cut -d "," -f1 >> $i.ViralGenomes.txt; done
+```
+
+Now add the file name to each txt file so can cat them all together
+```{bash, eval = FALSE}
+awk -i inplace -v ORS='\r\n' 'FNR==1{print FILENAME}1' *
+```
 
 
 # Using Seqkit to get genome size of vMAGs

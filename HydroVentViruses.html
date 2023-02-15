@@ -877,14 +877,18 @@ ln -s /storage1/data12/Projects/Plume_Viruses/Virus_Genomes/unbinned_PlumeViruse
 <pre class="bash"><code>ls | wc -l</code></pre>
 <p><strong>38,014 viruses total</strong></p>
 <ol start="4" style="list-style-type: decimal">
-<li>Compile the CheckV info to provide to dRep: genome,completeness,contamination</li>
+<li><strong>Nevermind, this step isn’t necessary because you can ignore Genome qual</strong>. Compile the CheckV info to provide to dRep: genome,completeness,contamination</li>
 </ol>
-<pre class="bash"><code>cat CheckV_Output/quality_summary.tsv CheckV_vMAGs/quality_summary_vMAGs_Vents.tsv &gt; checkV_vUnbinned_vMAGs_Vents.tsv
-</code></pre>
+<pre class="bash"><code>cat CheckV_Output/quality_summary.tsv CheckV_vMAGs/quality_summary_vMAGs_Vents.tsv &gt; checkV_vUnbinned_vMAGs_Vents.tsv</code></pre>
 <ol start="5" style="list-style-type: decimal">
 <li>Run dRep dereplicate - using the guidance provided at the bottom of <a href="https://drep.readthedocs.io/en/latest/choosing_parameters.html">this page</a> for clustering bacteriophages and plasmids</li>
 </ol>
-<pre class="bash"><code>nohup dRep dereplicate -g input_viruses_fna/*fasta --S_algorithm ANImf -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single &amp;</code></pre>
+<p>First, make a txt file of the paths to the vMAGs because list is too long to call with a wildcard.</p>
+<pre class="bash"><code>ls &gt; ../vMAG_paths.txt
+sed -i &#39;s+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g&#39; vMAG_paths.txt</code></pre>
+<pre class="bash"><code>nohup dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths.txt --S_algorithm ANImf -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 &amp;</code></pre>
+<p><strong>This run with ANImf (uses nucmer to align genomes) is estimated to take ~1 week with &gt;30k viral genomes. So I am cancelling the run and switching to fastANI. I’ll probably lose some accuracy but I guess it’s necessary because a week per run won’t allow me to tweak parameters if necessary.</strong></p>
+<pre class="bash"><code>nohup dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths.txt --S_algorithm fastANI -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 &amp;</code></pre>
 </div>
 </div>
 <div id="using-seqkit-to-get-genome-size-of-vmags" class="section level1">
