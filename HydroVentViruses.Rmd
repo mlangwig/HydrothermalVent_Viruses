@@ -701,7 +701,7 @@ rename 's/_metaspades_scaffolds.min1000//' *.faa
 # Clustering
 ## Using skani to compare ANI between viruses
 
-This utilizes a skani-vMAG.py script written by Cody
+This utilizes a skani-vMAG.py script written by Cody.
 ```{bash, eval = FALSE}
 conda install -c bioconda skani
 
@@ -830,6 +830,11 @@ nohup dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths
 ```
 **This run with ANImf (uses nucmer to align genomes) is estimated to take ~1 week with >30k viral genomes. So I am cancelling the run and switching to fastANI. I'll probably lose some accuracy but I guess it's necessary because a week per run won't allow me to tweak parameters if necessary.**
 
+Final command used was this:
+```{bash, eval = FALSE}
+/storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths.txt --S_algorithm fastANI -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15
+```
+
 6. Analyze dRep output. Use the following command to see how many representatives are in each cluster:
 ```{bash, eval = FALSE}
 cut -d "," -f6 Cdb.csv | sort | uniq -c | sort -nr
@@ -888,6 +893,26 @@ cat Vent_vMAG_GenSize_KB.tsv vUnbinned_GenSize_KB.tsv > Vent_vUnbinned_vMAG_GenS
 conda activate gtdbtk-1.5.0
 
 nohup gtdbtk classify_wf --genome_dir MAGs_Renamed/No_ViralContam/ --out_dir GTDBtk_v1.5.0/ --cpus 15 &
+```
+
+# Using Cody's script to parse dRep and skani output
+
+**You need python3.11 for this script**
+
+1. dRep parsing
+-a points to the ANI file, which is Nbd.csv for dRep. -c to clusters file, Cdb.csv for dRep
+```{bash, eval = FALSE}
+conda create -n py311 python=3.11
+conda activate py311
+
+mamba install -c conda-forge polars networkx matplotlib numpy python=3.11
+
+/storage1/data14/for_maggie/calc_ani_per_cluster.py -a data_tables/Ndb.csv -c data_tables/Cdb.csv -m fastani-drep
+```
+
+2. skani parsing
+```{bash, eval = FALSE}
+/storage1/data14/for_maggie/calc_ani_per_cluster.py -a /storage1/data12/Projects/Vent_Viruses/skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -c /storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent/vUnbinned_vMAGs_PlumeVents.clusters -m skani-mcl
 ```
 
 
