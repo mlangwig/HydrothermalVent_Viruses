@@ -163,8 +163,10 @@ edges <- as.data.frame(virus_host_iphop[, c("x","y","Method")])
 ########################################## plot the network ###############################################
 
 ######graph
+#mods to Site in nodes for simpler plotting
+nodes_SiteShort <- nodes %>% separate(Site, c("Site", NA), sep= "(?<=Brothers|ELSC|EPR|Guaymas|MAR)")
 # make a tidy graph
-network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE) 
+network <- tbl_graph(nodes = nodes_SiteShort, edges = edges, directed = FALSE) 
 network
 # setting theme_graph 
 set_graph_style()
@@ -194,12 +196,12 @@ col_vector<-c("#7FC97F", "#BEAED4", "#FDC086",
 
 # ggraph plot of network
 dev.off()
-plot<- ggraph(network, layout = 'kk') +  #kk is pretty #dh better for large networks. fr for small. --> play around with this layout. See here: https://www.data-imaginist.com/2017/ggraph-introduction-layouts/
-  geom_edge_link(mapping = NULL) + #mapping = NULL to turn off #aes(colour = Method) to color by method
-  geom_node_point(aes(shape = type, color = p), size = 3, alpha = .9) + #Site is the color of the nodes
+plot<- ggraph(network, layout = 'graphopt') +  #kk is pretty #dh better for large networks. fr for small. --> play around with this layout. See here: https://www.data-imaginist.com/2017/ggraph-introduction-layouts/
+  geom_edge_arc(strength = 0.2) + #mapping = NULL to turn off #aes(colour = Method) to color by method
+  geom_node_point(aes(color = Site), size = 2.5, alpha = .9) + #Site is the color of the nodes, shape = for a shape
   #Aesthetic: change size = # for larger text within node when fewer nodes
   #geom_node_text(aes(label = u_id), size = 3, color = "white") + #I add the number label associated with u_id --> remove it if you have too many
-  scale_color_manual("GTDBtk Phyla", values = rev(palette)) +
+  scale_color_manual("Phyla", values = rev(palette)) +
   #scale_edge_color_discrete() + #change the first number in FALSE = depending on what percent identity cut off you used
   # scale_shape_manual(name="Hydrothermal Vent Site", labels = c("NA" = ""),
   #                    values = c("Cayman_Deep"=15, "Cayman_Shallow"=17, 
@@ -213,14 +215,14 @@ plot<- ggraph(network, layout = 'kk') +  #kk is pretty #dh better for large netw
         panel.grid = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank()) +
-  facet_nodes(~ Site, scales = "free") +
+  facet_nodes(~ p, scales = "free") +
   th_foreground(border = TRUE) +
   xlab(NULL) +
   ylab(NULL)
 plot
 
 #export image of network --> change the name depending on what percent identity cut off you used
-ggsave("output/iphop_network_vUnbinned_vMAGs_phyla_facet.png", plot, width = 14,
+ggsave("output/iphop_network_vUnbinned_vMAGs_PhylaFacet_SiteColor.png", plot, width = 14,
        height = 10, units = "in")
 
 
