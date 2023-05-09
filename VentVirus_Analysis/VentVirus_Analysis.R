@@ -23,6 +23,12 @@ vib_type <- read.delim2(file = "input/All_GenQuality_Vents.tsv", header = TRUE)
 
 gensize_kb<-read.delim2(file = "input/GenSize_KB.tsv", header = TRUE)
 
+plume_master_vUnbinned<-read.delim2(file = "~/Google Drive/My Drive/Faith/PlumeViruses/PlumeVirus_Analysis/output/master_table_vUnbinned.tsv",
+                                    header = TRUE)
+
+plume_master_vMAGs<-read.delim2(file = "~/Google Drive/My Drive/Faith/PlumeViruses/PlumeVirus_Analysis/output/master_table_vMAGs.tsv",
+                                    header = TRUE)
+
 ##################### Create the master table #####################
 
 #select columns from vibrant amgs because has the scaffold and protein IDs
@@ -101,9 +107,15 @@ master_table_vMAGs_noProtein<-master_table_vMAGs %>%
   select(vMAG, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
 master_table_vMAGs_noProtein<-unique(master_table_vMAGs_noProtein)
 
+plume_master_table_vMAGs_noProtein<-plume_master_vMAGs %>%
+  select(vMAG, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
+plume_master_table_vMAGs_noProtein<-unique(plume_master_table_vMAGs_noProtein)
+
 #subset for vMAGs that have 2 type designations after binning
 dups<-master_table_vMAGs_noProtein[duplicated(master_table_vMAGs_noProtein$vMAG),]
 two_type_vMAGs<-master_table_vMAGs_noProtein[master_table_vMAGs_noProtein$vMAG %in% dups$vMAG,] #subset table using list of names
+
+##PLUME MASTER TABLE WAS ALREADY CORRECTED FOR LYTIC/LYSOGENIC IN PLUME MASTER TABLE
 
 ###REPLACING ALL LYTIC/LYSOGENIC SAME SCAFFOLDS WITH LYSOGENIC ONLY ACCORDING TO VRHYME RULES
 #now grab the two types from the master vMAG table so you can change all of them to lysogenic
@@ -126,12 +138,23 @@ master_table_unbinned_noProtein<-master_table_unbinned %>%
   select(scaffold, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
 master_table_unbinned_noProtein<-unique(master_table_unbinned_noProtein)
 
+plume_master_table_unbinned_noProtein<-plume_master_vUnbinned %>%
+  select(scaffold, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
+plume_master_table_unbinned_noProtein<-unique(plume_master_table_unbinned_noProtein)
+
 ####################Combine the tables into 1 for plots and counts of all viruses together
 #rename vMAG column to combine
 master_table_vMAGs_noProtein<-rename(master_table_vMAGs_noProtein, Virus = vMAG)
 master_table_unbinned_noProtein<-rename(master_table_unbinned_noProtein, Virus = scaffold)
 #combine them
 master_table_noProtein<-rbind(master_table_vMAGs_noProtein, master_table_unbinned_noProtein)
+
+#rename vMAG column to combine
+plume_master_table_vMAGs_noProtein<-rename(plume_master_table_vMAGs_noProtein, Virus = vMAG)
+plume_master_table_unbinned_noProtein<-rename(plume_master_table_unbinned_noProtein, Virus = scaffold)
+#combine them
+master_table_noProtein<-rbind(master_table_vMAGs_noProtein, master_table_unbinned_noProtein,
+                              plume_master_table_vMAGs_noProtein, plume_master_table_unbinned_noProtein)
 
 ############################## Useful counts with no protein ###################################
 
