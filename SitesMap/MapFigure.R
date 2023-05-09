@@ -3,6 +3,8 @@
 
 #read input
 BR <- readr::read_tsv("input.tsv")
+input <- readr::read_tsv("input_VentPlume.txt")
+
 #raster_df <- readr::read_tsv("salinity.txt")
 
 #libraries
@@ -17,34 +19,39 @@ library(dplyr)
 #sf_map <- sf_map %>% st_transform(crs = 4326) #make coordinate ref system lat / long
 
 #convert lat and long & salinity to numeric for plotting
-BR$Latitude<-as.numeric(BR$Latitude)
-BR$Longitude<-as.numeric(BR$Longitude)
+input$Latitude<-as.numeric(input$Latitude)
+input$Longitude<-as.numeric(input$Longitude)
 #BR$AvgSalinity<-as.numeric(BR$AvgSalinity)
 
 #color scheme
 #mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols)
-mycolors <- pals::kelly(n=5)
+mycolors <- pals::kelly(n=7)
 
 # map = shape file...extension .shp
 # raster = salinity...extension .geotiff
 # brick for average
 
+dev.off()
 #plotting
 mapworld <- borders("world",colour = "gray80",fill="white") 
 mp<-ggplot() + mapworld + ylim(-60,90) 
 overview <- mp + 
-  geom_point(data = BR, aes(x = Longitude, y = Latitude, color=factor(Site2))) +
-  #scale_color_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1")) + #choose colors of sites
+  geom_point(data = input, aes(x = Longitude, y = Latitude, color=factor(Site2),
+                            shape=Site)) +
+  scale_color_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
+                              "#8c510a", "#000000")) + #choose colors of sites
   #scale_size(limits = c(2, 29), breaks = c(2, 10, 20, 27, 28)) +
   theme_gray() +
   labs(x= "Longitude", y = "Latitude") + #Lat and Long labels
   guides(color = guide_legend(title = "Site")) + #change legend title
   #coord_cartesian(xlim=c(-123,-121.5),ylim=c(37,38.5)) + #set limits of map
   theme(axis.text = element_text(size = 10), 
-        axis.title = element_text(size = 12))
+        axis.title = element_text(size = 12),
+        legend.key=element_rect(fill="white"),
+        legend.title = element_blank())
 overview
 
-ggsave(overview, filename = "Overview_Map.png", width = 12, height = 6)
+ggsave(overview, filename = "Overview_Map_PlumeVent.png", width = 12, height = 6)
 
 # Zoom in Lau
 
