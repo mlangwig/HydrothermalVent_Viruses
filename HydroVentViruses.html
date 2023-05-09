@@ -173,11 +173,18 @@
             <li><a href="#using-skani-to-compare-ani-between-viruses">Using skani to compare ANI between viruses</a></li>
             <li><a href="#cluster-the-skani-results-using-mcl">Cluster the skani results using mcl</a></li>
             <li><a href="#ani-clustering-with-skani-and-mcl-using-both-vent-and-plume-data">ANI clustering with skani and mcl using both Vent and Plume data</a></li>
+            <li><a href="#final-clustering-with-skani-and-mcl-vent-and-plume-5kb-and-above-viruses">Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses</a></li>
             <li><a href="#clustering-using-drep">Clustering using dRep</a></li>
+            <li><a href="#drep-with-5kb-viruses">dRep with 5kb viruses</a></li>
+            <li><a href="#drep-with-5kb-viruses-at-90-ani">dRep with 5kb viruses at 90% ANI</a></li>
+            <li><a href="#drep-with-1kb-viruses-at-90-ani">dRep with 1kb viruses at 90% ANI</a></li>
+            <li><a href="#realized-drep-has-been-throwing-errors-for-some-clusters">Realized dRep has been throwing errors for some clusters</a></li>
             </ul></li>
             <li><a href="#using-seqkit-to-get-genome-size-of-vmags">Using Seqkit to get genome size of vMAGs</a></li>
             <li><a href="#run-gtdbtk-v1.5.0-on-vent-mags">Run GTDBtk v1.5.0 on Vent MAGs</a></li>
             <li><a href="#using-codys-script-to-parse-drep-and-skani-output">Using Cody’s script to parse dRep and skani output</a></li>
+            <li><a href="#using-codys-rfasta-to-split-faa-unbinned-viruses">Using Codys rfasta to split faa unbinned viruses</a></li>
+            <li><a href="#clustering-viral-protein-content-using-mmseqs">Clustering viral protein content using mmseqs</a></li>
             </ul>
           </div>
           <div data-position="sidebar:post-end" class="InjectedComponents"><div class="dark-theme-toggler"><div class="toggle "><div class="toggle-track"><div class="toggle-track-check"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAABlJJREFUWAm1V3tsFEUcntnXvXu0tBWo1ZZHihBjCEWqkHiNaMLDRKOtQSKaiCFKQtS/SbxiFCHGCIkmkBSMwZhQNTFoQZD0DFiwtCDFAkdDqBBBKFj63rvdnfH7zfVo5aFBj0l2Z/dm5vd98/0es8dYjlpr62azufnDQNZcU1PciMfjWvb9rvZSMk4Ayfb36pLH13189GC8LAtIRLLPt+pzwrCuLq4ISEv/gHmitrAwfPbEkXc/ad4dL6iujrvyX0jcitgd/yZlZqftP6995Mr5TVLa22Tn8XVX2g/XLSRjUu7Q79jonS7I7hS7/0oOb5VyqF52n98oj7esXX07EjlxwXWisRmSnm3b29TTM8iYrjmFBWExubxwY/uhNas4r/WySl1fc5cetDMd7ydl+lMJJRw5WC8ud62Xx5rfepzwxgZmbhUYNS5Stvsj4yo2GXJEFBVHWDBkfdbR9HpYBaaUajDnBLKKpl1xRKYcgGtMCqEzTaSnThk/SQT0uJqTqFNBmXMCsZE48DzRZRMBRjv1GHNdk3HBImF9ZUvTyxM40pMKVc4JZBXQOLOFoDeKSxdp6HIQcO4rjYT9fn0pjbz9GLt7BAAODmjSVReXUMFzNW5x5vfxp2mIxZjIuQKJxAmFa+is2DQJJQ0JyBVExNOYcJnPxx/6/utnijmP555ALEagKAGGnGn64QORBjARcIA/yJk7JMJBLRrNtybTvH88KGjCf2jK86bhzmMcwDKFZEQvbIhxFYhChoMWMzU2iWznlIBEVJOsP+1bdX/ALx9l7jApADeDAEcMkE90JnUmmGl4USKQ0xhoW3JB5XY0YrxYWhLwMZZypUyjDGH35AbNwgUGiFBPpuGbHCpAOV1ZGXf2f/taftAv31DyeymN2d1IhAFAwTOmnzF/kKcdh3me7CYCOVNgycju84u8DeVlwfFq9/ZlTfldYrMUjOlrkjkD+rU+WzCROkcEchIDHR011syZW9JHD7y07N6JvhWMpz3pugaTkB6lWFVCKkhck0zzeMp2utq+uHrmfxOgoCO/Z8CXPlEQ1bdH8wgvhSIkEG0ICcQeExIFGdimjvKka7btJFZuaXOammIGKUCFQ53j9EN1dYKWqHf0t2w407W2tgs6h89ZnImjB55flh81tt9XirjjDuSl+oIPRQ0iWPgNZ5GqTqbBe3vSzEl5n5PhWKwocyR2HlqYN61qV18WjYjE8JLARZPQsUSim8foIRYTlGr02Ly7piASFRtKJ4VfieYhxdS2JcDVMN6xVOKZyrCGm8b108lrLRVzvptLH7IoEFLFANes6KnDi+uxfmvFnF17oALq5u1agu3/YfHkcSFzeSggV5eXRfIB7CHNcO5SUI+Ih5Ir7f4MAV9IqdFzdZgNpZw1Gcs1mNvgGbTbqQ9/cz7ZuuhgyYRQ49ljTyWHhr2DwpNHHFf+5gnWZ3Bharo+0TD5dNMw5vv9RlVpSRDHK4TlnoukhtYApuOHejSZQuo5g/A9BysdKRCyLl6062fN37OXMDlvUJtUrtmxo0avrW3wTrYs3jJ9RvRVChrmSmanPMpX2OXMsmDGh6AiEIwBAlvkOqIdBy+8JyAz8pz7QxiDth4KDy5uAlwzrWTnwC8Vc4KVAMZ3YUZ+IqoIjP3h5KFFX1ZMy3uW+7RhEDHgTi0zC9rS7uhPCDiNrGFyqBeERtKN/B0YlyFCkw0NJ5C0Ojv7zvT1a1WV1TuvZDdL4NTgB7CASYpsen6gqvG5jmTf5qHedADgkBl3D0nkSgNhZACDyi0FUKZRr3IdRjgN4WPPoFMIIegIK3mqd38fS80mcJKelM4szNyzZtQbkchGePuBRS8Eg9pHU8ojRQpSqs+ajAIwTjjUMQ/nvTNM0kicwYxZIYMh/891DYi+fvedB+c1xsm4lDU6ya+Axtz+RiAzEVYbajQOpq17F0R9QevNcEhfcU+xvyQQUalGJBSesqOkgPQ4YNyUZL9fSvUPDjoNAwN8/dwFjaczNkc3ptaMud1EIDtGcmXTcefO2cGSvKIFfp/2JIJxlq7xEl3nVPM4fDeIbPkD16/ptNc0bDu7qxbsu0R2JGywWMIjF2ft3tjfloAyQAGXiOn8hrqwbVvMXzaO+QeHXP6nF0wvX74Hf4NGG5GPjSlYoyM3P/0FbCT6zvM/yYoAAAAASUVORK5CYII=" role="presentation" style="pointer-events: none;" width="16" height="16"></div> <div class="toggle-track-x"><img src="data:image/png;base64,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" role="presentation" style="pointer-events: none;" width="16" height="16"></div></div> <div class="toggle-thumb"></div></div> <input type="checkbox" aria-label="Switch between Dark and Default theme" class="toggler-screen-reader-only"></div></div>
@@ -830,6 +837,46 @@ nohup mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcx
 cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc</code></pre>
 <p><strong>2,797 clusters with 2 or more viral genomes. 497 viral genomes are singletons</strong></p>
 </div>
+<div id="final-clustering-with-skani-and-mcl-vent-and-plume-5kb-and-above-viruses" class="section level2">
+<h2>Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses</h2>
+<ol style="list-style-type: decimal">
+<li>Set up directories of viral genomes by creating sym links for vMAGs &gt;=5kb. Also get 1 file of unbinned viruses &gt;5kb. Remember to replace “=” in name to &quot;_&quot; because of issues.</li>
+</ol>
+<pre class="bash"><code>pwd
+/storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent_5kb
+
+sed &#39;s/$/.fasta/g&#39; 5kb_AllViruses_list.txt &gt; 5kb_PlumeVentViruses_list_noEqual.txt
+sed -i &#39;s/=/_/g&#39; 5kb_PlumeVentViruses_list_noEqual.txt
+grep &quot;vRhyme&quot; 5kb_PlumeVentViruses_list_noEqual.txt &gt; 5kb_PlumeVentViruses_list_vMAGsOnly.txt
+
+for i in `cat 5kb_PlumeVentViruses_list_vMAGsOnly.txt`; do ln -s /storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/$i fna_vMAGs/; done
+
+perl screen_list_new.pl 5kb_vUnbinned.txt unbinned_PlumeVentViruses.fna keep &gt; vUnbinned_PlumeVent_Viruses_5kb.fna</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Rerun ANI with skani</li>
+</ol>
+<pre class="bash"><code>conda activate
+
+nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c vUnbinned_PlumeVent_Viruses_5kb.fna -d /storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent_5kb/fna_vMAGs -x .fasta --outdir . &amp;
+
+cp skani_ANI.tsv skani_ANI_PlumeVent_Viruses_5kb.tsv</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Preprocess the skani ANI results to cluster with mcl</li>
+</ol>
+<pre class="bash"><code>conda activate mcl
+
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_PlumeVent_Viruses_5kb.tsv -o skani_ANIprocessed_PlumeVent_Viruses_5kb.tsv</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Run clustering with mcl</li>
+</ol>
+<pre class="bash"><code>conda activate mcl
+
+mcxload -abc skani_ANIprocessed_PlumeVent_Viruses_5kb.tsv -o PlumeVent_Viruses_5kb.mci -write-tab PlumeVent_Viruses_5kb.mcxload
+
+nohup mcl PlumeVent_Viruses_5kb.mci -use-tab PlumeVent_Viruses_5kb.mcxload -o PlumeVent_Viruses_5kb.clusters &amp;
+
+sed &#39;s/\t/,/g&#39; PlumeVent_Viruses_5kb.clusters &gt; PlumeVent_Viruses_5kb.clusters.csv</code></pre>
+</div>
 <div id="clustering-using-drep" class="section level2">
 <h2>Clustering using dRep</h2>
 <ol style="list-style-type: decimal">
@@ -894,6 +941,45 @@ sed -i &#39;s+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g
 <p>Now add the file name to each txt file so can cat them all together</p>
 <pre class="bash"><code>awk -i inplace -v ORS=&#39;\r\n&#39; &#39;FNR==1{print FILENAME}1&#39; *</code></pre>
 </div>
+<div id="drep-with-5kb-viruses" class="section level2">
+<h2>dRep with 5kb viruses</h2>
+<ol style="list-style-type: decimal">
+<li>There should be 7297 viruses with genomes &gt;5kb. Put them into 1 folder for dRep. Then make the virus genome path file</li>
+</ol>
+<pre class="bash"><code>for i in `cat 5kb_PlumeVentViruses_list_noEqual.txt`; do cp /storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/$i input_VentPlume_viruses_fna_5kb/; done
+
+ls *fasta &gt; ../5kb_VirusGenomes_paths.txt
+
+sed -i &#39;s+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g&#39; 5kb_VirusGenomes_paths.txt
+
+sed -i &#39;s+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+/storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb/input_VentPlume_viruses_fna_5kb/+g&#39; 5kb_VirusGenomes_paths.txt
+</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Run it</li>
+</ol>
+<pre class="bash"><code>conda activate drep
+
+nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 &amp;</code></pre>
+</div>
+<div id="drep-with-5kb-viruses-at-90-ani" class="section level2">
+<h2>dRep with 5kb viruses at 90% ANI</h2>
+<pre class="bash"><code>conda activate drep
+
+nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb_90ani -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -sa 0.90 -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 20 --skip_plots &amp;</code></pre>
+</div>
+<div id="drep-with-1kb-viruses-at-90-ani" class="section level2">
+<h2>dRep with 1kb viruses at 90% ANI</h2>
+<pre class="bash"><code>nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_1kb_90ani/ -g 1kb_VirusGenomes_paths.txt --S_algorithm fastANI -sa 0.90 -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 20 --skip_plots &amp;</code></pre>
+</div>
+<div id="realized-drep-has-been-throwing-errors-for-some-clusters" class="section level2">
+<h2>Realized dRep has been throwing errors for some clusters</h2>
+<p>Looks like on the 5kb run, ~190 viral scaffolds are not making it into the final clustering so trying to troubleshoot errors here:</p>
+<pre class="bash"><code>conda activate drep
+
+sed &#39;s+/dRep/input_viruses_fna+/dRep/dRep_1kb/input_viruses_fna+g&#39; vMAG_paths.txt &gt; ../1kb_VirusGenomes_paths.txt
+
+nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb_debug -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -nc .5 -l 5000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 --debug --skip_plots &amp;</code></pre>
+</div>
 </div>
 <div id="using-seqkit-to-get-genome-size-of-vmags" class="section level1">
 <h1>Using Seqkit to get genome size of vMAGs</h1>
@@ -942,6 +1028,25 @@ mamba install -c conda-forge polars networkx matplotlib numpy python=3.11
 <li>skani parsing</li>
 </ol>
 <pre class="bash"><code>/storage1/data14/for_maggie/calc_ani_per_cluster.py -a /storage1/data12/Projects/Vent_Viruses/skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -c /storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent/vUnbinned_vMAGs_PlumeVents.clusters -m skani-mcl</code></pre>
+</div>
+<div id="using-codys-rfasta-to-split-faa-unbinned-viruses" class="section level1">
+<h1>Using Codys rfasta to split faa unbinned viruses</h1>
+<pre class="bash"><code>rfasta split -i All_Viruses.faa -d vUnbinned_faa_split -m genome</code></pre>
+</div>
+<div id="clustering-viral-protein-content-using-mmseqs" class="section level1">
+<h1>Clustering viral protein content using mmseqs</h1>
+<ol style="list-style-type: decimal">
+<li>Run mmseqs. 595,541 proteins between Plume and Vent binned and unbinned viruses.</li>
+</ol>
+<pre class="bash"><code>conda install -c bioconda mmseqs2
+
+mmseqs createdb PlumeVent_Viruses.faa PlumeVent_Viruses_DB
+
+nohup mmseqs cluster PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu /storage1/data12/tmp --cov-mode 0 --min-seq-id 0.75 --threads 20 &amp;
+
+mmseqs createtsv PlumeVent_Viruses_DB PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu PlumeVent_mmseqs_clusters.tsv --threads 20</code></pre>
+<p>cov-mode 0 means alignment covers <a href="https://github.com/soedinglab/mmseqs2/wiki#how-to-set-the-right-alignment-coverage-to-cluster">at least 0.8 of query and of target</a>. Using default clustering mode, –cluster-mode 0. This is the <a href="https://github.com/soedinglab/mmseqs2/wiki#clustering-modes">greedy set cover algorithm</a>, which iteratively selects the node with most connections and all its connected nodes to form a cluster and repeats until all nodes are in a cluster.</p>
+<p><a href="https://github.com/soedinglab/mmseqs2/wiki#cluster-tsv-format">See here</a> for explanation of tsv output format.</p>
 </div>
 </div>
 

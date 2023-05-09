@@ -168,8 +168,11 @@ master_table_vMAGs_iphop <- iphop %>%
 
 ##################### writing outputs #####################
 
-# write.table(master_table_vMAGs, file = "output/master_table_vMAGs.tsv", col.names = TRUE,
-#             row.names = FALSE, sep = "\t")
+write.table(master_table_vMAGs, file = "output/master_table_vMAGs.tsv", col.names = TRUE,
+            row.names = FALSE, sep = "\t", quote = FALSE)
+
+write.table(master_table_unbinned, file = "output/master_table_unbinned.tsv", col.names = TRUE,
+            row.names = FALSE, sep = "\t", quote = FALSE)
 
 ######################################## Visualize ##################################################
 
@@ -243,6 +246,11 @@ gensize_kb <- checkV %>%
 gensize_kb$checkv_quality <- factor(gensize_kb$checkv_quality, levels=c("Complete", "High-quality", 
                                                                         "Medium-quality", "Low-quality",
                                                                         "Not-determined")) #set order of x axis 
+
+#get the names of Vent viruses >=5kb
+gensize_kb_5kb <- gensize_kb %>% filter(KB >= 5)
+write.table(gensize_kb_5kb, file = "output/gensize_5kb.tsv", quote = FALSE, sep = "\t",
+            col.names = TRUE, row.names = FALSE)
 
 dev.off()
 p <- ggplot(gensize_kb, aes(x = checkv_quality, y = as.numeric(KB), fill = checkv_quality)) + 

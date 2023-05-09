@@ -768,6 +768,49 @@ cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc
 ```
 **2,797 clusters with 2 or more viral genomes. 497 viral genomes are singletons**
 
+## Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses
+
+1. Set up directories of viral genomes by creating sym links for vMAGs >=5kb. Also get 1 file of unbinned viruses >5kb. Remember to replace "=" in name to "_" because of issues.
+```{bash, eval = FALSE}
+pwd
+/storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent_5kb
+
+sed 's/$/.fasta/g' 5kb_AllViruses_list.txt > 5kb_PlumeVentViruses_list_noEqual.txt
+sed -i 's/=/_/g' 5kb_PlumeVentViruses_list_noEqual.txt
+grep "vRhyme" 5kb_PlumeVentViruses_list_noEqual.txt > 5kb_PlumeVentViruses_list_vMAGsOnly.txt
+
+for i in `cat 5kb_PlumeVentViruses_list_vMAGsOnly.txt`; do ln -s /storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/$i fna_vMAGs/; done
+
+perl screen_list_new.pl 5kb_vUnbinned.txt unbinned_PlumeVentViruses.fna keep > vUnbinned_PlumeVent_Viruses_5kb.fna
+```
+
+2. Rerun ANI with skani
+```{bash, eval = FALSE}
+conda activate
+
+nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c vUnbinned_PlumeVent_Viruses_5kb.fna -d /storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent_5kb/fna_vMAGs -x .fasta --outdir . &
+
+cp skani_ANI.tsv skani_ANI_PlumeVent_Viruses_5kb.tsv
+```
+
+3. Preprocess the skani ANI results to cluster with mcl
+```{bash, eval = FALSE}
+conda activate mcl
+
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_PlumeVent_Viruses_5kb.tsv -o skani_ANIprocessed_PlumeVent_Viruses_5kb.tsv
+```
+
+4. Run clustering with mcl
+```{bash, eval = FALSE}
+conda activate mcl
+
+mcxload -abc skani_ANIprocessed_PlumeVent_Viruses_5kb.tsv -o PlumeVent_Viruses_5kb.mci -write-tab PlumeVent_Viruses_5kb.mcxload
+
+nohup mcl PlumeVent_Viruses_5kb.mci -use-tab PlumeVent_Viruses_5kb.mcxload -o PlumeVent_Viruses_5kb.clusters &
+
+sed 's/\t/,/g' PlumeVent_Viruses_5kb.clusters > PlumeVent_Viruses_5kb.clusters.csv
+```
+
 ## Clustering using dRep
 
 1. Split the unbinned viruses into individual files. I realized I need to replace the "=" in the header name because Unix does not like it
@@ -857,6 +900,50 @@ Now add the file name to each txt file so can cat them all together
 awk -i inplace -v ORS='\r\n' 'FNR==1{print FILENAME}1' *
 ```
 
+## dRep with 5kb viruses
+1. There should be 7297 viruses with genomes >5kb. Put them into 1 folder for dRep. Then make the virus genome path file
+```{bash, eval = FALSE}
+for i in `cat 5kb_PlumeVentViruses_list_noEqual.txt`; do cp /storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/$i input_VentPlume_viruses_fna_5kb/; done
+
+ls *fasta > ../5kb_VirusGenomes_paths.txt
+
+sed -i 's+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g' 5kb_VirusGenomes_paths.txt
+
+sed -i 's+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+/storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb/input_VentPlume_viruses_fna_5kb/+g' 5kb_VirusGenomes_paths.txt
+
+```
+
+2. Run it
+```{bash, eval = FALSE}
+conda activate drep
+
+nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 &
+```
+
+## dRep with 5kb viruses at 90% ANI
+
+```{bash, eval = FALSE}
+conda activate drep
+
+nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb_90ani -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -sa 0.90 -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 20 --skip_plots &
+```
+
+## dRep with 1kb viruses at 90% ANI
+
+```{bash, eval = FALSE}
+nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_1kb_90ani/ -g 1kb_VirusGenomes_paths.txt --S_algorithm fastANI -sa 0.90 -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 20 --skip_plots &
+```
+
+## Realized dRep has been throwing errors for some clusters
+
+Looks like on the 5kb run, ~190 viral scaffolds are not making it into the final clustering so trying to troubleshoot errors here:
+```{bash, eval = FALSE}
+conda activate drep
+
+sed 's+/dRep/input_viruses_fna+/dRep/dRep_1kb/input_viruses_fna+g' vMAG_paths.txt > ../1kb_VirusGenomes_paths.txt
+
+nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb_debug -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -nc .5 -l 5000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 --debug --skip_plots &
+```
 
 # Using Seqkit to get genome size of vMAGs
 
@@ -914,6 +1001,28 @@ mamba install -c conda-forge polars networkx matplotlib numpy python=3.11
 ```{bash, eval = FALSE}
 /storage1/data14/for_maggie/calc_ani_per_cluster.py -a /storage1/data12/Projects/Vent_Viruses/skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -c /storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent/vUnbinned_vMAGs_PlumeVents.clusters -m skani-mcl
 ```
+
+# Using Codys rfasta to split faa unbinned viruses
+
+```{bash, eval = FALSE}
+rfasta split -i All_Viruses.faa -d vUnbinned_faa_split -m genome
+```
+
+# Clustering viral protein content using mmseqs
+
+1. Run mmseqs. 595,541 proteins between Plume and Vent binned and unbinned viruses.
+```{bash, eval = FALSE}
+conda install -c bioconda mmseqs2
+
+mmseqs createdb PlumeVent_Viruses.faa PlumeVent_Viruses_DB
+
+nohup mmseqs cluster PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu /storage1/data12/tmp --cov-mode 0 --min-seq-id 0.75 --threads 20 &
+
+mmseqs createtsv PlumeVent_Viruses_DB PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu PlumeVent_mmseqs_clusters.tsv --threads 20
+```
+cov-mode 0 means alignment covers [at least 0.8 of query and of target](https://github.com/soedinglab/mmseqs2/wiki#how-to-set-the-right-alignment-coverage-to-cluster). Using default clustering mode, --cluster-mode 0. This is the [greedy set cover algorithm](https://github.com/soedinglab/mmseqs2/wiki#clustering-modes), which iteratively selects the node with most connections and all its connected nodes to form a cluster and repeats until all nodes are in a cluster.\n
+
+[See here](https://github.com/soedinglab/mmseqs2/wiki#cluster-tsv-format) for explanation of tsv output format.
 
 
 
