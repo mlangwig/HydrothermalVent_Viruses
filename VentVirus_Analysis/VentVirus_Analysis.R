@@ -142,6 +142,18 @@ plume_master_table_unbinned_noProtein<-plume_master_vUnbinned %>%
   select(scaffold, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
 plume_master_table_unbinned_noProtein<-unique(plume_master_table_unbinned_noProtein)
 
+############################## Replace site names with general name ###################################
+
+#gsub to replace Plume names
+plume_master_table_unbinned_noProtein$Site <- gsub(".*Lau_Basin.*","Lau_Basin",plume_master_table_unbinned_noProtein$Site) #the placement of the periods is crucial for replacing whole string
+plume_master_table_unbinned_noProtein$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",plume_master_table_unbinned_noProtein$Site)
+plume_master_table_unbinned_noProtein$Site <- gsub(".*Axial.*","Axial_Seamount",plume_master_table_unbinned_noProtein$Site)
+
+#gsub to replace Vent names
+plume_master_table_unbinned_noProtein$Site <- gsub(".*Lau_Basin.*","Lau_Basin",plume_master_table_unbinned_noProtein$Site) #the placement of the periods is crucial for replacing whole string
+plume_master_table_unbinned_noProtein$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",plume_master_table_unbinned_noProtein$Site)
+plume_master_table_unbinned_noProtein$Site <- gsub(".*Axial.*","Axial_Seamount",plume_master_table_unbinned_noProtein$Site)
+
 ####################Combine the tables into 1 for plots and counts of all viruses together
 #rename vMAG column to combine
 master_table_vMAGs_noProtein<-rename(master_table_vMAGs_noProtein, Virus = vMAG)
