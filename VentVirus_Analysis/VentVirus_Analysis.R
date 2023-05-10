@@ -142,18 +142,6 @@ plume_master_table_unbinned_noProtein<-plume_master_vUnbinned %>%
   select(scaffold, contig_length, checkv_quality, provirus, completeness, contamination, type, Site)
 plume_master_table_unbinned_noProtein<-unique(plume_master_table_unbinned_noProtein)
 
-############################## Replace site names with general name ###################################
-
-#gsub to replace Plume names
-plume_master_table_unbinned_noProtein$Site <- gsub(".*Lau_Basin.*","Lau_Basin",plume_master_table_unbinned_noProtein$Site) #the placement of the periods is crucial for replacing whole string
-plume_master_table_unbinned_noProtein$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",plume_master_table_unbinned_noProtein$Site)
-plume_master_table_unbinned_noProtein$Site <- gsub(".*Axial.*","Axial_Seamount",plume_master_table_unbinned_noProtein$Site)
-
-#gsub to replace Vent names
-plume_master_table_unbinned_noProtein$Site <- gsub(".*Lau_Basin.*","Lau_Basin",plume_master_table_unbinned_noProtein$Site) #the placement of the periods is crucial for replacing whole string
-plume_master_table_unbinned_noProtein$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",plume_master_table_unbinned_noProtein$Site)
-plume_master_table_unbinned_noProtein$Site <- gsub(".*Axial.*","Axial_Seamount",plume_master_table_unbinned_noProtein$Site)
-
 ####################Combine the tables into 1 for plots and counts of all viruses together
 #rename vMAG column to combine
 master_table_vMAGs_noProtein<-rename(master_table_vMAGs_noProtein, Virus = vMAG)
@@ -167,6 +155,18 @@ plume_master_table_unbinned_noProtein<-rename(plume_master_table_unbinned_noProt
 #combine them
 master_table_noProtein<-rbind(master_table_vMAGs_noProtein, master_table_unbinned_noProtein,
                               plume_master_table_vMAGs_noProtein, plume_master_table_unbinned_noProtein)
+
+############################## Replace site names with general name ###################################
+
+#gsub to replace Plume names
+master_table_noProtein$Site <- gsub(".*Lau_Basin.*","Lau_Basin",master_table_noProtein$Site) #the placement of the periods is crucial for replacing whole string
+master_table_noProtein$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",master_table_noProtein$Site)
+master_table_noProtein$Site <- gsub(".*Axial.*","Axial_Seamount",master_table_noProtein$Site)
+master_table_noProtein$Site <- gsub(".*ELSC.*","Lau_Basin",master_table_noProtein$Site)
+master_table_noProtein$Site <- gsub(".*Brothers.*","Brothers_Volcano",master_table_noProtein$Site)
+master_table_noProtein$Site <- gsub(".*Guaymas.*","Guaymas_Basin",master_table_noProtein$Site)
+master_table_noProtein$Site <- gsub(".*MAR.*","Mid_Atlantic_Ridge",master_table_noProtein$Site)
+master_table_noProtein$Site <- gsub(".*EPR.*","East_Pacific_Rise",master_table_noProtein$Site)
 
 ############################## Useful counts with no protein ###################################
 
@@ -221,20 +221,24 @@ master_table_fig <- master_table_noProtein %>%
 #filter(!grepl("Low-quality|Not-determined", 
 #             checkv_quality)) #drop low quality bc it's telling me nothing
 
+level_order <- c('Not-determined', 'Low-quality', 'Medium-quality', 'High-quality', 'Complete') 
+
 ###plot
 dev.off()
-p <- ggplot(master_table_fig, aes(x = checkv_quality, y = n, fill = checkv_quality)) + 
+p <- ggplot(master_table_fig, aes(x = factor(checkv_quality, levels = level_order), #reorder bc was plotting x axis backwards/upside down
+                                  y = n, fill = checkv_quality)) + 
   geom_bar(stat = "identity") + 
   facet_wrap(~Site) + 
   xlab(element_blank())  +
   ylab("Count") +
-  ggtitle("CheckV Quality") +
-  scale_fill_viridis_d() +
-  theme()
+  ggtitle("Virus Genome Quality") +
+  scale_fill_viridis_d(name = "CheckV Quality", direction = -1) +
+  scale_y_continuous(breaks = c(0, 2000, 4000, 6000, 8000, 10000, 12000))
 #geom_text(aes(label = paste0(n), y = n),
 #          hjust = -.5, size = 2.5, color = "black" )
 p <- p + theme_bw() + 
-  theme(axis.text.x = element_text(angle = 90,  hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        text = element_text(size = 16)) +
   coord_flip()
 p
 
@@ -267,10 +271,20 @@ ggsave("output/LyticLysogenic.png", p, width = 15, height = 10, dpi = 500)
 ggsave("output/LyticLysogenic.pdf", p, width = 15, height = 10, dpi = 500)
 
 ############################### Genome Size ##################################
+gensize_kb<-read.delim2(file = "input/GenSize_KB.tsv", header = TRUE)
 
 gensize_kb$Site<-gensize_kb$Genome
 gensize_kb <- gensize_kb %>% separate(Site, c("Site", NA), 
-                                      sep= "_NODE|_scaffold|_vRhyme")
+                                      sep= "_NODE|_scaffold|_vRhyme|_k95")
+
+gensize_kb$Site <- gsub(".*Lau_Basin.*","Lau_Basin",gensize_kb$Site) #the placement of the periods is crucial for replacing whole string
+gensize_kb$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",gensize_kb$Site)
+gensize_kb$Site <- gsub(".*Axial.*","Axial_Seamount",gensize_kb$Site)
+gensize_kb$Site <- gsub(".*ELSC.*","Lau_Basin",gensize_kb$Site)
+gensize_kb$Site <- gsub(".*Brothers.*","Brothers_Volcano",gensize_kb$Site)
+gensize_kb$Site <- gsub(".*Guaymas.*","Guaymas_Basin",gensize_kb$Site)
+gensize_kb$Site <- gsub(".*MAR.*","Mid_Atlantic_Ridge",gensize_kb$Site)
+gensize_kb$Site <- gsub(".*EPR.*","East_Pacific_Rise",gensize_kb$Site)
 
 #map quality so can filter. SKIP THIS TO SEE GENOME SIZES WITHOUT QC FILTERING
 gensize_kb <- checkV %>%
