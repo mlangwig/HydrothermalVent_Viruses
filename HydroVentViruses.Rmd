@@ -1024,5 +1024,20 @@ cov-mode 0 means alignment covers [at least 0.8 of query and of target](https://
 
 [See here](https://github.com/soedinglab/mmseqs2/wiki#cluster-tsv-format) for explanation of tsv output format.
 
+# Genomad for virus taxonomy
 
+1. Add this to your .bashrc first
+```{bash, eval = FALSE}
+export LANG="en_US.UTF-8"
+```
 
+2. Download genomad with mamba and run it. **Caution when running** genomad uses tensorflow during the classification step and at this step it will significantly overuse the amount of threads you set. It seems like it's using all available CPUs?
+```{bash, eval = FALSE}
+mamba create -n genomad -c conda-forge -c bioconda genomad
+
+mamba activate genomad
+
+nohup genomad end-to-end --cleanup Virus_Genomes/vUnbinned_vMAGs_1500Ns_PlumeVent.fna genomad_output /storage2/databases/genomad_db/ -t 30 &
+```
+
+3. 

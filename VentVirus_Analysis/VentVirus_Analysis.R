@@ -15,7 +15,7 @@ iphop <- read.csv(file = "input/Host_prediction_to_genus_m90.csv", header = TRUE
 
 vib_amgs <- read.delim2(file = "input/All_AMG_annotations_Vents.tsv", header = TRUE)
 
-checkV <- read.delim2(file = "input/CheckV_quality_vMAGs_vUnbinned.tsv", header = TRUE)
+checkV <- read.delim2(file = "input/CheckV_quality_vMAGs_vUnbinned_PlumeVent.txt", header = TRUE)
 
 vMAG_mapping <- read.delim2(file = "input/vMAG_scaffold_mapping.txt", header = FALSE)  
 
@@ -301,6 +301,7 @@ gensize_kb_5kb <- gensize_kb %>% filter(KB >= 5)
 write.table(gensize_kb_5kb, file = "output/gensize_5kb.tsv", quote = FALSE, sep = "\t",
             col.names = TRUE, row.names = FALSE)
 
+################### Genome Size by CheckV Quality
 dev.off()
 p <- ggplot(gensize_kb, aes(x = checkv_quality, y = as.numeric(KB), fill = checkv_quality)) + 
   geom_boxplot() + 
@@ -308,6 +309,7 @@ p <- ggplot(gensize_kb, aes(x = checkv_quality, y = as.numeric(KB), fill = check
   xlab("Site")  +
   ylab("Genome Size (KB)") +
   ggtitle("Viral Genome Size (KB)") +
+  guides(fill=guide_legend(title = "CheckV Quality")) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
   scale_x_discrete(limits = rev(levels(gensize_kb$checkv_quality))) +
@@ -319,4 +321,7 @@ p
 
 ggsave("output/GenomeSizeKB.png", p, width = 12, height = 6, dpi = 500)
 ggsave("output/GenomeSizeKB.pdf", p, width = 12, dpi = 500)
+
+################### Genome Size by Site
+
 

@@ -9,81 +9,98 @@ setwd("~/Google Drive/My Drive/PhD_Projects/VentViruses/HydrothermalVent_Viruses
 
 ######################################### Read the input ##################################################
 
-#iphop
-iphop <- read.csv(file = "input/Host_prediction_to_genus_m90.csv", header = TRUE)
+#iphop Vent
+iphop_vent <- read.csv(file = "input/Host_prediction_to_genus_m90.csv", header = TRUE)
 #653 unique hosts without any filtering
 
+#iphop results Plume
+iphop_plume <- read.csv(file = "~/Google Drive/My Drive/Faith/PlumeViruses/AMG_homology/AMG_homology_network/input/Host_prediction_to_genus_m90_vMAGs_vUnbinned.csv")
+#######combine the iphop results for both Vent and Plume
+iphop_VentPlume <- rbind(iphop_vent, iphop_plume)
+
 #CheckV
-checkv <- read.delim(file = "input/CheckV_quality_vMAGs_vUnbinned.tsv", header = TRUE, sep = "\t")
+#checkv <- read.delim(file = "input/CheckV_quality_vMAGs_vUnbinned.tsv", header = TRUE, sep = "\t")
 
-#Genome Size
-gensize_kb <- read.delim(file = "input/Vent_vUnbinned_vMAG_GenSize_KB.tsv", header = TRUE, sep = "\t")
+#Genome Size and CheckV quality for Plume and Vent viruses
+sites_iphop <- read.delim(file = "../VentVirus_Analysis/output/gensize_VentPlume.tsv", header = TRUE, sep = "\t")
 
-MAG_tax<-read.delim(file = "input/gtdbtk_v1.5.0_VentMAGs.tsv", header = TRUE)
+#GTDB MAG taxonomy for Vent
+MAG_tax <- read.delim(file = "input/gtdbtk_v1.5.0_VentMAGs.tsv", header = TRUE)
+#GTDB MAG tax for Plume
+MAG_Tax_Plume <- read.delim(file = "~/Google Drive/My Drive/Faith/Plume_MAGs/GTDBtk_v1.5.0/all_PlumeMAGs_gtdbtkv1.5.0.txt", header = TRUE)
+##########combine them into 1
+mag_gtdb_VentPlume <- rbind(MAG_tax, MAG_Tax_Plume)
+
+#virus taxonomy from genomad for Vent and Plume viruses
+virus_tax <- read.delim(file = "../../genomad/vUnbinned_vMAGs_1500Ns_PlumeVent_genomad_tax_parsed.txt", header = TRUE)
 
 ################################## Map quality data so you can filter ########################################
 
 #map
-iphop <- checkv %>%
-  dplyr::select(contig_id, contig_length, checkv_quality, provirus, gene_count, viral_genes,
-                completeness, contamination, warnings) %>%
-  right_join(iphop, by = c("contig_id" = "Virus"))
+# iphop <- checkv %>%
+#   dplyr::select(contig_id, contig_length, checkv_quality, provirus, gene_count, viral_genes,
+#                 completeness, contamination, warnings) %>%
+#   right_join(iphop, by = c("contig_id" = "Virus"))
 
 #map
-iphop <- gensize_kb %>%
-  dplyr::select(Genome, KB) %>%
-  right_join(iphop, by = c("Genome" = "contig_id"))
+iphop_VentPlume <- sites_iphop %>%
+  dplyr::select(contig_id, KB, checkv_quality, provirus,
+                completeness, contamination, warnings) %>%
+  right_join(iphop_VentPlume, by = c("contig_id" = "Virus"))
 
 ####################### Remove iphop results that don't match MAG taxonomy ########################################
 #I will only keep predictions that match the MAG data that I have
 
 #remove ;s_ in gtdbtk classification for mapping
-MAG_tax <- MAG_tax %>% separate(classification, c("classification", NA), sep= "(?=;s__)")
+mag_gtdb_VentPlume <- mag_gtdb_VentPlume %>% separate(classification, c("classification", NA), sep= "(?=;s__)")
 #vlookup mapping
-iphop <- MAG_tax %>%
+iphop_VentPlume <- mag_gtdb_VentPlume %>%
   dplyr::select(classification, user_genome) %>%
-  right_join(iphop, by = c("classification" = "Host.genus"))
+  right_join(iphop_VentPlume, by = c("classification" = "Host.genus"))
+iphop_VentPlume <- virus_tax %>%
+  dplyr::select(genome, lineage) %>%
+  right_join(iphop_VentPlume, by = c("genome" = "contig_id"))
 #drop NAs
-iphop <- iphop %>%
+iphop_VentPlume <- iphop_VentPlume %>%
   drop_na(user_genome)
 #rename classification column
-iphop<-rename(iphop,"Host.genus" = "classification")
-iphop<-rename(iphop,"Virus" = "Genome")
+iphop_VentPlume<-rename(iphop_VentPlume,"Host.genus" = "classification")
+iphop_VentPlume<-rename(iphop_VentPlume,"Virus" = "genome")
 #258 unique hosts when filter by matching MAG taxonomy
 
 ################################### Quality control iphop results ########################################
 #I am removing viruses whose checkv quality was Not determined because in my manual inspections,
 #this gets rid of a lot of junk
 
-iphop<-iphop[!grepl("Not-determined", iphop$checkv_quality),]
+iphop_VentPlume<-iphop_VentPlume[!grepl("Not-determined", iphop_VentPlume$checkv_quality),]
 
 #Removing viruses with the warning "no viral genes detected" because my manual inspections suggest these are not viral
 #or are poor enough quality that I don't want to keep
 
-iphop<-iphop[!grepl("no viral genes detected", iphop$warnings),]
+iphop_VentPlume<-iphop_VentPlume[!grepl("no viral genes detected", iphop_VentPlume$warnings),]
 
 #Now removing viruses ≤5kb because I am not sure I trust host predictions to viral fragments
 #And I'd like the potential for more genomic context from the virus
 
 #filter for viruses with genome >5 KB
-iphop<-subset(iphop, iphop$KB>=5000)
+iphop_VentPlume<-subset(iphop_VentPlume, iphop_VentPlume$KB>=5)
 
 #Remove viruses with contamination >20% because these don't look great
 
-iphop<-subset(iphop, iphop$contamination<=20)
+iphop_VentPlume<-subset(iphop_VentPlume, iphop_VentPlume$contamination<=20)
 #194 unique hosts when filtering by all these quality metrics
 
 ##########################remove user_genome so I can see the table##########################
-iphop<-select(iphop, -c("user_genome"))
-iphop<-unique(iphop)
+iphop_VentPlume<-select(iphop_VentPlume, -c("user_genome"))
+iphop_VentPlume<-unique(iphop_VentPlume)
 
-write.table(file = "output/iphop_results_qc.txt", iphop, quote = FALSE, sep = "\t", col.names = TRUE,
+write.table(file = "output/iphop_VentPlumeresults_qc.txt", iphop_VentPlume, quote = FALSE, sep = "\t", col.names = TRUE,
             row.names = FALSE)
 
 ####################### Generate the network, starting with the nodes file ########################################
 
 ##subset virus and host genus
-virus_host_iphop<-iphop[,c("Virus", "Host.genus", "List.of.methods")]
+virus_host_iphop<-iphop_VentPlume[,c("Virus", "Host.genus", "List.of.methods")]
 
 ###USE THIS SEGMENT OF CODE IF YOU WANT EACH HOST MATCH TO BE UNIQUE (don't group by taxa)
 ##Add unique columns with x and y coordinates
@@ -142,7 +159,17 @@ nodes$type[grepl("p__", nodes$type, ignore.case=FALSE)] <- "Host" # AND CHANGE H
 
 #Create column of Site names and then change taxa site name to NA
 sites_iphop <- nodes %>% separate(node, c("Site", NA),
-                                  sep= "(?=_NODE|_scaffold|_d|_vRhyme)")
+                                  sep= "(?=_NODE|_scaffold|_d|_vRhyme|_k95)")
+#replace specific site to get general sites
+sites_iphop$Site <- gsub(".*Lau_Basin.*","Lau_Basin",sites_iphop$Site) #the placement of the periods is crucial for replacing whole string
+sites_iphop$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",sites_iphop$Site)
+sites_iphop$Site <- gsub(".*Axial.*","Axial_Seamount",sites_iphop$Site)
+sites_iphop$Site <- gsub(".*ELSC.*","Lau_Basin",sites_iphop$Site)
+sites_iphop$Site <- gsub(".*Brothers.*","Brothers_Volcano",sites_iphop$Site)
+sites_iphop$Site <- gsub(".*Guaymas.*","Guaymas_Basin",sites_iphop$Site)
+sites_iphop$Site <- gsub(".*MAR.*","Mid_Atlantic_Ridge",sites_iphop$Site)
+sites_iphop$Site <- gsub(".*EPR.*","East_Pacific_Rise",sites_iphop$Site)
+
 #sites_iphop$Site[grepl("d__", sites_iphop$Site, ignore.case=FALSE)] <- "NA"
 
 #map it back to the nodes
@@ -164,9 +191,9 @@ edges <- as.data.frame(virus_host_iphop[, c("x","y","Method")])
 
 ######graph
 #mods to Site in nodes for simpler plotting
-nodes_SiteShort <- nodes %>% separate(Site, c("Site", NA), sep= "(?<=Brothers|ELSC|EPR|Guaymas|MAR)")
+#nodes_SiteShort <- nodes %>% separate(Site, c("Site", NA), sep= "(?<=Brothers|ELSC|EPR|Guaymas|MAR)")
 # make a tidy graph
-network <- tbl_graph(nodes = nodes_SiteShort, edges = edges, directed = FALSE) 
+network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE) 
 network
 # setting theme_graph 
 set_graph_style()
@@ -178,7 +205,7 @@ my_colors <- rev(pals::kelly(n=16)[2:17]) #change n = for the number of colors y
 #edge_colors <- pals::kelly(n=2)[c(2,7)]
 
 library(randomcoloR)
-n <- 36
+n <- 42
 palette <- rev(distinctColorPalette(n))
 
 library(RColorBrewer)
@@ -196,26 +223,26 @@ col_vector<-c("#7FC97F", "#BEAED4", "#FDC086",
 
 # ggraph plot of network
 dev.off()
-plot<- ggraph(network, layout = 'graphopt') +  #kk is pretty #dh better for large networks. fr for small. --> play around with this layout. See here: https://www.data-imaginist.com/2017/ggraph-introduction-layouts/
-  geom_edge_arc(strength = 0.2) + #mapping = NULL to turn off #aes(colour = Method) to color by method
-  geom_node_point(aes(color = Site), size = 2.5, alpha = .9) + #Site is the color of the nodes, shape = for a shape
+plot<- ggraph(network, layout = 'kk') +  #kk is pretty #dh better for large networks. fr for small. --> play around with this layout. See here: https://www.data-imaginist.com/2017/ggraph-introduction-layouts/
+  #geom_edge_arc(strength = 0.2) + #mapping = NULL to turn off #aes(colour = Method) to color by method
+  geom_node_point(aes(shape = Site, color = p), size = 2.5, alpha = .9) + #Site is the color of the nodes, shape = for a shape
   #Aesthetic: change size = # for larger text within node when fewer nodes
   #geom_node_text(aes(label = u_id), size = 3, color = "white") + #I add the number label associated with u_id --> remove it if you have too many
   scale_color_manual("Phyla", values = rev(palette)) +
-  #scale_edge_color_discrete() + #change the first number in FALSE = depending on what percent identity cut off you used
-  # scale_shape_manual(name="Hydrothermal Vent Site", labels = c("NA" = ""),
-  #                    values = c("Cayman_Deep"=15, "Cayman_Shallow"=17, 
-  #                               "Guaymas_Basin"=18, "Lau_Basin_Abe"=25, 
-  #                               "Lau_Basin_Kilo_Moana"=7, "Lau_Basin_Mariner"=9, "Lau_Basin_Tahi_Moana"=12, 
-  #                               "Lau_Basin_Tui_Malila"=11, "SWIR"=8, "NA"=19)) + 
+  scale_edge_color_discrete() + #change the first number in FALSE = depending on what percent identity cut off you used
+  scale_shape_manual(name="Hydrothermal Vent Site", labels = c("NA" = ""),
+                     values = c("Axial_Seamount"=15, "Brothers_Volcano"=17,
+                                "Mid_Cayman_Rise"=18, "Lau_Basin"=25,
+                                "East_Pacific_Rise"=7, "Guaymas_Basin"=9, "Lau_Basin_Tahi_Moana"=12,
+                                "Mid_Atlantic_Ridge"=11)) +
   theme_bw() +
-  theme(plot.background = element_blank(),
-        panel.background = element_blank(),
-        panel.border = element_blank(),
-        panel.grid = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_nodes(~ p, scales = "free") +
+  # theme(plot.background = element_blank(),
+  #       panel.background = element_blank(),
+  #       panel.border = element_blank(),
+  #       panel.grid = element_blank(),
+  #       axis.text = element_blank(),
+  #       axis.ticks = element_blank()) +
+  #facet_nodes(~ Site, scales = "free") +
   th_foreground(border = TRUE) +
   xlab(NULL) +
   ylab(NULL)
@@ -270,10 +297,56 @@ p <- p + theme_bw() +
   coord_flip()
 p
 
-ggsave("output/iphop_hosts_barplot_Class_nolegend.png", p, width = 10, height = 8, units = "in")
+ggsave("output/iphop_hosts_barplot_Class_VentPlume.png", p, width = 10, height = 9, units = "in")
+
+########################## zoom in on Campylo and Gamma ################################
+
+#drop Pseudomonas contam
+virus_host_iphop_plot <- virus_host_iphop_plot %>% filter(!str_detect(g, "g__Pseudomonas_D"))
+#only keep Gamma and Camp
+virus_host_iphop_plot_camp_gam <- virus_host_iphop_plot %>% filter(str_detect(c, "c__Gammaproteobacteria|c__Campylobacteria"))
 
 
+ 
+# for_plotting <- virus_host_iphop_plot_camp_gam %>%
+#   select(Virus, Site, c, o) %>%
+#   group_by(o) %>%
+#   mutate(count=n()) %>%
+#   arrange(o)
 
+for_plotting <- virus_host_iphop_plot_camp_gam %>%
+  select(Virus, Site, c, g) %>%
+  group_by(c) %>%
+  count(g) %>%
+  arrange(g) 
+
+for_plotting$g <- factor(for_plotting$g)
+
+# count.df <- as.data.frame(table(virus_host_iphop_plot_camp_gam$o))
+# colnames(count.df) <- c("o", "Count")
+
+dev.off()
+p <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) + 
+  geom_bar(stat = "identity") + 
+  #facet_wrap(~Site) + 
+  xlab("Taxonomy")  +
+  ylab("Count") +
+  scale_fill_viridis_d(name = "GTDBtk class") +
+  ggtitle("iPHoP-Predicted Microbial Hosts") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 400)) +
+  scale_x_discrete(limits = rev(levels(for_plotting$g)))
+#geom_text(aes(label = paste0(n), y = n),
+#         vjust = -.5, size = 2.5, color = "black" )
+p <- p + theme_bw() + 
+  theme(legend.position = "none",
+        text = element_text(size = 12)) +
+  coord_flip() +
+  facet_wrap(~ c)
+p
+
+ggsave("output/iphop_hosts_barplot_GammaCamp_VentPlume.png", p, width = 12, height = 9, units = "in")
+
+########################## plot sites separately ################################
 
 
 
