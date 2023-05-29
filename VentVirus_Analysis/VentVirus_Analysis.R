@@ -209,6 +209,9 @@ write.table(master_table_vMAGs, file = "output/master_table_vMAGs.tsv", col.name
 write.table(master_table_unbinned, file = "output/master_table_unbinned.tsv", col.names = TRUE,
             row.names = FALSE, sep = "\t", quote = FALSE)
 
+write.table(gensize_kb, file = "output/gensize_VentPlume.tsv", col.names = TRUE,
+            row.names = FALSE, sep = "\t", quote = FALSE)
+
 ######################################## Visualize ##################################################
 
 ############################### CheckV quality ##################################
@@ -322,6 +325,34 @@ p
 ggsave("output/GenomeSizeKB.png", p, width = 12, height = 6, dpi = 500)
 ggsave("output/GenomeSizeKB.pdf", p, width = 12, dpi = 500)
 
-################### Genome Size by Site
+################### Genome Size Site Totals
 
+master_table_fig <- gensize_kb %>% 
+  select(c("contig_id", "KB", "Site")) %>%
+  unique() %>%
+  group_by(Site) %>%
+  count(KB) #%>%
 
+master_table_fig<-filter(master_table_fig, Site == "Brothers_Volcano")
+
+dev.off()
+p <- ggplot(master_table_fig, aes(x=n)) + 
+  geom_histogram(binwidth = 5) +
+  #facet_wrap(~Site) + 
+  xlab("Count")  +
+  ylab("Genome Size (KB)") +
+  ggtitle("Viral Genome Size (KB)") +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  #guides(fill=guide_legend(title = "CheckV Quality")) +
+  theme_bw()
+  #theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
+  #scale_x_discrete(limits = rev(levels(gensize_kb$checkv_quality))) +
+  #scale_y_continuous(limits = c(0, 1050), breaks = seq(0, 1050, by = 300)) +
+  #scale_fill_viridis_d() +
+  #ylim(0,1050) +
+  #coord_flip()
+p
+
+ggsave("output/GenomeSizeKB_SiteTotals.png", p, width = 12, height = 6, dpi = 500)
+ggsave("output/GenomeSizeKB_SiteTotals.pdf", p, width = 12, dpi = 500)

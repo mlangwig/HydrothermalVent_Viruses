@@ -768,6 +768,13 @@ cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc
 ```
 **2,797 clusters with 2 or more viral genomes. 497 viral genomes are singletons**
 
+### To reformat mcl cluster table so that vRhyme MAG names are in the right format
+
+```{bash, eval = FALSE}
+cut -f1,2 mcl_formatted_table_VentPlumeViruses.tsv | sort | sed 's/__/\t/g' | sed 's/vRhyme_/vRhyme_bin_/g' | sed 's/_k95/\t/g' | sed 's/_NODE/\t/g' | sed 's/_scaffold/\t/g' | grep "vRhyme" | cut -f1,2,3 | awk '{ print $1 " " $3 "_" $2}' > mcl_vMAGs_renamed.txt
+```
+**Used this to create mcl_formatted_table_VentPlumeViruses_renamedFinal, which is the final mcl cluster file with the right names for all 1kb viruses from Plume and Vent**
+
 ## Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses
 
 1. Set up directories of viral genomes by creating sym links for vMAGs >=5kb. Also get 1 file of unbinned viruses >5kb. Remember to replace "=" in name to "_" because of issues.
@@ -1040,4 +1047,12 @@ mamba activate genomad
 nohup genomad end-to-end --cleanup Virus_Genomes/vUnbinned_vMAGs_1500Ns_PlumeVent.fna genomad_output /storage2/databases/genomad_db/ -t 30 &
 ```
 
-3. 
+3. Use Cody's parsing script to get the taxonomy info from genomad into GTDBtk format
+```{bash, eval = FALSE}
+conda activate
+
+conda install -c conda-forge polars
+
+python /storage1/data14/for_maggie/genomad/fix_genomad_taxonomy.py -i vUnbinned_vMAGs_1500Ns_PlumeVent_taxonomy.tsv -o vUnbinned_vMAGs_1500Ns_PlumeVent_genomad_tax_parsed.txt
+```
+

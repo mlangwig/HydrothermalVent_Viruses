@@ -270,13 +270,17 @@ virus_host_iphop_plot <- virus_host_iphop_plot %>% separate(Host.genus, c(NA, "H
 virus_host_iphop_plot <- virus_host_iphop_plot %>% separate(Host.genus, c("d", "p", "c", "o", "f", "g"), 
                                                             sep= ";") #split by ;
 
+virus_host_iphop_plot_bac <- virus_host_iphop_plot %>% filter(grepl('d__Bacteria', d))
+virus_host_iphop_plot_arc <- virus_host_iphop_plot %>% filter(grepl('d__Archaea', d))
+
 ########################## plot hosts by class ################################
 
-for_plotting <- virus_host_iphop_plot %>%
-  select(Virus, Site, c) %>%
-  group_by(Site) %>%
+for_plotting <- virus_host_iphop_plot_bac %>%
+  select(Virus, Site, c, d) %>%
+  group_by(d) %>%
   count(c) %>%
-  arrange(c) 
+  arrange(c) %>%
+  mutate(c = str_replace(c, "c__", ""))
 
 for_plotting$c <- factor(for_plotting$c)
 
@@ -284,28 +288,60 @@ dev.off()
 p <- ggplot(for_plotting, aes(x = c, y = n, fill = c)) + 
   geom_bar(stat = "identity") + 
   #facet_wrap(~Site) + 
-  xlab("Taxonomy")  +
-  ylab("Count") +
+  xlab("Class")  +
+  ylab("Number of Predicted Hosts") +
   scale_fill_viridis_d(name = "GTDBtk class") +
-  ggtitle("iPHoP-Predicted Microbial Hosts") +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 400)) +
+  ggtitle("Bacteria") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 400)) + #
   scale_x_discrete(limits = rev(levels(for_plotting$c)))
 #geom_text(aes(label = paste0(n), y = n),
 #         vjust = -.5, size = 2.5, color = "black" )
 p <- p + theme_bw() + 
   theme(legend.position = "none") +
   coord_flip()
+  #facet_wrap(~ d, scales = "free")
 p
 
-ggsave("output/iphop_hosts_barplot_Class_VentPlume.png", p, width = 10, height = 9, units = "in")
+for_plotting <- virus_host_iphop_plot_arc %>%
+  select(Virus, Site, c, d) %>%
+  group_by(d) %>%
+  count(c) %>%
+  arrange(c) %>%
+  mutate(c = str_replace(c, "c__", ""))
+
+for_plotting$c <- factor(for_plotting$c)
+
+dev.off()
+p2 <- ggplot(for_plotting, aes(x = c, y = n, fill = c)) + 
+  geom_bar(stat = "identity") + 
+  #facet_wrap(~Site) + 
+  xlab("")  +
+  ylab("Number of Predicted Hosts") +
+  scale_fill_viridis_d(name = "GTDBtk class") +
+  ggtitle("Archaea") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 40)) + #, limits = c(0, 400)
+  scale_x_discrete(limits = rev(levels(for_plotting$c)))
+#geom_text(aes(label = paste0(n), y = n),
+#         vjust = -.5, size = 2.5, color = "black" )
+p2 <- p2 + theme_bw() + 
+  theme(legend.position = "none") +
+  coord_flip()
+#facet_wrap(~ d, scales = "free")
+p2
+
+library(patchwork)
+p_final <- p + p2
+p_final
+
+ggsave("output/iphop_hosts_barplot_Class_VentPlume.png", p_final, width = 13, height = 9, units = "in")
 
 ########################## zoom in on Campylo and Gamma ################################
 
 #drop Pseudomonas contam
 virus_host_iphop_plot <- virus_host_iphop_plot %>% filter(!str_detect(g, "g__Pseudomonas_D"))
 #only keep Gamma and Camp
-virus_host_iphop_plot_camp_gam <- virus_host_iphop_plot %>% filter(str_detect(c, "c__Gammaproteobacteria|c__Campylobacteria"))
-
+virus_host_iphop_plot_camp_gam_alph <- virus_host_iphop_plot_bac %>% filter(str_detect(c, "c__Gammaproteobacteria|c__Campylobacteria|c__Alphaproteobacteria"))
+virus_host_iphop_plot_thermos <- virus_host_iphop_plot_arc %>% filter(str_detect(c, "c__Thermococci|c__Thermoproteia|c__Thermoplasmata"))
 
  
 # for_plotting <- virus_host_iphop_plot_camp_gam %>%
@@ -314,8 +350,8 @@ virus_host_iphop_plot_camp_gam <- virus_host_iphop_plot %>% filter(str_detect(c,
 #   mutate(count=n()) %>%
 #   arrange(o)
 
-for_plotting <- virus_host_iphop_plot_camp_gam %>%
-  select(Virus, Site, c, g) %>%
+for_plotting <- virus_host_iphop_plot_camp_gam_alph %>%
+  select(Virus, c, g) %>%
   group_by(c) %>%
   count(g) %>%
   arrange(g) 
@@ -329,19 +365,46 @@ dev.off()
 p <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) + 
   geom_bar(stat = "identity") + 
   #facet_wrap(~Site) + 
-  xlab("Taxonomy")  +
-  ylab("Count") +
+  xlab("Genus")  +
+  ylab("Number of Predicted Hosts") +
   scale_fill_viridis_d(name = "GTDBtk class") +
-  ggtitle("iPHoP-Predicted Microbial Hosts") +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 400)) +
+  ggtitle("Bacteria") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 250)) + #
   scale_x_discrete(limits = rev(levels(for_plotting$g)))
 #geom_text(aes(label = paste0(n), y = n),
 #         vjust = -.5, size = 2.5, color = "black" )
 p <- p + theme_bw() + 
   theme(legend.position = "none",
         text = element_text(size = 12)) +
-  coord_flip() +
-  facet_wrap(~ c)
+  coord_flip()
+  #facet_wrap(~ c)
+p
+
+for_plotting <- virus_host_iphop_plot_thermos %>%
+  select(Virus, c, g) %>%
+  group_by(c) %>%
+  count(g) %>%
+  arrange(g) 
+
+for_plotting$g <- factor(for_plotting$g)
+
+dev.off()
+p <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) + 
+  geom_bar(stat = "identity") + 
+  #facet_wrap(~Site) + 
+  xlab("Genus")  +
+  ylab("Number of Predicted Hosts") +
+  scale_fill_viridis_d(name = "GTDBtk class") +
+  ggtitle("Archaea") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 40)) + #
+  scale_x_discrete(limits = rev(levels(for_plotting$g)))
+#geom_text(aes(label = paste0(n), y = n),
+#         vjust = -.5, size = 2.5, color = "black" )
+p <- p + theme_bw() + 
+  theme(legend.position = "none",
+        text = element_text(size = 12)) +
+  coord_flip()
+#facet_wrap(~ c)
 p
 
 ggsave("output/iphop_hosts_barplot_GammaCamp_VentPlume.png", p, width = 12, height = 9, units = "in")
