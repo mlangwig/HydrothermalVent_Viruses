@@ -34,6 +34,8 @@ mag_gtdb_VentPlume <- rbind(MAG_tax, MAG_Tax_Plume)
 #virus taxonomy from genomad for Vent and Plume viruses
 virus_tax <- read.delim(file = "../../genomad/vUnbinned_vMAGs_1500Ns_PlumeVent_genomad_tax_parsed.txt", header = TRUE)
 
+sulfur_cyclers <- read.delim(file = "../../sulfur_cyclers/sulfurMAGs_toVirus.txt", header = TRUE)
+
 ################################## Map quality data so you can filter ########################################
 
 #map
@@ -97,10 +99,37 @@ iphop_VentPlume<-unique(iphop_VentPlume)
 write.table(file = "output/iphop_VentPlumeresults_qc.txt", iphop_VentPlume, quote = FALSE, sep = "\t", col.names = TRUE,
             row.names = FALSE)
 
+########################## subset just sulfur cycling infecting viruses ##########################
+#map
+iphop_VentPlume_sulfur <- sulfur_cyclers %>%
+  dplyr::select(Virus, MAG_w_sulfur, Method) %>%
+  right_join(iphop_VentPlume, by = c("Virus" = "Virus")) %>%
+  drop_na(MAG_w_sulfur)
+  
+iphop_VentPlume_sulfur_high_qual <- iphop_VentPlume_sulfur %>% filter(!str_detect(checkv_quality,
+                                                                                  "Low-quality"))
+
+iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% rename("VirusSite" = "Site")
+iphop_VentPlume_sulfur$MAGSite <- iphop_VentPlume_sulfur$MAG_w_sulfur # copy column
+iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% separate(MAGSite, c("Site", NA),
+                                                  sep= "(?=_maxbin|_metabat)") #separate by NODE and k95
+iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% rename("MAGSite" = "Site")
+
+#replace specific site to get general sites - do this for 2 columns at once
+sulf_cols<-c("VirusSite", "MAGSite")
+iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*ELSC.*","Lau_Basin")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Brothers.*","Brothers_Volcano")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Guaymas.*","Guaymas_Basin")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*MAR.*","Mid_Atlantic_Ridge")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*EPR.*","East_Pacific_Rise"))
+
 ####################### Generate the network, starting with the nodes file ########################################
 
 ##subset virus and host genus
 virus_host_iphop<-iphop_VentPlume[,c("Virus", "Host.genus", "List.of.methods")]
+
+virus_host_iphop<-iphop_VentPlume_sulfur[,c("Virus", "Host.genus", "List.of.methods")]
 
 ###USE THIS SEGMENT OF CODE IF YOU WANT EACH HOST MATCH TO BE UNIQUE (don't group by taxa)
 ##Add unique columns with x and y coordinates
@@ -224,24 +253,25 @@ col_vector<-c("#7FC97F", "#BEAED4", "#FDC086",
 # ggraph plot of network
 dev.off()
 plot<- ggraph(network, layout = 'kk') +  #kk is pretty #dh better for large networks. fr for small. --> play around with this layout. See here: https://www.data-imaginist.com/2017/ggraph-introduction-layouts/
+  geom_edge_link(aes(colour = Method)) +
   #geom_edge_arc(strength = 0.2) + #mapping = NULL to turn off #aes(colour = Method) to color by method
   geom_node_point(aes(shape = Site, color = p), size = 2.5, alpha = .9) + #Site is the color of the nodes, shape = for a shape
   #Aesthetic: change size = # for larger text within node when fewer nodes
-  #geom_node_text(aes(label = u_id), size = 3, color = "white") + #I add the number label associated with u_id --> remove it if you have too many
+  geom_node_text(aes(label = u_id), size = 3, color = "black") + #I add the number label associated with u_id --> remove it if you have too many
   scale_color_manual("Phyla", values = rev(palette)) +
-  scale_edge_color_discrete() + #change the first number in FALSE = depending on what percent identity cut off you used
+  #scale_edge_color_discrete() + #change the first number in FALSE = depending on what percent identity cut off you used
   scale_shape_manual(name="Hydrothermal Vent Site", labels = c("NA" = ""),
                      values = c("Axial_Seamount"=15, "Brothers_Volcano"=17,
                                 "Mid_Cayman_Rise"=18, "Lau_Basin"=25,
                                 "East_Pacific_Rise"=7, "Guaymas_Basin"=9, "Lau_Basin_Tahi_Moana"=12,
                                 "Mid_Atlantic_Ridge"=11)) +
   theme_bw() +
-  # theme(plot.background = element_blank(),
-  #       panel.background = element_blank(),
-  #       panel.border = element_blank(),
-  #       panel.grid = element_blank(),
-  #       axis.text = element_blank(),
-  #       axis.ticks = element_blank()) +
+  theme(plot.background = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
   #facet_nodes(~ Site, scales = "free") +
   th_foreground(border = TRUE) +
   xlab(NULL) +
@@ -376,8 +406,8 @@ p <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) +
 p <- p + theme_bw() + 
   theme(legend.position = "none",
         text = element_text(size = 12)) +
-  coord_flip()
-  #facet_wrap(~ c)
+  coord_flip() +
+  facet_wrap(~ c)
 p
 
 for_plotting <- virus_host_iphop_plot_thermos %>%
@@ -389,10 +419,10 @@ for_plotting <- virus_host_iphop_plot_thermos %>%
 for_plotting$g <- factor(for_plotting$g)
 
 dev.off()
-p <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) + 
+p2 <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) + 
   geom_bar(stat = "identity") + 
   #facet_wrap(~Site) + 
-  xlab("Genus")  +
+  xlab("")  +
   ylab("Number of Predicted Hosts") +
   scale_fill_viridis_d(name = "GTDBtk class") +
   ggtitle("Archaea") +
@@ -400,24 +430,74 @@ p <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) +
   scale_x_discrete(limits = rev(levels(for_plotting$g)))
 #geom_text(aes(label = paste0(n), y = n),
 #         vjust = -.5, size = 2.5, color = "black" )
-p <- p + theme_bw() + 
+p2 <- p2 + theme_bw() + 
   theme(legend.position = "none",
         text = element_text(size = 12)) +
-  coord_flip()
-#facet_wrap(~ c)
-p
+  coord_flip() +
+  facet_wrap(~ c)
+p2
 
-ggsave("output/iphop_hosts_barplot_GammaCamp_VentPlume.png", p, width = 12, height = 9, units = "in")
+p_BacArcZoom <- p + p2
+p_BacArcZoom
 
-########################## plot sites separately ################################
+ggsave("output/iphop_hosts_barplot_BacArcZoom_VentPlume.png", p_BacArcZoom, width = 20, height = 10, units = "in")
 
+########################## Plot Host Predictions by Site ################################
 
+iphop_VentPlume$Site <- iphop_VentPlume$Virus # copy column
+iphop_VentPlume <- iphop_VentPlume %>% separate(Site, c("Site", NA),
+                                                  sep= "(?=_NODE|_scaffold|_vRhyme|_k95)") #separate by NODE and k95
+for_plotting <- iphop_VentPlume %>%
+  select(Virus, lineage, Host.genus, List.of.methods, Site)
 
+for_plotting <- for_plotting %>% separate(Host.genus, c("d", "p", "c", "o", "f", "g"), 
+                                                            sep= ";") #split by ;
 
+for_plotting$Method <- for_plotting$List.of.methods
+for_plotting <- for_plotting %>% separate(Method, c("Method", NA),
+                                          sep = ";")
 
+#replace specific site to get general sites
+for_plotting$Site <- gsub(".*Lau_Basin.*","Lau_Basin",for_plotting$Site) #the placement of the periods is crucial for replacing whole string
+for_plotting$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",for_plotting$Site)
+for_plotting$Site <- gsub(".*Axial.*","Axial_Seamount",for_plotting$Site)
+for_plotting$Site <- gsub(".*ELSC.*","Lau_Basin",for_plotting$Site)
+for_plotting$Site <- gsub(".*Brothers.*","Brothers_Volcano",for_plotting$Site)
+for_plotting$Site <- gsub(".*Guaymas.*","Guaymas_Basin",for_plotting$Site)
+for_plotting$Site <- gsub(".*MAR.*","Mid_Atlantic_Ridge",for_plotting$Site)
+for_plotting$Site <- gsub(".*EPR.*","East_Pacific_Rise",for_plotting$Site)
 
+for_plotting <- for_plotting %>% filter(str_detect(c, "c__Gammaproteobacteria"))
 
+for_plotting <- for_plotting %>%
+  select(Virus, Site, g) %>%
+  group_by(Site) %>%
+  count(g) %>%
+  arrange(g)
 
+for_plotting$g <- factor(for_plotting$g)
+
+dev.off()
+p3 <- ggplot(for_plotting, aes(x = g, y = n, fill = g)) + 
+  geom_bar(stat = "identity") + 
+  #facet_wrap(~Site) + 
+  xlab("")  +
+  ylab("Number of Predicted Hosts") +
+  scale_fill_viridis_d(name = "GTDBtk class") +
+  ggtitle("Gammaproteobacteria Host Predictions") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 35)) + #
+  scale_x_discrete(limits = rev(levels(for_plotting$g)))
+#geom_text(aes(label = paste0(n), y = n),
+#         vjust = -.5, size = 2.5, color = "black" )
+p3 <- p3 + theme_bw() + 
+  theme(legend.position = "none",
+        text = element_text(size = 12)) +
+  coord_flip() +
+  facet_wrap(~ Site)
+p3
+
+ggsave("output/iphop_Gammahosts_barplot_perSite.png", 
+       p3, width = 10, height = 12, units = "in")
 
 
 

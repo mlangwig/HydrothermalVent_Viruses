@@ -1056,3 +1056,47 @@ conda install -c conda-forge polars
 python /storage1/data14/for_maggie/genomad/fix_genomad_taxonomy.py -i vUnbinned_vMAGs_1500Ns_PlumeVent_taxonomy.tsv -o vUnbinned_vMAGs_1500Ns_PlumeVent_genomad_tax_parsed.txt
 ```
 
+
+# Focus on viruses that infect sulfur cycling microbes
+
+## Annotating microbial MAGs
+
+1. Copy data to virserver. Cpying MAGs with no viral contamination. Renamed to remove NoViralContam from names.
+```{bash, eval = FALSE}
+cp /storage1/data12/Projects/Vent_Viruses/MAGs_Renamed/No_ViralContam/*fna .
+```
+
+2. Plume MAGs I already have the faa format MAGs without viral contamination. So just going to translate Vent MAGs on sulfur and then cp faa files to virserver.
+```{bash, eval = FALSE}
+for sample in *.fna; do prodigal -i $sample -a Prodigal/$sample.faa -o Prodigal/$sample_output.txt; done
+```
+
+3 Run the hmm search
+```{bash, eval = FALSE}
+for file in /scratch/langwig/Databases/Metabolic_genes_hmms/*.hmm; do hmmsearch --cut_tc --cpu 30 --tblout $file.txt $file ../PlumeVent_MAGs_3872.faa; echo "next hmm"; done
+```
+
+4. Get best hits
+```{bash, eval = FALSE}
+for i in *.txt; do python3 /storage2/scratch/langwig/scripts/hmm_parser.py -i $i -o $i.parsed.txt; done
+```
+**Note that some are 0 because did not have trusted cutoff**. \n
+**Also this did not actually grab best hits as expected but organized nicely**
+
+### Sulfur hmm search parsing
+
+**File that is named subset_sulfurHMM_MAG_names_final_uniq.txt contains the names of microbial MAGs that encode aprA, dsrABD, fccB, soxBCY, or phsA**
+
+Wild sed commands to get rid of annoying names...
+```{bash, eval = FALSE}
+sed 's/_355-202/\t/2' subset_sulfurHMM_MAGs_final_uniq.txt | cut -f1 | sed 's/_354-166/\t/2' | sed 's/_4571-419/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_4561-380/\t/2' | sed 's/_4559-240/\t/2' | sed 's/_4281-140/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_PIR-30/\t/2' | sed 's/_V2/\t/2' | sed 's/_T2/\t/2' | sed 's/_T11/\t/2' | sed 's/_T10/\t/2' | sed 's/_M2/\t/2' | sed 's/_M17/\t/2' | sed 's/_M1/\t/2' | cut -f1 | sed 's/_A3/\t/2' | sed 's/_A1/\t/2' | sed 's/_134-614/\t/2' | sed 's/_132-544/\t/2' | sed 's/_131-447/\t/2' | sed 's/_128-326/\t/2' | sed 's/_S147/\t/2' | sed 's/_S146/\t/2' | sed 's/_S145/\t/2' | sed 's/_S144/\t/2' | sed 's/_S14/\t/2'| cut -f1 | sed 's/_S13/\t/2' | cut -f1 | sed 's/_S0/\t/2' | cut -f1 | sort | uniq > subset_sulfurHMM_MAGs_final_uniq_namesFixed.txt
+```
+
+
+
+
+
+
+
+
+
