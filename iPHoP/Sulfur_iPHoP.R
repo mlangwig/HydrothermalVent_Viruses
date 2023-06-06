@@ -1,0 +1,101 @@
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(pals)
+library(ggraph)
+library(tidygraph)
+
+setwd("~/Google Drive/My Drive/PhD_Projects/VentViruses/HydrothermalVent_Viruses/iPHoP/")
+
+######################################### Read the input ##################################################
+
+#iphop Vent
+iphop_genome <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genome_m90.csv", header = TRUE)
+iphop_genus <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genus_m90.csv", header = TRUE)
+
+sulfur_mags <- read.csv(file = "../../sulfur_cyclers/subset_sulfurHMM_MAGs_final_uniq_namesFixed.txt", header = FALSE)
+
+################### vlookup to match iphop genus and genome output ###############################
+
+#remove ;s_ in gtdbtk classification for mapping
+iphop_genome <- iphop_genome %>% separate(Host.taxonomy, c("Host.taxonomy", NA), sep= "(?=;s__)")
+
+#map MAG name from genome file to genus file, matching by virus name and host taxonomy
+iphop_genus_genome <- iphop_genome %>%
+  dplyr::select(Virus, Host.genome, Host.taxonomy) %>%
+  right_join(iphop_genus, iphop_genome, by = c("Virus" = "Virus", "Host.taxonomy" = "Host.genus"))
+
+#drop matches to GCA genomes aka not MAGs
+iphop_genus_genome <- iphop_genus_genome %>% 
+  filter(!grepl("GCA_|GCF",Host.genome)) %>%
+  mutate(across('Host.genome', str_replace, '.fna.noVirusContam', '')) %>%
+  drop_na(Host.genome)  #drop the NAs in host.genome column bc appear tax doesnt match MAG
+
+############################# subset for sulfur MAGs only ##################################################
+
+iphop_genus_genome_sulfur <- 
+  iphop_genus_genome[iphop_genus_genome$Host.genome %in% sulfur_mags$V1,]
+
+################################### Quality control iphop results ########################################
+
+iphop_genus_genome_sulfur <- sites_iphop %>%
+  dplyr::select(contig_id, KB, checkv_quality, provirus,
+                completeness, contamination, warnings) %>%
+  right_join(iphop_genus_genome_sulfur, by = c("contig_id" = "Virus"))
+
+#I am removing viruses whose checkv quality was Not determined because in my manual inspections,
+#this gets rid of a lot of junk
+
+iphop_genus_genome_sulfur<-iphop_genus_genome_sulfur[!grepl("Not-determined", iphop_genus_genome_sulfur$checkv_quality),]
+
+#Removing viruses with the warning "no viral genes detected" because my manual inspections suggest these are not viral
+#or are poor enough quality that I don't want to keep
+
+iphop_genus_genome_sulfur<-iphop_genus_genome_sulfur[!grepl("no viral genes detected", iphop_genus_genome_sulfur$warnings),]
+
+#Now removing viruses ≤5kb because I am not sure I trust host predictions to viral fragments
+#And I'd like the potential for more genomic context from the virus
+
+#filter for viruses with genome >5 KB
+iphop_genus_genome_sulfur<-subset(iphop_genus_genome_sulfur, iphop_genus_genome_sulfur$KB>=5)
+
+#Remove viruses with contamination >20% because these don't look great
+
+iphop_genus_genome_sulfur<-subset(iphop_genus_genome_sulfur, iphop_genus_genome_sulfur$contamination<=20)
+#768 unique viruses infecting 704 unique sulfur cycling MAGs when filtering by all these quality metrics
+#114 unique sulfur cycling microbial taxa
+
+#map viral taxonomy
+iphop_genus_genome_sulfur <- virus_tax %>%
+  dplyr::select(genome, lineage) %>%
+  right_join(iphop_genus_genome_sulfur, by = c("genome" = "contig_id"))
+iphop_genus_genome_sulfur <- iphop_genus_genome_sulfur %>% rename("Virus" = "genome")
+
+#filter for >50% complete
+iphop_genus_genome_sulfur_50comp<-subset(iphop_genus_genome_sulfur, iphop_genus_genome_sulfur$completeness>=50)
+
+################################### Formatting to write table ########################################
+
+#separate taxonomy
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separate(Host.taxonomy, c("d", "p", "c", "o", "f", "g"), 
+                                                              sep= ";")
+
+iphop_genus_genome_sulfur_50comp$VirusSite <- iphop_genus_genome_sulfur_50comp$Virus # copy column
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separate(VirusSite, c("VirusSite", NA),
+                                                              sep= "(?=_NODE|_k95|_scaffold|_vRhyme)") #separate by NODE and k95
+iphop_genus_genome_sulfur_50comp$MAGSite <- iphop_genus_genome_sulfur_50comp$Host.genome # copy column
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separate(MAGSite, c("MAGSite", NA),
+                                                                                  sep= "(?=_maxbin|_metabat|_UWMA|_HVA)") #separate by NODE and k95
+
+#replace specific site to get general sites - do this for 2 columns at once
+sulf_cols<-c("VirusSite", "MAGSite")
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*ELSC.*","Lau_Basin")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Brothers.*","Brothers_Volcano")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Guaymas.*","Guaymas_Basin")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*MAR.*","Mid_Atlantic_Ridge")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*EPR.*","East_Pacific_Rise")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Cayman.*","Mid_Cayman_Rise")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Lau.*","Lau_Basin")) %>%
+  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Axial.*","Axial_Seamount"))
+
