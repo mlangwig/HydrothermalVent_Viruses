@@ -15,6 +15,9 @@ iphop_genus <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genus_m
 
 sulfur_mags <- read.csv(file = "../../sulfur_cyclers/subset_sulfurHMM_MAGs_final_uniq_namesFixed.txt", header = FALSE)
 
+mag_sulfur_hits <- read.delim(file = "input/dissim_sulfur_MAGs_GeneContent.txt", header = TRUE)
+mapping_acc <- read.delim(file = "input/hmm_mapping.txt", header = FALSE)
+
 ################### vlookup to match iphop genus and genome output ###############################
 
 #remove ;s_ in gtdbtk classification for mapping
@@ -99,3 +102,62 @@ iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>%
   mutate_at(vars(sulf_cols), ~ str_replace(., ".*Lau.*","Lau_Basin")) %>%
   mutate_at(vars(sulf_cols), ~ str_replace(., ".*Axial.*","Axial_Seamount"))
 
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separate(List.of.methods, c("Method", NA),
+                                                                                  sep= ";")
+
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separate(lineage, 
+                                                              c("rV", "kV", "pV", "cV", "oV", "fV", "gV", "sV"),
+                                                              sep= ";")
+
+write.csv(file = "output/iphop_VentPlume_sulfur_50comp.csv", iphop_genus_genome_sulfur_50comp,
+          row.names = FALSE, quote = FALSE)
+
+################ Making a bubble plot of sulfur cycling microbes and their viruses ########################################
+mag_sulfur_hits <- read.delim(file = "input/dissim_sulfur_MAGs_GeneContent.txt", header = TRUE)
+
+mag_sulfur_hits <- mapping_acc %>%
+  dplyr::select(V1, V2) %>%
+  right_join(mag_sulfur_hits, by = c("V1" = "accession")) %>%
+  separate(protein, c("MAG", NA),
+           sep= "(?=_NODE|_scaffold)")
+
+#fix MAG names so they'll match the iphop table
+mag_sulfur_Axial <- mag_sulfur_hits %>% filter(str_detect(MAG,"Axial"))
+mag_sulfur_NotAxial <- mag_sulfur_hits %>% filter(!str_detect(MAG,"Axial"))
+mag_sulfur_NotAxial$MAG <- sub("_[^_]+$", "", mag_sulfur_NotAxial$MAG)
+
+mag_sulfur_hits <- rbind(mag_sulfur_Axial,mag_sulfur_NotAxial)
+#get rid of e value and bit score so can filter for unique number of hits to a gene
+mag_sulfur_hits <- select(mag_sulfur_hits,-c(evalue,score))
+mag_sulfur_hits <- unique(mag_sulfur_hits)
+
+# ########################## old ##########################
+# #map
+# iphop_VentPlume_sulfur <- sulfur_cyclers %>%
+#   dplyr::select(Virus, MAG_w_sulfur, Method, GTDBtk_v1_5_0) %>%
+#   right_join(iphop_VentPlume, by = c("Virus" = "Virus")) %>%
+#   drop_na(MAG_w_sulfur)
+# 
+# iphop_VentPlume_sulfur_high_qual <- iphop_VentPlume_sulfur %>% filter(!str_detect(checkv_quality,
+#                                                                                   "Low-quality"))
+# 
+# iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% rename("VirusSite" = "Site")
+# iphop_VentPlume_sulfur$MAGSite <- iphop_VentPlume_sulfur$MAG_w_sulfur # copy column
+# iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% separate(MAGSite, c("Site", NA),
+#                                                               sep= "(?=_maxbin|_metabat)") #separate by NODE and k95
+# iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% rename("MAGSite" = "Site")
+# 
+# #replace specific site to get general sites - do this for 2 columns at once
+# sulf_cols<-c("VirusSite", "MAGSite")
+# iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>%
+#   mutate_at(vars(sulf_cols), ~ str_replace(., ".*ELSC.*","Lau_Basin")) %>%
+#   mutate_at(vars(sulf_cols), ~ str_replace(., ".*Brothers.*","Brothers_Volcano")) %>%
+#   mutate_at(vars(sulf_cols), ~ str_replace(., ".*Guaymas.*","Guaymas_Basin")) %>%
+#   mutate_at(vars(sulf_cols), ~ str_replace(., ".*MAR.*","Mid_Atlantic_Ridge")) %>%
+#   mutate_at(vars(sulf_cols), ~ str_replace(., ".*EPR.*","East_Pacific_Rise"))
+# 
+# #separate taxonomy
+# iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% separate(Host.genus, c("d", "p", "c", "o", "f", "g"), 
+#                                                               sep= ";")
+# # iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% separate(lineage, c("r", "k", "p", "c", "o", "f", "g", "s"), 
+# #                                                               sep= ";")

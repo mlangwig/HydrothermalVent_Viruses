@@ -192,6 +192,12 @@ mcl_clusters <- mcl_clusters %>%
   na.omit()
 #rename column
 mcl_clusters <- rename(mcl_clusters, "Site" = "value")
+
+#write the mcl table in this format
+write.table(mcl_clusters,
+            file = "Output/mcl_formatted_table_VentPlumeViruses.tsv", sep = "\t", quote = FALSE,
+            row.names = FALSE, col.names = TRUE)
+
 #replace strings with Vent or Plume
 mcl_clusters$Site <- gsub(".*Lau_Basin.*","Plume",mcl_clusters$Site) #the placement of the periods is crucial for replacing whole string
 mcl_clusters$Site <- gsub(".*Cayman.*","Plume",mcl_clusters$Site)
@@ -238,12 +244,15 @@ mcl_clusters <- mcl_clusters %>%
   na.omit()
 #rename column
 mcl_clusters <- rename(mcl_clusters, "Site" = "value")
+
+
 #replace strings with Vent or Plume
 mcl_clusters$Site <- gsub(".*Lau_Basin.*","Plume",mcl_clusters$Site) #the placement of the periods is crucial for replacing whole string
 mcl_clusters$Site <- gsub(".*Cayman.*","Plume",mcl_clusters$Site)
 mcl_clusters$Site <- gsub(".*Guaymas_Basin.*","Plume",mcl_clusters$Site)
 mcl_clusters$Site <- gsub(".*Axial.*","Plume",mcl_clusters$Site)
 
+#replace strings with 7 general site names
 mcl_clusters$Site <- gsub(".*Lau_Basin.*","Lau_Basin",mcl_clusters$Site) #the placement of the periods is crucial for replacing whole string
 mcl_clusters$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",mcl_clusters$Site)
 mcl_clusters$Site <- gsub(".*ELSC.*","Lau_Basin",mcl_clusters$Site)
@@ -259,5 +268,51 @@ mcl_clusters_noSingle <- mcl_clusters %>%
   filter(n!=1) %>%
   select(-n)
 
+#number of clusters with 1+ rep from all sites:
+table(mcl_clusters_noSingle$Site)
 
+#group by secondary cluster, count occurrences of Site
+mcl_count <- mcl_clusters_noSingle %>% group_by(id) %>% count(Site)
+#see if any cluster now occurs twice
+mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
 
+############################ plot mcl across sites ###########################
+
+#dRep drop Pseudomonas viruses cluster because contamination
+mcl_count <- mcl_count %>% filter(id!="3")
+
+#see if any cluster now occurs twice
+mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
+mcl_count_3plus <-  mcl_count %>% group_by(id) %>% filter(n()>2)
+#Remove BV + Lau overlap bc going to plot separately
+mcl_count_test <- mcl_count %>%
+  group_by(id) %>% 
+  filter(Site!="Brothers_Volcano|Lau_Basin")
+  
+#plot
+dev.off()
+plot <- mcl_count_3plus %>%
+  ggplot(aes(x = as.character(id), y = as.numeric(n), fill = Site)) + 
+  geom_bar(stat = "identity") +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Cluster", y = "Viral genomes") +
+  guides(fill=guide_legend(override.aes = list(size=3))) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5, size = 8),
+        axis.text.y = element_text(size = 8),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_rect(fill = "transparent"),
+        panel.background = element_rect(fill = "transparent"),
+        #panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_y_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  scale_fill_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
+                             "#8c510a", "#000000")) +
+  #ggtitle("dRep Clusters 1kb, 95% ANI") +
+  coord_flip()
+plot
+
+ggsave(plot, filename = "Output/mcl_clusters_1kb_distant_sites.png", dpi = 500, height = 5, width = 6)
+ggsave(plot, filename = "Output/mcl_clusters_5kb_90ani_distant_sites.png", dpi = 500)

@@ -1,0 +1,11 @@
+TIGR02061	aprA
+TIGR02064	dsrA
+TIGR02066	dsrB
+dsrD_PF08679_stockholm	dsrD
+fcc_interpro	fccB
+sor_PF07682_full.stockholm	sor
+TIGR04486	soxB
+TIGR04555	soxC
+TIGR04488	soxY
+thiosulfate_reductase_phsA_alignment	phsA
+
