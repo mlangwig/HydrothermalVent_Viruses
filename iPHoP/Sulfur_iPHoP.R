@@ -4,6 +4,7 @@ library(stringr)
 library(pals)
 library(ggraph)
 library(tidygraph)
+library(ggplot2)
 
 setwd("~/Google Drive/My Drive/PhD_Projects/VentViruses/HydrothermalVent_Viruses/iPHoP/")
 
@@ -119,7 +120,7 @@ iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separat
 write.csv(file = "output/iphop_VentPlume_sulfur_50comp.csv", iphop_genus_genome_sulfur_50comp,
           row.names = FALSE, quote = FALSE)
 
-################ Making a bubble plot of sulfur cycling microbes and their viruses ########################################
+########### Making input data for a bubble plot of sulfur cycling microbes and their viruses ########################################
 mag_sulfur_hits <- read.delim(file = "input/dissim_sulfur_MAGs_GeneContent.txt", header = TRUE)
 
 mag_sulfur_hits <- mapping_acc %>%
@@ -130,10 +131,17 @@ mag_sulfur_hits <- mapping_acc %>%
 
 #fix MAG names so they'll match the iphop table
 mag_sulfur_Axial <- mag_sulfur_hits %>% filter(str_detect(MAG,"Axial"))
-mag_sulfur_NotAxial <- mag_sulfur_hits %>% filter(!str_detect(MAG,"Axial"))
-mag_sulfur_NotAxial$MAG <- sub("_[^_]+$", "", mag_sulfur_NotAxial$MAG)
+mag_sulfur_CaymanLauGuay <- mag_sulfur_hits %>% filter(str_detect(MAG, "Cayman|Lau|Guaymas_Basin"))
+#remove strings after last 2 underscores for Cayman and Lau
+mag_sulfur_CaymanLauGuay$MAG <- sub("_[^_]+$", "", mag_sulfur_CaymanLauGuay$MAG)
+mag_sulfur_CaymanLauGuay$MAG <- sub("_[^_]+$", "", mag_sulfur_CaymanLauGuay$MAG)
 
-mag_sulfur_hits <- rbind(mag_sulfur_Axial,mag_sulfur_NotAxial)
+mag_sulfur_NotAxialCaymanLauGuay <- mag_sulfur_hits %>% filter(!str_detect(MAG,"Axial|Cayman|Lau|Guaymas_Basin"))
+#remove anything after last underscore
+mag_sulfur_NotAxialCaymanLauGuay$MAG <- sub("_[^_]+$", "", mag_sulfur_NotAxialCaymanLauGuay$MAG) 
+
+#combine them all together again with corrected names
+mag_sulfur_hits <- rbind(mag_sulfur_Axial,mag_sulfur_NotAxialCaymanLauGuay,mag_sulfur_CaymanLauGuay)
 #get rid of e value and bit score so can filter for unique number of hits to a gene
 mag_sulfur_hits <- select(mag_sulfur_hits,-c(evalue,score))
 mag_sulfur_hits <- unique(mag_sulfur_hits)
@@ -147,15 +155,74 @@ mag_sulfur_plotting <- mag_sulfur_hits %>%
   rename("gene" = "V2")
 
 mag_sulfur_plotting <- mag_sulfur_plotting %>%
-  select(gene, MAG, Virus, p, c, Method, VirusSite, MAGSite) %>%
-  group_by(c, gene) %>%
+  select(gene, MAG, Virus, d, c, Method, VirusSite, MAGSite) %>%
+  group_by(d, c, gene) %>%
   count(gene) %>%
   #arrange() %>%
   mutate(c = str_replace(c, "c__", "")) %>%
+  mutate(d = str_replace(d, "d__", "")) %>%
+  arrange() %>%
   na_if('')
 
 mag_sulfur_plotting$c <- mag_sulfur_plotting$c %>% replace_na("Bacteria") #replace blank cell with Bac
 
+#count number of occurrences in iphop_genus file of unique virus infecting MAG
+sulf_mag_virus_count <- iphop_genus_genome_sulfur_50comp %>%
+  group_by(c, Virus) %>%
+  summarise(count = n_distinct(Virus)) %>%
+  count(c, name = "num_infecting_viruses") %>%
+  mutate(c = str_replace(c, "c__", "")) %>%
+  na_if('') %>%
+  mutate(num_infecting_viruses = paste0("(", num_infecting_viruses, ")"))
+sulf_mag_virus_count$c <- sulf_mag_virus_count$c %>% replace_na("Bacteria") #replace blank cell with Bac
+
+mag_sulfur_plotting <- sulf_mag_virus_count %>%
+  dplyr::select(c, num_infecting_viruses) %>%
+  right_join(mag_sulfur_plotting, by = c("c" = "c"))
+
+mag_sulfur_plotting <- mag_sulfur_plotting %>% 
+  unite(class, c(c, num_infecting_viruses), sep = " ", remove = FALSE)
+
+################################### plotting ########################################
+
+mag_sulfur_plotting$gene <- factor(mag_sulfur_plotting$gene, 
+                                   levels = c("aprA", "dsrA", "dsrB", "dsrD",
+                                           "phsA", "soxB", "soxC", "soxY",
+                                           "fccB", "sor"))
+
+# mag_sulfur_plotting$d <- factor(mag_sulfur_plotting$d)
+mag_sulfur_plotting$c <- factor(mag_sulfur_plotting$c)
+
+# mag_sulfur_plotting_a <- mag_sulfur_plotting %>% 
+#   filter(str_detect(d,"Archaea"))
+# mag_sulfur_plotting_b <- mag_sulfur_plotting %>% 
+#   filter(str_detect(d,"Bacteria"))
+
+dev.off()
+p <- ggplot(mag_sulfur_plotting, aes(y=class, x=gene))+
+  geom_point(aes(size=n, color = n))+
+  scale_size_continuous(range = c(1, 7))+
+  scale_color_continuous(guide="legend", 
+                         type = "viridis")+
+  theme_bw()+
+  theme(strip.background = element_blank(),
+        strip.text.y = element_text(angle=-90),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(angle=45, hjust=-.10),
+        text = element_text(color="black"),
+        legend.position="right")+
+  scale_x_discrete(position="top")+
+  xlab("")+
+  ylab("Microbial Class (Number of Viruses)")+
+  labs(size = "Number of genes",
+       color = "Number of genes") +
+  facet_grid(d ~ ., scales = "free_y", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
+  scale_y_discrete(limits=rev) # has to be this instead of factor
+p  
+
+ggsave("Figures/NSM.activity.MAGs.pdf", width = 10, height = 10)
+  
+  
 # ########################## old ##########################
 # #map
 # iphop_VentPlume_sulfur <- sulfur_cyclers %>%
