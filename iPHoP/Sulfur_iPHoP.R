@@ -76,11 +76,18 @@ iphop_genus_genome_sulfur <- iphop_genus_genome_sulfur %>% rename("Virus" = "gen
 
 #filter for >50% complete
 iphop_genus_genome_sulfur_50comp<-subset(iphop_genus_genome_sulfur, iphop_genus_genome_sulfur$completeness>=50)
+#make sure taxonomy is correct because I noticed errors further down (this seems to be because iphop sometimes doesn't get as specific with taxonomy compared to gtdb results on MAG)
+mag_gtdb_VentPlume$user_genome <- sub(".fasta.noVirusContam", "", mag_gtdb_VentPlume$user_genome)
+
+iphop_genus_genome_sulfur_50comp <- mag_gtdb_VentPlume %>%
+  dplyr::select(user_genome, classification) %>%
+  right_join(iphop_genus_genome_sulfur_50comp, by = c("user_genome" = "Host.genome"))
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% rename("Host.genome" = "user_genome")
 
 ################################### Formatting to write table ########################################
 
 #separate taxonomy
-iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separate(Host.taxonomy, c("d", "p", "c", "o", "f", "g"), 
+iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separate(classification, c("d", "p", "c", "o", "f", "g"), 
                                                               sep= ";")
 
 iphop_genus_genome_sulfur_50comp$VirusSite <- iphop_genus_genome_sulfur_50comp$Virus # copy column
@@ -130,6 +137,24 @@ mag_sulfur_hits <- rbind(mag_sulfur_Axial,mag_sulfur_NotAxial)
 #get rid of e value and bit score so can filter for unique number of hits to a gene
 mag_sulfur_hits <- select(mag_sulfur_hits,-c(evalue,score))
 mag_sulfur_hits <- unique(mag_sulfur_hits)
+
+#map sulfur cycling genes of MAGs onto table for reformatting and plotting
+
+mag_sulfur_plotting <- mag_sulfur_hits %>%
+  dplyr::select(V1, V2, MAG) %>%
+  right_join(iphop_genus_genome_sulfur_50comp, by = c("MAG" = "Host.genome")) %>%
+  rename("accession" = "V1") %>%
+  rename("gene" = "V2")
+
+mag_sulfur_plotting <- mag_sulfur_plotting %>%
+  select(gene, MAG, Virus, p, c, Method, VirusSite, MAGSite) %>%
+  group_by(c, gene) %>%
+  count(gene) %>%
+  #arrange() %>%
+  mutate(c = str_replace(c, "c__", "")) %>%
+  na_if('')
+
+mag_sulfur_plotting$c <- mag_sulfur_plotting$c %>% replace_na("Bacteria") #replace blank cell with Bac
 
 # ########################## old ##########################
 # #map
