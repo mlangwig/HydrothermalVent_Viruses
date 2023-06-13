@@ -193,6 +193,11 @@ mag_sulfur_plotting$gene <- factor(mag_sulfur_plotting$gene,
 # mag_sulfur_plotting$d <- factor(mag_sulfur_plotting$d)
 mag_sulfur_plotting$c <- factor(mag_sulfur_plotting$c)
 
+#log transform values for better visualization
+mag_sulfur_plotting <- mag_sulfur_plotting %>% 
+  mutate(log_n = log(n)) %>%
+  mutate(log_n_plus1 = log_n+1)
+
 # mag_sulfur_plotting_a <- mag_sulfur_plotting %>% 
 #   filter(str_detect(d,"Archaea"))
 # mag_sulfur_plotting_b <- mag_sulfur_plotting %>% 
@@ -200,8 +205,8 @@ mag_sulfur_plotting$c <- factor(mag_sulfur_plotting$c)
 
 dev.off()
 p <- ggplot(mag_sulfur_plotting, aes(y=class, x=gene))+
-  geom_point(aes(size=n, color = n))+
-  scale_size_continuous(range = c(1, 7))+
+  geom_point(aes(size=log_n_plus1, color = log_n_plus1))+ 
+  #scale_size_continuous(range = c(1, 7))+
   scale_color_continuous(guide="legend", 
                          type = "viridis")+
   theme_bw()+
@@ -220,7 +225,7 @@ p <- ggplot(mag_sulfur_plotting, aes(y=class, x=gene))+
   scale_y_discrete(limits=rev) # has to be this instead of factor
 p  
 
-ggsave("Figures/NSM.activity.MAGs.pdf", width = 10, height = 10)
+ggsave("output/iphop_sulfur_50comp_genes.png", width = 7, height = 6)
   
   
 # ########################## old ##########################
