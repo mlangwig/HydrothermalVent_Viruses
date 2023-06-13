@@ -206,9 +206,10 @@ mag_sulfur_plotting <- mag_sulfur_plotting %>%
 dev.off()
 p <- ggplot(mag_sulfur_plotting, aes(y=class, x=gene))+
   geom_point(aes(size=log_n_plus1, color = log_n_plus1))+ 
-  #scale_size_continuous(range = c(1, 7))+
+  scale_size_continuous(breaks = c(1, 3, 5, 7))+
   scale_color_continuous(guide="legend", 
-                         type = "viridis")+
+                         type = "viridis",
+                         breaks = c(1, 3, 5, 7))+
   theme_bw()+
   theme(strip.background = element_blank(),
         strip.text.y = element_text(angle=-90),
@@ -219,8 +220,8 @@ p <- ggplot(mag_sulfur_plotting, aes(y=class, x=gene))+
   scale_x_discrete(position="top")+
   xlab("")+
   ylab("Microbial Class (Number of Viruses)")+
-  labs(size = "Number of genes",
-       color = "Number of genes") +
+  labs(size = "Log number of genes",
+       color = "Log number of genes") +
   facet_grid(d ~ ., scales = "free_y", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
   scale_y_discrete(limits=rev) # has to be this instead of factor
 p  
