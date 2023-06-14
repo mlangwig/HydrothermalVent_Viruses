@@ -65,12 +65,41 @@ sulfur_VentVirus_AMGs$KO <- gsub("E2.7.7.24", "rfbA", sulfur_VentVirus_AMGs$KO)
 sulfur_VentVirus_AMGs$KO <- gsub("E4.2.1.46", "rfbB", sulfur_VentVirus_AMGs$KO)
 
 #subset unique list of gene names so can map metabolic pathway onto it
-sulfur_virus_KO_list <- sulfur_VentVirus_AMGs %>%
-  distinct("KO") %>%
-  pull()
+#REDO THE TOP COMMANDS TO GET THE RIGHT FILE FORMAT BACK - up to make input for plotting
+sulfur_virus_KO_list1 <- sulfur_unbinned_AMGs %>%
+  distinct(KO)
+sulfur_virus_KO_list2 <- sulfur_vMAG_AMGs %>%
+  distinct(KO)
+
+sulfur_virus_KO_list <- rbind(sulfur_virus_KO_list1, sulfur_virus_KO_list2) %>%
+  distinct(KO)
+
+# write.table(sulfur_virus_KO_list, file = "output/sulfur_virus_KO_list.txt", 
+#             col.names = TRUE, row.names = FALSE, sep = "\t", quote = FALSE)
 
 
-  rename("unique(sulfur_VentVirus_AMGs$KO)","KO" = "unique(sulfur_VentVirus_AMGs$KO)")
+############ map the KO pathway to the genes ##############
+KO_pathway <- read.delim(file = "input/sulfur_virus_KO_list_mod.txt", header = TRUE, sep = "\t")
+
+KO_pathway <- KO_pathway %>% 
+  separate(Description, c("Description", NA), sep= ",")
+KO_pathway$Description <- gsub("K23144","UAP", KO_pathway$Description)
+KO_pathway$Description <- gsub("K13522", "nadM", KO_pathway$Description)
+KO_pathway$Description <- gsub("E2.1.1.104", "CCoAOMT", KO_pathway$Description)
+KO_pathway$Description <- gsub("rhnA-cobC", "rhnA", KO_pathway$Description)
+KO_pathway$Description <- gsub("E2.7.7.3A", "coaD", KO_pathway$Description)
+KO_pathway$Description <- gsub("K16150", "GS", KO_pathway$Description)
+KO_pathway$Description <- gsub("E2.7.7.24", "rfbA", KO_pathway$Description)
+KO_pathway$Description <- gsub("E4.2.1.46", "rfbB", KO_pathway$Description)
+
+#map to plotting file
+sulfur_VentVirus_AMGs <- KO_pathway %>%
+  dplyr::select("Description", "Pathway") %>%
+  right_join(sulfur_VentVirus_AMGs, by = c("Description" = "KO")) 
+
+#removing genes I know are not good context by manual examination
+sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
+  filter(!grepl("CS|fadJ|egtC|ATPF0A", Description))
 
 ############# plot ##################
 # library(randomcoloR)
@@ -84,31 +113,34 @@ col_vector<-c("#7FC97F", "#d9d9d9", "#FDC086",
               "#A6761D", "#7570B3", "#e9a3c9",
               "#000000") #"#E6AB02", "#A6761D", "#666666")
 
+
 dev.off()
-p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Virus, x=KO))+
+p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Virus, x=Description))+
   #geom_point(aes(size=KO_count, colour = c))+ 
   geom_point(color='black', shape = 21, stroke = .15, aes(fill=factor(c), size=KO_count)) + # THE SHAPE = 21 IS CRITICAL TO GET THE CIRCLE BORDER
   scale_size_continuous(breaks = c(1, 2, 3), range = c(1, 4))+
   scale_fill_discrete(guide="legend", type = col_vector)+ #type = "viridis for color
   theme_bw()+
   theme(strip.background = element_blank(),
-        strip.text.y = element_text(angle=360, size = 7),
+        strip.text.y = element_text(angle=360, size = 10),
+        strip.text.x = element_text(angle = 90, size = 10),
         #panel.grid = element_blank(),
-        axis.text.x = element_text(angle=45, hjust=-.10, size = 5),
-        axis.text.y = element_text(size = 5),
+        axis.text.x = element_text(angle=45, size = 5.5, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 6.5),
         text = element_text(color="black"),
         legend.position="right",
-        legend.text = element_text(size = 7),
-        legend.title = element_text(size = 8),
-        axis.title.y = element_text(size = 8))+
-  scale_x_discrete(position="top")+
+        legend.text = element_text(size = 10),
+        legend.title = element_text(size = 10),
+        axis.title.y = element_text(size = 10))+
+  scale_x_discrete(position="bottom")+
   xlab("")+
   ylab("Virus")+
   labs(size = "Gene count",
        fill = "Host class") +
-  facet_grid(c ~ ., scales = "free_y", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
+  facet_grid(c ~ Pathway, scales = "free", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
   scale_y_discrete(limits=rev) # has to be this instead of factor
 p  
 
-#ggsave("output/iphop_sulfur_50comp_genes.png", width = 7, height = 6)
+ggsave("output/VentVirus_AVGs_plot.png", p, width = 17, height = 15)
 
+#, scales = "free_y", space = "free"
