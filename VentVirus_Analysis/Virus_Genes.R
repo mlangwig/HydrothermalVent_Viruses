@@ -10,20 +10,102 @@ sulfur_unbinned_master <- master_table_unbinned[master_table_unbinned$scaffold %
 
 non_AMGs <- read.delim("input/non_AMG_list.txt", header = FALSE)
 ##################### Filter for AMGs #####################
-sulfur_vMAG_AMGs <- sulfur_vMAG_master %>% filter(grepl("AMG", AMG))
-sulfur_unbinned_AMGs <- sulfur_unbinned_master %>% filter(grepl("AMG", AMG))
 
-#remove non-AMGs that I know based on mmseqs protein clustering of all viruses - things that are present at all geographically distinct Vent sites
+##################### Filter for AMGs bordered by VOGs #####################
+
+sulfur_unbinned_master_temp <- sulfur_unbinned_master %>%
+  select(c("protein", "KO", "AMG", "VOG"))
+
+sulfur_vMAG_master_temp <- sulfur_vMAG_master %>%
+  select(c("protein", "KO", "AMG", "VOG"))
+
+sulfur_VentVirus_AMGs_filtered <- rbind(sulfur_unbinned_master_temp, sulfur_vMAG_master_temp)
+
+library(DescTools)
+
+sulfur_VentVirus_AMGs_filtered <- sulfur_VentVirus_AMGs_filtered[OrderMixed(sulfur_VentVirus_AMGs_filtered$protein), ]
+sulfur_VentVirus_AMGs_filtered$protein2 <- sub("_[^_]+$", "", sulfur_VentVirus_AMGs_filtered$protein)
+
+test <- sulfur_VentVirus_AMGs_filtered %>%
+  na_if('')
+
+## Loop for detecting AMG and Vogs
+protein.vec <- unique(test$protein2)
+amg.vog.filter <- data.frame(protein = NA,
+                             KO = NA,
+                             AMG = NA,
+                             VOG = NA,
+                             protein2 = NA)
+
+for(i in 1:length(protein.vec)){
+  
+  ## Grab the protein
+  protein.tmp <- protein.vec[i]
+  
+  ## Subset by the protein
+  test.tmp <- test[test$protein2 == protein.tmp, ]
+  
+  ## Look for any AMG
+  amg.detect <- any(!is.na(test.tmp$AMG))
+  
+  ## If this is true then proceed
+  if(amg.detect == TRUE){
+  
+    ## Where are the AMGs
+    amg.pos <- which(!is.na(test.tmp$AMG))
+    
+    ## Where are the VOGS
+    vog.pos <- which(!is.na(test.tmp$VOG))
+    
+    ## Where are they the same
+    amg.vog.match <- which(!is.na(test.tmp$AMG) & !is.na(test.tmp$VOG))
+    
+    ## See if we have at least 1 match
+    ## If so we subset the DF for these row since we definitely want them
+    if(length(amg.vog.match) >= 1){
+      match.df <- test.tmp[amg.vog.match, ]
+      amg.vog.filter <- rbind(amg.vog.filter, match.df)
+    }
+    
+    ## See where we have an amg that doesn't match the amg.vog.match
+    amg.pos <- amg.pos[!amg.pos %in% amg.vog.match]
+    
+    ## If we have some non-matches
+    if(length(amg.pos) >= 1){
+    for(j in 1:length(amg.pos)){
+      amg.pos.tmp <- amg.pos[j]
+      ## Test if the vog position has an amg before or after
+      if(amg.pos.tmp < max(vog.pos) & amg.pos.tmp > min(vog.pos)){
+        ## if so we keep these rows
+        row.keep <- c(amg.vog.match, amg.pos.tmp)
+        amg.sandwich <- test.tmp[row.keep, ]
+        amg.vog.filter <- rbind(amg.vog.filter, amg.sandwich)
+      }
+    }
+  
+    }
+  } else {
+    print(paste0("No AMGs detected for protein iteration:", i))
+  }
+  }
+
+amg.vog.filter <- amg.vog.filter[-1, ]
+
+####### remove non-AMGs that I know based on mmseqs protein #######
+############ clustering of all viruses - things that are present 
+############ at all geographically distinct Vent sites
 `%notin%` <- Negate(`%in%`)
 
-sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs[sulfur_vMAG_AMGs$KO %notin% non_AMGs$V1,] #subset table using list of names
-sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs[sulfur_vMAG_AMGs$Pfam %notin% non_AMGs$V1,] #subset table using list of names
-sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs[sulfur_vMAG_AMGs$VOG %notin% non_AMGs$V1,] #subset table using list of names
+amg.vog.filter <- amg.vog.filter[amg.vog.filter$KO %notin% non_AMGs$V1,] #subset table using list of names
+#sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs[sulfur_vMAG_AMGs$Pfam %notin% non_AMGs$V1,] #subset table using list of names
+amg.vog.filter <- amg.vog.filter[amg.vog.filter$VOG %notin% non_AMGs$V1,] #subset table using list of names
 
-sulfur_unbinned_AMGs <- sulfur_unbinned_AMGs[sulfur_unbinned_AMGs$KO %notin% non_AMGs$V1,] #subset table using list of names
-sulfur_unbinned_AMGs <- sulfur_unbinned_AMGs[sulfur_unbinned_AMGs$Pfam %notin% non_AMGs$V1,] #subset table using list of names
-sulfur_unbinned_AMGs <- sulfur_unbinned_AMGs[sulfur_unbinned_AMGs$VOG %notin% non_AMGs$V1,]
-##################### Filter for those bordered by VOGs #####################
+#### map the filtered list back to meaningful virus genome names
+
+test <- sulfur_vMAG_master[sulfur_vMAG_master$KO %in% amg.vog.filter$KO,] #subset table using list of names
+
+sulfur_vMAG_AMGs <- sulfur_vMAG_master %>% filter(grepl("AMG", AMG))
+sulfur_unbinned_AMGs <- sulfur_unbinned_master %>% filter(grepl("AMG", AMG))
 
 ##################### Make input for plotting #####################
 sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs %>% 
@@ -100,6 +182,10 @@ sulfur_VentVirus_AMGs <- KO_pathway %>%
 #removing genes I know are not good context by manual examination
 sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
   filter(!grepl("CS|fadJ|egtC|ATPF0A", Description))
+  
+sulfur_VentVirus_AMGs <- unique(sulfur_VentVirus_AMGs)
+
+################### vlookup to
 
 ############# plot ##################
 # library(randomcoloR)
@@ -141,6 +227,6 @@ p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Virus, x=Description))+
   scale_y_discrete(limits=rev) # has to be this instead of factor
 p  
 
-ggsave("output/VentVirus_AVGs_plot.png", p, width = 17, height = 15)
+#ggsave("output/VentVirus_AVGs_plot.png", p, width = 17, height = 15)
 
-#, scales = "free_y", space = "free"
+################### Spencer helping with
