@@ -9,6 +9,7 @@ sulfur_vMAG_master <- master_table_vMAGs[master_table_vMAGs$vMAG %in% sulfur_vir
 sulfur_unbinned_master <- master_table_unbinned[master_table_unbinned$scaffold %in% sulfur_viruses$Virus,]
 
 non_AMGs <- read.delim("input/non_AMG_list.txt", header = FALSE)
+
 ##################### Filter for AMGs #####################
 
 ##################### Filter for AMGs bordered by VOGs #####################
@@ -96,16 +97,17 @@ amg.vog.filter <- amg.vog.filter[-1, ]
 ############ at all geographically distinct Vent sites
 `%notin%` <- Negate(`%in%`)
 
-amg.vog.filter <- amg.vog.filter[amg.vog.filter$KO %notin% non_AMGs$V1,] #subset table using list of names
-#sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs[sulfur_vMAG_AMGs$Pfam %notin% non_AMGs$V1,] #subset table using list of names
-amg.vog.filter <- amg.vog.filter[amg.vog.filter$VOG %notin% non_AMGs$V1,] #subset table using list of names
+amg.vog.filter <- amg.vog.filter[amg.vog.filter$KO %notin% non_AMGs$V1,] 
+#sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs[sulfur_vMAG_AMGs$Pfam %notin% non_AMGs$V1,] 
+amg.vog.filter <- amg.vog.filter[amg.vog.filter$VOG %notin% non_AMGs$V1,] 
 
 #### map the filtered list back to meaningful virus genome names
 
-test <- sulfur_vMAG_master[sulfur_vMAG_master$KO %in% amg.vog.filter$KO,] #subset table using list of names
+sulfur_vMAG_AMGs <- sulfur_vMAG_master[sulfur_vMAG_master$KO %in% amg.vog.filter$KO,] 
+sulfur_unbinned_AMGs <- sulfur_unbinned_master[sulfur_unbinned_master$KO %in% amg.vog.filter$KO,]
 
-sulfur_vMAG_AMGs <- sulfur_vMAG_master %>% filter(grepl("AMG", AMG))
-sulfur_unbinned_AMGs <- sulfur_unbinned_master %>% filter(grepl("AMG", AMG))
+# sulfur_vMAG_AMGs <- sulfur_vMAG_master %>% filter(grepl("AMG", AMG))
+# sulfur_unbinned_AMGs <- sulfur_unbinned_master %>% filter(grepl("AMG", AMG))
 
 ##################### Make input for plotting #####################
 sulfur_vMAG_AMGs <- sulfur_vMAG_AMGs %>% 
@@ -124,10 +126,12 @@ sulfur_VentVirus_AMGs <- rbind(sulfur_vMAG_AMGs, sulfur_unbinned_AMGs)
 sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
   group_by(Virus) %>%
   count(KO, name = "KO_count")
+
 #add metadata
 sulfur_VentVirus_AMGs <- sulfur_viruses %>%
   dplyr::select("Virus", "c") %>%
-  right_join(sulfur_VentVirus_AMGs, by = c("Virus" = "Virus")) 
+  right_join(sulfur_VentVirus_AMGs, by = c("Virus" = "Virus")) %>%
+  unique()
 
 sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
   mutate(c = str_replace(c, "c__", "")) %>%
@@ -177,13 +181,33 @@ KO_pathway$Description <- gsub("E4.2.1.46", "rfbB", KO_pathway$Description)
 #map to plotting file
 sulfur_VentVirus_AMGs <- KO_pathway %>%
   dplyr::select("Description", "Pathway") %>%
-  right_join(sulfur_VentVirus_AMGs, by = c("Description" = "KO")) 
+  right_join(sulfur_VentVirus_AMGs, by = c("Description" = "KO")) %>%
+  unique()
 
-#removing genes I know are not good context by manual examination
-sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
-  filter(!grepl("CS|fadJ|egtC|ATPF0A", Description))
+# #removing genes I know are not good context by manual examination
+# sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
+#   filter(!grepl("CS|fadJ|egtC|ATPF0A", Description))
+#   
+# sulfur_VentVirus_AMGs <- unique(sulfur_VentVirus_AMGs)
+
+### add column for site of virus to try and make plot smaller
+sulfur_VentVirus_AMGs$VirusSite <- sulfur_VentVirus_AMGs$Virus # copy column
+sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>% 
+  separate(VirusSite, c("VirusSite", NA), sep= "(?=_NODE|_k95|_scaffold|_vRhyme)") %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*ELSC.*","Lau_Basin")) %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*Brothers.*","Brothers_Volcano")) %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*Guaymas.*","Guaymas_Basin")) %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*MAR.*","Mid_Atlantic_Ridge")) %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*EPR.*","East_Pacific_Rise")) %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*Cayman.*","Mid_Cayman_Rise")) %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*Lau.*","Lau_Basin")) %>%
+  mutate_at(vars(VirusSite), ~ str_replace(., ".*Axial.*","Axial_Seamount")) 
+
+#to count by Site rather than by Virus
+test <- sulfur_VentVirus_AMGs %>%
+  group_by(VirusSite, c, Description, Pathway) %>%
+  summarise("KO_count_perSite" = sum(KO_count))
   
-sulfur_VentVirus_AMGs <- unique(sulfur_VentVirus_AMGs)
 
 ################### vlookup to
 
@@ -201,7 +225,7 @@ col_vector<-c("#7FC97F", "#d9d9d9", "#FDC086",
 
 
 dev.off()
-p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Virus, x=Description))+
+p <- ggplot(sulfur_VentVirus_AMGs, aes(y=VirusSite, x=Description))+
   #geom_point(aes(size=KO_count, colour = c))+ 
   geom_point(color='black', shape = 21, stroke = .15, aes(fill=factor(c), size=KO_count)) + # THE SHAPE = 21 IS CRITICAL TO GET THE CIRCLE BORDER
   scale_size_continuous(breaks = c(1, 2, 3), range = c(1, 4))+
@@ -211,7 +235,7 @@ p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Virus, x=Description))+
         strip.text.y = element_text(angle=360, size = 10),
         strip.text.x = element_text(angle = 90, size = 10),
         #panel.grid = element_blank(),
-        axis.text.x = element_text(angle=45, size = 5.5, vjust = 1, hjust = 1),
+        axis.text.x = element_text(angle=45, size = 7, vjust = 1, hjust = 1),
         axis.text.y = element_text(size = 6.5),
         text = element_text(color="black"),
         legend.position="right",
@@ -220,13 +244,13 @@ p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Virus, x=Description))+
         axis.title.y = element_text(size = 10))+
   scale_x_discrete(position="bottom")+
   xlab("")+
-  ylab("Virus")+
+  ylab("Virus Site")+
   labs(size = "Gene count",
        fill = "Host class") +
   facet_grid(c ~ Pathway, scales = "free", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
   scale_y_discrete(limits=rev) # has to be this instead of factor
 p  
 
-#ggsave("output/VentVirus_AVGs_plot.png", p, width = 17, height = 15)
+ggsave("output/VentVirus_AVGs_plot.png", p, width = 17, height = 15)
 
 ################### Spencer helping with
