@@ -790,6 +790,11 @@ rename &#39;s/_metaspades_scaffolds.min1000//&#39; *.faa</code></pre>
 <pre class="bash"><code>conda install -c bioconda skani
 
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c ../Virus_Genomes/fna/unbinned_VentViruses.fna -d ../vRhyme/fna -x .fasta --outdir . &amp;</code></pre>
+<div id="if-you-want-to-parse-the-skani-output-for-aligned-fraction" class="section level3">
+<h3>If you want to parse the skani output for aligned fraction</h3>
+<p>To only get output for viral genomes where aligned fraction is &gt;50%</p>
+<pre class="bash"><code>awk &#39;{ if ($4 &gt;= 50 &amp;&amp; $5 &gt;= 50) print $1 &quot;\t&quot; $2 &quot;\t&quot; $3 &quot;\t&quot; $4 &quot;\t&quot; $5 &quot;\t&quot; $6 &quot;\t&quot; $7 }&#39; skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv &gt; skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv</code></pre>
+</div>
 </div>
 <div id="cluster-the-skani-results-using-mcl" class="section level2">
 <h2>Cluster the skani results using mcl</h2>

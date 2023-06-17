@@ -204,7 +204,7 @@ sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
   mutate_at(vars(VirusSite), ~ str_replace(., ".*Axial.*","Axial_Seamount")) 
 
 #to count by Site rather than by Virus
-test <- sulfur_VentVirus_AMGs %>%
+sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
   group_by(VirusSite, c, Description, Pathway) %>%
   summarise("KO_count_perSite" = sum(KO_count))
   
@@ -225,32 +225,38 @@ col_vector<-c("#7FC97F", "#d9d9d9", "#FDC086",
 
 
 dev.off()
-p <- ggplot(sulfur_VentVirus_AMGs, aes(y=VirusSite, x=Description))+
+p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Description, x=VirusSite))+
   #geom_point(aes(size=KO_count, colour = c))+ 
-  geom_point(color='black', shape = 21, stroke = .15, aes(fill=factor(c), size=KO_count)) + # THE SHAPE = 21 IS CRITICAL TO GET THE CIRCLE BORDER
-  scale_size_continuous(breaks = c(1, 2, 3), range = c(1, 4))+
+  geom_point(color='black', shape = 21, stroke = .15, aes(fill=factor(c), size=KO_count_perSite)) + # THE SHAPE = 21 IS CRITICAL TO GET THE CIRCLE BORDER
+  #scale_size_continuous(breaks = c(1, 2, 3), range = c(1, 4))+
   scale_fill_discrete(guide="legend", type = col_vector)+ #type = "viridis for color
   theme_bw()+
   theme(strip.background = element_blank(),
-        strip.text.y = element_text(angle=360, size = 10),
-        strip.text.x = element_text(angle = 90, size = 10),
+        strip.text.y = element_text(angle=360, size = 8),
+        strip.text.x = element_text(angle = 90, size = 8),
         #panel.grid = element_blank(),
         axis.text.x = element_text(angle=45, size = 7, vjust = 1, hjust = 1),
-        axis.text.y = element_text(size = 6.5),
+        axis.text.y = element_text(size = 7),
         text = element_text(color="black"),
         legend.position="right",
-        legend.text = element_text(size = 10),
-        legend.title = element_text(size = 10),
-        axis.title.y = element_text(size = 10))+
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 8),
+        axis.title.y = element_text(size = 10),
+        panel.spacing = unit(.15, "lines"))+
   scale_x_discrete(position="bottom")+
   xlab("")+
   ylab("Virus Site")+
   labs(size = "Gene count",
        fill = "Host class") +
-  facet_grid(c ~ Pathway, scales = "free", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
-  scale_y_discrete(limits=rev) # has to be this instead of factor
+  facet_grid(Pathway ~ c, scales = "free", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
+  scale_y_discrete(limits=rev) # has to be this instead of factor 
 p  
 
-ggsave("output/VentVirus_AVGs_plot.png", p, width = 17, height = 15)
+ggsave("output/VentVirus_AVGs_plot_bySite_long.png", p, width = 9, height = 11)
+
+
+
+
+
 
 ################### Spencer helping with

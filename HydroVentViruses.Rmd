@@ -708,6 +708,13 @@ conda install -c bioconda skani
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c ../Virus_Genomes/fna/unbinned_VentViruses.fna -d ../vRhyme/fna -x .fasta --outdir . &
 ```
 
+### If you want to parse the skani output for aligned fraction
+
+To only get output for viral genomes where aligned fraction is >50%
+```{bash, eval = FALSE}
+awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv > skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv
+```
+
 ## Cluster the skani results using mcl
 
 1. Preprocess the file using polars. This utilizes preprocess.py written by Cody.
