@@ -189,6 +189,7 @@
             <li><a href="#focus-on-viruses-that-infect-sulfur-cycling-microbes">Focus on viruses that infect sulfur cycling microbes</a>
             <ul>
             <li><a href="#annotating-microbial-mags">Annotating microbial MAGs</a></li>
+            <li><a href="#annotations-of-blast-based-iphop-matches">Annotations of blast-based iphop matches</a></li>
             </ul></li>
             </ul>
           </div>
@@ -1110,6 +1111,30 @@ python /storage1/data14/for_maggie/genomad/fix_genomad_taxonomy.py -i vUnbinned_
 <p><strong>File that is named subset_sulfurHMM_MAG_names_final_uniq.txt contains the names of microbial MAGs that encode aprA, dsrABD, fccB, soxBCY, or phsA</strong></p>
 <p>Wild sed commands to get rid of annoying names…</p>
 <pre class="bash"><code>sed &#39;s/_355-202/\t/2&#39; subset_sulfurHMM_MAGs_final_uniq.txt | cut -f1 | sed &#39;s/_354-166/\t/2&#39; | sed &#39;s/_4571-419/\t/2&#39; | sed &#39;s/_4562-384/\t/2&#39; | sed &#39;s/_4562-384/\t/2&#39; | sed &#39;s/_4561-380/\t/2&#39; | sed &#39;s/_4559-240/\t/2&#39; | sed &#39;s/_4281-140/\t/2&#39; | sed &#39;s/_4562-384/\t/2&#39; | sed &#39;s/_PIR-30/\t/2&#39; | sed &#39;s/_V2/\t/2&#39; | sed &#39;s/_T2/\t/2&#39; | sed &#39;s/_T11/\t/2&#39; | sed &#39;s/_T10/\t/2&#39; | sed &#39;s/_M2/\t/2&#39; | sed &#39;s/_M17/\t/2&#39; | sed &#39;s/_M1/\t/2&#39; | cut -f1 | sed &#39;s/_A3/\t/2&#39; | sed &#39;s/_A1/\t/2&#39; | sed &#39;s/_134-614/\t/2&#39; | sed &#39;s/_132-544/\t/2&#39; | sed &#39;s/_131-447/\t/2&#39; | sed &#39;s/_128-326/\t/2&#39; | sed &#39;s/_S147/\t/2&#39; | sed &#39;s/_S146/\t/2&#39; | sed &#39;s/_S145/\t/2&#39; | sed &#39;s/_S144/\t/2&#39; | sed &#39;s/_S14/\t/2&#39;| cut -f1 | sed &#39;s/_S13/\t/2&#39; | cut -f1 | sed &#39;s/_S0/\t/2&#39; | cut -f1 | sort | uniq &gt; subset_sulfurHMM_MAGs_final_uniq_namesFixed.txt</code></pre>
+</div>
+</div>
+<div id="annotations-of-blast-based-iphop-matches" class="section level2">
+<h2>Annotations of blast-based iphop matches</h2>
+<p>What are the genes that link viruses and hosts based on blast output of iphop?</p>
+<ol style="list-style-type: decimal">
+<li>Get viruses that infect sulfur cyclers from BLAST file</li>
+</ol>
+<pre class="bash"><code>for i in `cat sulfur_Virus_list.txt`; do grep -w $i ../../iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb/blastgenomes_seqids.txt &gt;&gt; blastgenomes_seqids_sulfur.txt; done</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Then grab the matches to sulfur cycling MAGs, leave out ref genomes</li>
+</ol>
+<pre class="bash"><code>for i in `cat sulfur_MAG_list_50comp.txt`; do grep -w $i blastgenomes_seqids_sulfur.txt &gt;&gt; blastgenomes_seqids_sulfur_VirusMAG.txt; done</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Get coordinates for MAGs</li>
+</ol>
+<pre class="bash"><code>cut -f3,6,7 blastgenomes_seqids_sulfur_VirusMAG.txt &gt; MAG_coordinates.txt
+
+bedtools getfasta -fi ../../../MAGs_microbial/PlumeVent_MAGs_3872.fna -bed MAG_coordinates.txt -fo PlumeVent_MAGs_sulfurVirus_blastGenes.fna -s</code></pre>
+<div id="trying-blastp-because-parsing-is-hard" class="section level3">
+<h3>Trying blastp because parsing is hard</h3>
+<pre class="bash"><code>diamond makedb --in sulfur_MAGs.faa -d sulfur_MAGs.db
+
+diamond blastp --db GenomesToBlast/sulfur_MAGs.db.dmnd --query GenomesToBlast/sulfur_vUnbinned_vMAGs.faa --out VentPlume_Virus_toMAGs_diamond.txt --id 80 --evalue 1e-3 --threads 25 --outfmt 6 qtitle stitle pident length qstart qend sstart send evalue bitscore --max-target-seqs 1 &amp;</code></pre>
 </div>
 </div>
 </div>

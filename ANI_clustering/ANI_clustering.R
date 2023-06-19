@@ -173,12 +173,13 @@ write.table(dRep_clusters_noSingle_plot,
 library()
 
 
-
-
-
 ############################################ mcl ####################################################
 
 mcl_clusters <- read.csv2(file = "Input/vUnbinned_vMAGs_PlumeVents.clusters.csv", sep = ",", header = FALSE)
+
+#mcl 1kb clusters with 50AF
+mcl_clusters <- read.csv2(file = "Input/out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv", sep = ",", header = FALSE)
+
 
 #add id number to rows
 mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
@@ -194,9 +195,9 @@ mcl_clusters <- mcl_clusters %>%
 mcl_clusters <- rename(mcl_clusters, "Site" = "value")
 
 #write the mcl table in this format
-write.table(mcl_clusters,
-            file = "Output/mcl_formatted_table_VentPlumeViruses.tsv", sep = "\t", quote = FALSE,
-            row.names = FALSE, col.names = TRUE)
+# write.table(mcl_clusters,
+#             file = "Output/mcl_formatted_table_VentPlumeViruses.tsv", sep = "\t", quote = FALSE,
+#             row.names = FALSE, col.names = TRUE)
 
 #replace strings with Vent or Plume
 mcl_clusters$Site <- gsub(".*Lau_Basin.*","Plume",mcl_clusters$Site) #the placement of the periods is crucial for replacing whole string
@@ -219,9 +220,11 @@ mcl_clusters_noSingle <- mcl_clusters %>%
 #number of clusters with more than 1 rep according to dRep
 length(unique(mcl_clusters_noSingle$id))
 #2797
+#1,020 with 50AF
 
 #number of clusters with 1+ rep from Plume and Vent:
 table(mcl_clusters_noSingle$Site)
+#699 plume and 1591 vent with 50AF
 
 #group by secondary cluster, count occurrences of Site
 mcl_count <- mcl_clusters_noSingle %>% group_by(id) %>% count(Site)
@@ -231,6 +234,8 @@ mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
 ######################### mcl get counts of clusters across vents #######################
 
 mcl_clusters <- read.csv2(file = "Input/vUnbinned_vMAGs_PlumeVents.clusters.csv", sep = ",", header = FALSE)
+#mcl 1kb clusters with 50AF
+mcl_clusters <- read.csv2(file = "Input/out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv", sep = ",", header = FALSE)
 
 #add id number to rows
 mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
@@ -244,13 +249,8 @@ mcl_clusters <- mcl_clusters %>%
   na.omit()
 #rename column
 mcl_clusters <- rename(mcl_clusters, "Site" = "value")
-
-
-#replace strings with Vent or Plume
-mcl_clusters$Site <- gsub(".*Lau_Basin.*","Plume",mcl_clusters$Site) #the placement of the periods is crucial for replacing whole string
-mcl_clusters$Site <- gsub(".*Cayman.*","Plume",mcl_clusters$Site)
-mcl_clusters$Site <- gsub(".*Guaymas_Basin.*","Plume",mcl_clusters$Site)
-mcl_clusters$Site <- gsub(".*Axial.*","Plume",mcl_clusters$Site)
+#remove Pseudomonas contam cluster
+mcl_clusters <- mcl_clusters %>% filter(id!="1")
 
 #replace strings with 7 general site names
 mcl_clusters$Site <- gsub(".*Lau_Basin.*","Lau_Basin",mcl_clusters$Site) #the placement of the periods is crucial for replacing whole string
@@ -279,7 +279,7 @@ mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
 ############################ plot mcl across sites ###########################
 
 #dRep drop Pseudomonas viruses cluster because contamination
-mcl_count <- mcl_count %>% filter(id!="3")
+#mcl_count <- mcl_count %>% filter(id!="3") 
 
 #see if any cluster now occurs twice
 mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
@@ -291,7 +291,7 @@ mcl_count_test <- mcl_count %>%
   
 #plot
 dev.off()
-plot <- mcl_count_3plus %>%
+plot <- mcl_count %>%
   ggplot(aes(x = as.character(id), y = as.numeric(n), fill = Site)) + 
   geom_bar(stat = "identity") +
   #scale_fill_manual(values = col_vector) +
@@ -316,3 +316,81 @@ plot
 
 ggsave(plot, filename = "Output/mcl_clusters_1kb_distant_sites.png", dpi = 500, height = 5, width = 6)
 ggsave(plot, filename = "Output/mcl_clusters_5kb_90ani_distant_sites.png", dpi = 500)
+
+############################ see sulfur virus relatedness ###########################
+
+sulfur_viruses <- read.csv(file = "../iPHoP/output/iphop_VentPlume_sulfur_50comp.csv")
+sulfur_viruses <- sulfur_viruses %>% select(Virus)
+sulfur_viruses <- unique(sulfur_viruses)
+
+#mcl 1kb clusters with 50AF
+mcl_clusters <- read.csv2(file = "Input/out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv", sep = ",", header = FALSE)
+
+#add id number to rows
+mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
+#melt by id
+mcl_clusters <- melt(mcl_clusters, id.vars = "id")
+#drop variable column
+mcl_clusters <- select(mcl_clusters, -variable)
+#drop blanks in value column
+mcl_clusters <- mcl_clusters %>%
+  na_if("") %>%
+  na.omit()
+#rename column
+mcl_clusters <- rename(mcl_clusters, "Virus" = "value")
+#remove Pseudomonas contam cluster
+mcl_clusters <- mcl_clusters %>% filter(id!="1")
+
+#fix vRhyme virus genome names
+#separate the vrhyme and non-vrhyme to make life easier
+mcl_clusters_vrhyme <- mcl_clusters %>% filter(grepl("vRhyme", Virus))
+mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% separate(Virus, c("Virus", NA), 
+                                                        sep= "(?=_scaffold|_NODE|_k95)")
+mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% separate(Virus, c("Virus", "Site"), 
+                                                        sep= "(__)")
+mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% 
+  mutate(Virus = str_replace(Virus, "vRhyme_", "vRhyme_bin_"))
+mcl_clusters_vrhyme$Virus <- paste0(mcl_clusters_vrhyme$Site, "_", mcl_clusters_vrhyme$Virus)
+mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% select(-Site)
+#put the data frames back together again
+mcl_clusters <- mcl_clusters %>% filter(!grepl("vRhyme", Virus))
+mcl_clusters <- rbind(mcl_clusters_vrhyme, mcl_clusters)
+
+#filter for only clusters containing sulfur cycling viruses
+mcl_clusters_sulfur <- mcl_clusters[mcl_clusters$Virus %in% sulfur_viruses$Virus,] #subset table using list of names
+#get list of IDs
+mcl_clusters_sulfur <- mcl_clusters_sulfur %>% select(id)
+mcl_clusters_sulfur <- unique(mcl_clusters_sulfur)
+#27 unique clusters with 50comp sulfur cycling viruses
+
+mcl_clusters_sulfur <- mcl_clusters[mcl_clusters$id %in% mcl_clusters_sulfur$id,]
+
+####################### add average ANI value to mcl sulfur cluster table ###########################
+skani_ANI <- read.delim2(file = "Input/skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv", header = FALSE)
+#fix vRhyme names
+skani_ANI_vrhyme <- skani_ANI %>% 
+  
+
+
+#Add counts to filter for clusters that occur more than once (not a singleton)
+mcl_clusters_noSingle <- mcl_clusters %>%
+  add_count(id) %>% 
+  filter(n!=1) %>%
+  select(-n)
+
+#number of clusters with 1+ rep from all sites:
+table(mcl_clusters_noSingle$Site)
+
+#group by secondary cluster, count occurrences of Site
+mcl_count <- mcl_clusters_noSingle %>% group_by(id) %>% count(Site)
+#see if any cluster now occurs twice
+mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
+
+
+
+
+
+
+
+
+

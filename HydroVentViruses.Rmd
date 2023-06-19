@@ -708,13 +708,6 @@ conda install -c bioconda skani
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c ../Virus_Genomes/fna/unbinned_VentViruses.fna -d ../vRhyme/fna -x .fasta --outdir . &
 ```
 
-### If you want to parse the skani output for aligned fraction
-
-To only get output for viral genomes where aligned fraction is >50%
-```{bash, eval = FALSE}
-awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv > skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv
-```
-
 ## Cluster the skani results using mcl
 
 1. Preprocess the file using polars. This utilizes preprocess.py written by Cody.
@@ -781,6 +774,35 @@ cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc
 cut -f1,2 mcl_formatted_table_VentPlumeViruses.tsv | sort | sed 's/__/\t/g' | sed 's/vRhyme_/vRhyme_bin_/g' | sed 's/_k95/\t/g' | sed 's/_NODE/\t/g' | sed 's/_scaffold/\t/g' | grep "vRhyme" | cut -f1,2,3 | awk '{ print $1 " " $3 "_" $2}' > mcl_vMAGs_renamed.txt
 ```
 **Used this to create mcl_formatted_table_VentPlumeViruses_renamedFinal, which is the final mcl cluster file with the right names for all 1kb viruses from Plume and Vent**
+
+### Redoing mcl clustering of 1kb PlumeVent skani output for higher aligned fraction
+
+1. To only get output for viral genomes where aligned fraction is >50%
+```{bash, eval = FALSE}
+awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv > skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv
+```
+
+2. Preprocess that file - I had to do this on sulfur because needed polars from mcl conda environment. Remember has to be older version if you're getting the error about sep vs separation
+```{bash, eval = FALSE}
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv -o skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv
+```
+**Notice that lowest value from this processed file is much higher than the lowest from the old processed file**
+
+3. Run mcxload
+```{bash, eval = FALSE}
+mcxload -abc skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv -o mcl/vUnbinned_vMAGs_PlumeVents_50AF.mci -write-tab mcl/vUnbinned_vMAGs_PlumeVents_50AF.mcxload
+```
+
+4. Run mcl
+```{bash, eval = FALSE}
+mcl vUnbinned_vMAGs_PlumeVents_50AF.mci -use-tab vUnbinned_vMAGs_PlumeVents_50AF.mcxload -o out_vUnbinned_vMAGs_PlumeVents_50AF.clusters
+```
+1,021 clusters found
+
+5. Convert to csv
+```{bash, eval = FALSE}
+sed 's/\t/,/g' out_vUnbinned_vMAGs_PlumeVents_50AF.clusters > out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv
+```
 
 ## Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses
 
@@ -1099,11 +1121,32 @@ Wild sed commands to get rid of annoying names...
 sed 's/_355-202/\t/2' subset_sulfurHMM_MAGs_final_uniq.txt | cut -f1 | sed 's/_354-166/\t/2' | sed 's/_4571-419/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_4561-380/\t/2' | sed 's/_4559-240/\t/2' | sed 's/_4281-140/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_PIR-30/\t/2' | sed 's/_V2/\t/2' | sed 's/_T2/\t/2' | sed 's/_T11/\t/2' | sed 's/_T10/\t/2' | sed 's/_M2/\t/2' | sed 's/_M17/\t/2' | sed 's/_M1/\t/2' | cut -f1 | sed 's/_A3/\t/2' | sed 's/_A1/\t/2' | sed 's/_134-614/\t/2' | sed 's/_132-544/\t/2' | sed 's/_131-447/\t/2' | sed 's/_128-326/\t/2' | sed 's/_S147/\t/2' | sed 's/_S146/\t/2' | sed 's/_S145/\t/2' | sed 's/_S144/\t/2' | sed 's/_S14/\t/2'| cut -f1 | sed 's/_S13/\t/2' | cut -f1 | sed 's/_S0/\t/2' | cut -f1 | sort | uniq > subset_sulfurHMM_MAGs_final_uniq_namesFixed.txt
 ```
 
+## Annotations of blast-based iphop matches
 
+What are the genes that link viruses and hosts based on blast output of iphop?
 
+1. Get viruses that infect sulfur cyclers from BLAST file
+```{bash, eval = FALSE}
+for i in `cat sulfur_Virus_list.txt`; do grep -w $i ../../iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb/blastgenomes_seqids.txt >> blastgenomes_seqids_sulfur.txt; done
+```
 
+2. Then grab the matches to sulfur cycling MAGs, leave out ref genomes
+```{bash, eval = FALSE}
+for i in `cat sulfur_MAG_list_50comp.txt`; do grep -w $i blastgenomes_seqids_sulfur.txt >> blastgenomes_seqids_sulfur_VirusMAG.txt; done
+```
 
+3. Get coordinates for MAGs
+```{bash, eval = FALSE}
+cut -f3,6,7 blastgenomes_seqids_sulfur_VirusMAG.txt > MAG_coordinates.txt
 
+bedtools getfasta -fi ../../../MAGs_microbial/PlumeVent_MAGs_3872.fna -bed MAG_coordinates.txt -fo PlumeVent_MAGs_sulfurVirus_blastGenes.fna -s
+```
 
+### Trying blastp because parsing is hard
 
+```{bash, eval = FALSE}
+diamond makedb --in sulfur_MAGs.faa -d sulfur_MAGs.db
+
+diamond blastp --db GenomesToBlast/sulfur_MAGs.db.dmnd --query GenomesToBlast/sulfur_vUnbinned_vMAGs.faa --out VentPlume_Virus_toMAGs_diamond.txt --id 80 --evalue 1e-3 --threads 25 --outfmt 6 qtitle stitle pident length qstart qend sstart send evalue bitscore --max-target-seqs 1 &
+```
 
