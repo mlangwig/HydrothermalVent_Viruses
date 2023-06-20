@@ -14,42 +14,85 @@ rownames(mat_df_2) <- mat_df[,1]
 #convert data to numeric
 mat_df_2 <- mat_df_2 %>% mutate_at(2:322, as.numeric)
 
+
+###### Filter out rows where the only ANI is 100 to itself #####################
+
+r <- rowSums(mat_df_2) #get sum of rows
+rind <- which(r > 100) #get those that have sum >100
+csum <- colSums(mat_df_2) 
+cind <- which(csum > 100) #same for cols as above
+ani_sulfur_filter <- mat_df_2[rind, cind] #filter for rows and cols that were >100 and make new df
+
+###stats
+min(ani_sulfur_filter[ani_sulfur_filter > 0])
+# Lowest ANI among viruses without hit to only itself is 82.54%
+# 80 sulfur viruses that have ≥82.54% ANI to each other
+# X number are between geographically distinct vent sites
+
+#write the table
+# write.table(ani_sulfur_filter, file = "Output/skani_matrix_SulfurViruses_50comp_filtered.txt", quote = FALSE,
+#             col.names = NA, sep = "\t") #colnames = NA to keep first blank cell
+
+#remove .fasta from row and col names
+colnames(ani_sulfur_filter) = gsub(".fasta", "", colnames(ani_sulfur_filter))
+rownames(ani_sulfur_filter) = gsub(".fasta", "", rownames(ani_sulfur_filter))
+
 ##Add Metadata Labels
-metadata<-read.csv("metadata2.csv")
+metadata<-read.csv("Input/metadata.csv")
+metadata<-metadata %>% select("Virus", "Host")
 rownames(metadata) <- metadata[,1]
-metadata_phylum<-as.data.frame(metadata[,c(2)])
-rownames(metadata_phylum) <- metadata[,1]
-colnames(metadata_phylum) <- c("Phylum")
+metadata_tax<-as.data.frame(metadata[,c(2)])
+rownames(metadata_tax) <- metadata[,1]
+colnames(metadata_tax) <- c("Class")
+
+metadata_tax <- metadata_tax %>%
+  mutate(Class = str_replace(Class, "c__", "")) #%>%
+#   na_if('')
+# metadata_tax$c <- metadata_tax$Class %>% replace_na("Bacteria")
+
+#this switches them between no blanks for rows or cols?
+metadata_tax2 <- metadata_tax
+rownames(metadata_tax) = colnames(ani_sulfur_filter)
+rownames(metadata_tax2) = rownames(ani_sulfur_filter)
+
+library(randomcoloR)
+n <- 8
+palette <- rev(distinctColorPalette(n))
+
+my_colour = list(Class = palette)
 
 my_colour = list(
-  Phylum = c(Korarchaeota = "#234673", Banfieldarchaeota = "#B9707E", 
-             Crenarchaeota = '#A4D5B2'))
+  Class = c(Campylobacteria = "#234673", Gammaproteobacteria = "#DE6B7E",
+            Alphaproteobacteria = '#8c510a', Aquificae = "#762a83", 
+            Bacteroidia = "#e7d4e8", Dissulfuribacteria = '#43a2ca',
+            Thermococci = "#e0f3db", Thermoproteia = '#99d8c9'))
 
 dev.off()
 #heatmap
-yep_cor<-pheatmap::pheatmap(mat_df_2, 
+yep_cor<-pheatmap::pheatmap(ani_sulfur_filter, 
                             fontsize = 6, 
-                            #fontsize_row = 5, 
-                            #fontsize_col = 5,
-                            show_colnames = FALSE,
-                            show_rownames = FALSE,
-                            #annotation_row = metadata_phylum,
-                            #annotation_col = metadata_phylum,
+                            fontsize_row = 5, 
+                            fontsize_col = 5,
+                            show_colnames = TRUE,
+                            show_rownames = TRUE,
+                            annotation_row = metadata_tax2,
+                            annotation_col = metadata_tax,
                             clustering_method = "ward.D",
-                            #annotation_colors = my_colour,
-                            cellwidth = 2,
-                            cellheight = 2,
-                            border_color = "grey")
+                            annotation_colors = my_colour,
+                            cellwidth = 6,
+                            cellheight = 6,
+                            border_color = "grey",
+                            rev(brewer.pal(n = 7, name = "RdYlBu")))
 
 #export
-save_pheatmap_png <- function(x, filename, width=1400, height=1200, res = 200) {
+save_pheatmap_png <- function(x, filename, width=3500, height=3500, res = 300) {
   png(filename, width = width, height = height, res = res)
   grid::grid.newpage()
   grid::grid.draw(x$gtable)
   dev.off()
 }
 
-save_pheatmap_png(yep_cor, "NovelArchaea_pheatmap.png")
+save_pheatmap_png(yep_cor, "Output/sulfur_VirusANI_pheatmap.png")
 
 ##pdf
 save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
@@ -61,7 +104,10 @@ save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
   dev.off()
 }
 
-save_pheatmap_pdf(yep_cor, "NovelArchaea_pheatmap.pdf")
+save_pheatmap_pdf(yep_cor, "VirusANI_pheatmap.pdf")
 
 
 dev.off()
+
+
+
