@@ -45,32 +45,40 @@ rownames(ani_sulfur_filter) = gsub(".fasta", "", rownames(ani_sulfur_filter))
 
 ##Add Metadata Labels
 metadata<-read.csv("Input/metadata_filtered.csv")
-metadata<-metadata %>% select("Virus", "Host")
+#metadata<-metadata %>% select("Virus", "Host")
 rownames(metadata) <- metadata[,1]
-metadata_tax<-as.data.frame(metadata[,c(2)])
-rownames(metadata_tax) <- metadata[,1]
-colnames(metadata_tax) <- c("Class")
+metadata_tax<-as.data.frame(metadata[,c(2,3,4)])
+#rownames(metadata_tax) <- metadata[,1]
+#colnames(metadata_tax) <- c("Class")
+
+#rename column
+metadata_tax <- rename(metadata_tax, "Class" = "Host")
 
 metadata_tax <- metadata_tax %>%
-  mutate(Class = str_replace(Class, "c__", "")) #%>%
-#   na_if('')
-# metadata_tax$c <- metadata_tax$Class %>% replace_na("Bacteria")
+  mutate(Class = str_replace(Class, "c__", "")) %>%
+  mutate(Genus = str_replace(Genus, "g__", "")) %>%
+   na_if('')
+metadata_tax$Genus <- metadata_tax$Genus %>% replace_na("Unknown")
 
 #this switches them between no blanks for rows or cols?
 metadata_tax2 <- metadata_tax
 rownames(metadata_tax) = colnames(ani_sulfur_filter)
 rownames(metadata_tax2) = rownames(ani_sulfur_filter)
 
-library(randomcoloR)
-n <- 8
-palette <- rev(distinctColorPalette(n))
-
-my_colour = list(Class = palette)
+# library(randomcoloR)
+# n <- 8
+# palette <- rev(distinctColorPalette(n))
+# 
+# my_colour = list(Class = palette)
 
 my_colour = list(
-  Class = c(Campylobacteria = "#234673", Gammaproteobacteria = "#DE6B7E",
-            Alphaproteobacteria = '#8c510a', Dissulfuribacteria = '#43a2ca',
-            Aquificae = "#762a83")) # , Bacteroidia = "#e7d4e8", Thermococci = "#e0f3db", Thermoproteia = '#99d8c9' 
+  Class = c(Alphaproteobacteria = '#8c510a', Aquificae = "#762a83", 
+            Campylobacteria = "#234673", Dissulfuribacteria = '#43a2ca', Gammaproteobacteria = "#DE6B7E"), # , Bacteroidia = "#e7d4e8", Thermococci = "#e0f3db", Thermoproteia = '#99d8c9' 
+  Genus = c("Caminibacter" = "#800000", "Dissulfuribacter" = "#ffd8b1", "GCA-2747325" = "#f58231", 
+            "JAADCZ01" = "#fffac8", "Marinosulfonomonas" = "#808000", "Nautilia" = "#42d4f4", 
+            "Persephonella" = "#aaffc3", "Sulfurovum" = "#FA8072", "SZUA-116" = "#bfef45", "SZUA-152" = "#4363d8", 
+            "Thermopetrobacter" = "#a9a9a9",  "UBA2013" = "#469990", "Unknown" = "#dcbeff"), 
+  Completeness = c("50.28" = "#ffffff", "75.42" = "#99d8c9", "100.0" = "#2ca25f")) 
 
 dev.off()
 #heatmap
@@ -87,10 +95,12 @@ yep_cor<-pheatmap::pheatmap(ani_sulfur_filter,
                             cellwidth = 10,
                             cellheight = 10,
                             border_color = "grey",
-                            display_numbers = round(ani_sulfur_filter,1))
+                            display_numbers = round(ani_sulfur_filter,1),
+                            number_color = "black")
+
 
 #export
-save_pheatmap_png <- function(x, filename, width=3500, height=3500, res = 300) {
+save_pheatmap_png <- function(x, filename, width=2700, height=2300, res = 300) {
   png(filename, width = width, height = height, res = res)
   grid::grid.newpage()
   grid::grid.draw(x$gtable)
@@ -109,10 +119,13 @@ save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
   dev.off()
 }
 
-save_pheatmap_pdf(yep_cor, "VirusANI_pheatmap.pdf")
+save_pheatmap_pdf(yep_cor, "Output/sulfur_VirusANI_pheatmap.pdf")
 
 
 dev.off()
 
+
+#save as svg
+ggsave(filename = "Output/sulfur_VirusANI_pheatmap.svg", plot = yep_cor, height = 14)
 
 
