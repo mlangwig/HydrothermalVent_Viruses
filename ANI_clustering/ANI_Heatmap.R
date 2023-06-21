@@ -5,14 +5,14 @@ library(reshape2)
 #rm(list = ls())
 
 #read input
-mat<-read.delim2("Input/skani_ani_matrix_full_SulfurViruses_50comp_renamed.txt", header = TRUE)
+mat<-read.delim2("Input/skani_ani_sulfur_FullMatrix_renamed_AFvalues.txt", header = TRUE)
 mat_df<-as.data.frame(mat)
 
 mat_df_2 <- mat_df[,-1]
 rownames(mat_df_2) <- mat_df[,1]
 
 #convert data to numeric
-mat_df_2 <- mat_df_2 %>% mutate_at(2:322, as.numeric)
+mat_df_2 <- mat_df_2 %>% mutate_at(1:28, as.numeric)
 
 
 ###### Filter out rows where the only ANI is 100 to itself #####################
@@ -25,9 +25,15 @@ ani_sulfur_filter <- mat_df_2[rind, cind] #filter for rows and cols that were >1
 
 ###stats
 min(ani_sulfur_filter[ani_sulfur_filter > 0])
-# Lowest ANI among viruses without hit to only itself is 82.54%
+# Lowest ANI among viruses without hit to only itself is 82.54% not caring about % aligned fraction
+# This number is 49.75% when only results for ≥50% aligned fraction are used + correcting ANI value for
+# aligned fraction
+
 # 80 sulfur viruses that have ≥82.54% ANI to each other
 # X number are between geographically distinct vent sites
+
+# 26 viruses that have ≥95.09% ANI to each other and ≥50% AF
+# X number between geographically distinct vents
 
 #write the table
 # write.table(ani_sulfur_filter, file = "Output/skani_matrix_SulfurViruses_50comp_filtered.txt", quote = FALSE,
@@ -38,7 +44,7 @@ colnames(ani_sulfur_filter) = gsub(".fasta", "", colnames(ani_sulfur_filter))
 rownames(ani_sulfur_filter) = gsub(".fasta", "", rownames(ani_sulfur_filter))
 
 ##Add Metadata Labels
-metadata<-read.csv("Input/metadata.csv")
+metadata<-read.csv("Input/metadata_filtered.csv")
 metadata<-metadata %>% select("Virus", "Host")
 rownames(metadata) <- metadata[,1]
 metadata_tax<-as.data.frame(metadata[,c(2)])
@@ -63,9 +69,8 @@ my_colour = list(Class = palette)
 
 my_colour = list(
   Class = c(Campylobacteria = "#234673", Gammaproteobacteria = "#DE6B7E",
-            Alphaproteobacteria = '#8c510a', Aquificae = "#762a83", 
-            Bacteroidia = "#e7d4e8", Dissulfuribacteria = '#43a2ca',
-            Thermococci = "#e0f3db", Thermoproteia = '#99d8c9'))
+            Alphaproteobacteria = '#8c510a', Dissulfuribacteria = '#43a2ca',
+            Aquificae = "#762a83")) # , Bacteroidia = "#e7d4e8", Thermococci = "#e0f3db", Thermoproteia = '#99d8c9' 
 
 dev.off()
 #heatmap
@@ -79,10 +84,10 @@ yep_cor<-pheatmap::pheatmap(ani_sulfur_filter,
                             annotation_col = metadata_tax,
                             clustering_method = "ward.D",
                             annotation_colors = my_colour,
-                            cellwidth = 6,
-                            cellheight = 6,
+                            cellwidth = 10,
+                            cellheight = 10,
                             border_color = "grey",
-                            rev(brewer.pal(n = 7, name = "RdYlBu")))
+                            display_numbers = round(ani_sulfur_filter,1))
 
 #export
 save_pheatmap_png <- function(x, filename, width=3500, height=3500, res = 300) {

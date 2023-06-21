@@ -174,6 +174,7 @@
             <li><a href="#cluster-the-skani-results-using-mcl">Cluster the skani results using mcl</a></li>
             <li><a href="#ani-clustering-with-skani-and-mcl-using-both-vent-and-plume-data">ANI clustering with skani and mcl using both Vent and Plume data</a></li>
             <li><a href="#final-clustering-with-skani-and-mcl-vent-and-plume-5kb-and-above-viruses">Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses</a></li>
+            <li><a href="#redoing-skani-with-only-sulfur-cycling-viruses">Redoing skani with only sulfur cycling viruses</a></li>
             <li><a href="#clustering-using-drep">Clustering using dRep</a></li>
             <li><a href="#drep-with-5kb-viruses">dRep with 5kb viruses</a></li>
             <li><a href="#drep-with-5kb-viruses-at-90-ani">dRep with 5kb viruses at 90% ANI</a></li>
@@ -190,6 +191,7 @@
             <ul>
             <li><a href="#annotating-microbial-mags">Annotating microbial MAGs</a></li>
             <li><a href="#annotations-of-blast-based-iphop-matches">Annotations of blast-based iphop matches</a></li>
+            <li><a href="#comparison-of-sulfur-viruses-to-gov">Comparison of sulfur viruses to GOV</a></li>
             </ul></li>
             </ul>
           </div>
@@ -791,11 +793,6 @@ rename &#39;s/_metaspades_scaffolds.min1000//&#39; *.faa</code></pre>
 <pre class="bash"><code>conda install -c bioconda skani
 
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c ../Virus_Genomes/fna/unbinned_VentViruses.fna -d ../vRhyme/fna -x .fasta --outdir . &amp;</code></pre>
-<div id="if-you-want-to-parse-the-skani-output-for-aligned-fraction" class="section level3">
-<h3>If you want to parse the skani output for aligned fraction</h3>
-<p>To only get output for viral genomes where aligned fraction is &gt;50%</p>
-<pre class="bash"><code>awk &#39;{ if ($4 &gt;= 50 &amp;&amp; $5 &gt;= 50) print $1 &quot;\t&quot; $2 &quot;\t&quot; $3 &quot;\t&quot; $4 &quot;\t&quot; $5 &quot;\t&quot; $6 &quot;\t&quot; $7 }&#39; skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv &gt; skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv</code></pre>
-</div>
 </div>
 <div id="cluster-the-skani-results-using-mcl" class="section level2">
 <h2>Cluster the skani results using mcl</h2>
@@ -852,6 +849,31 @@ cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc</code></pre>
 <pre class="bash"><code>cut -f1,2 mcl_formatted_table_VentPlumeViruses.tsv | sort | sed &#39;s/__/\t/g&#39; | sed &#39;s/vRhyme_/vRhyme_bin_/g&#39; | sed &#39;s/_k95/\t/g&#39; | sed &#39;s/_NODE/\t/g&#39; | sed &#39;s/_scaffold/\t/g&#39; | grep &quot;vRhyme&quot; | cut -f1,2,3 | awk &#39;{ print $1 &quot; &quot; $3 &quot;_&quot; $2}&#39; &gt; mcl_vMAGs_renamed.txt</code></pre>
 <p><strong>Used this to create mcl_formatted_table_VentPlumeViruses_renamedFinal, which is the final mcl cluster file with the right names for all 1kb viruses from Plume and Vent</strong></p>
 </div>
+<div id="redoing-mcl-clustering-of-1kb-plumevent-skani-output-for-higher-aligned-fraction" class="section level3">
+<h3>Redoing mcl clustering of 1kb PlumeVent skani output for higher aligned fraction</h3>
+<ol style="list-style-type: decimal">
+<li>To only get output for viral genomes where aligned fraction is &gt;50%</li>
+</ol>
+<pre class="bash"><code>awk &#39;{ if ($4 &gt;= 50 &amp;&amp; $5 &gt;= 50) print $1 &quot;\t&quot; $2 &quot;\t&quot; $3 &quot;\t&quot; $4 &quot;\t&quot; $5 &quot;\t&quot; $6 &quot;\t&quot; $7 }&#39; skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv &gt; skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Preprocess that file - I had to do this on sulfur because needed polars from mcl conda environment. Remember has to be older version if you’re getting the error about sep vs separation</li>
+</ol>
+<pre class="bash"><code>/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv -o skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv</code></pre>
+<p><strong>Notice that lowest value from this processed file is much higher than the lowest from the old processed file</strong></p>
+<ol start="3" style="list-style-type: decimal">
+<li>Run mcxload</li>
+</ol>
+<pre class="bash"><code>mcxload -abc skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv -o mcl/vUnbinned_vMAGs_PlumeVents_50AF.mci -write-tab mcl/vUnbinned_vMAGs_PlumeVents_50AF.mcxload</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Run mcl</li>
+</ol>
+<pre class="bash"><code>mcl vUnbinned_vMAGs_PlumeVents_50AF.mci -use-tab vUnbinned_vMAGs_PlumeVents_50AF.mcxload -o out_vUnbinned_vMAGs_PlumeVents_50AF.clusters</code></pre>
+<p>1,021 clusters found</p>
+<ol start="5" style="list-style-type: decimal">
+<li>Convert to csv</li>
+</ol>
+<pre class="bash"><code>sed &#39;s/\t/,/g&#39; out_vUnbinned_vMAGs_PlumeVents_50AF.clusters &gt; out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv</code></pre>
+</div>
 </div>
 <div id="final-clustering-with-skani-and-mcl-vent-and-plume-5kb-and-above-viruses" class="section level2">
 <h2>Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses</h2>
@@ -892,6 +914,26 @@ mcxload -abc skani_ANIprocessed_PlumeVent_Viruses_5kb.tsv -o PlumeVent_Viruses_5
 nohup mcl PlumeVent_Viruses_5kb.mci -use-tab PlumeVent_Viruses_5kb.mcxload -o PlumeVent_Viruses_5kb.clusters &amp;
 
 sed &#39;s/\t/,/g&#39; PlumeVent_Viruses_5kb.clusters &gt; PlumeVent_Viruses_5kb.clusters.csv</code></pre>
+</div>
+<div id="redoing-skani-with-only-sulfur-cycling-viruses" class="section level2">
+<h2>Redoing skani with only sulfur cycling viruses</h2>
+<ol style="list-style-type: decimal">
+<li>Rerun skani on just sulfur cycling viruses (on Sulfur)</li>
+</ol>
+<pre class="bash"><code>nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbinned.fna -d VirusGenomes/vMAGs/ -x .fasta --outdir . &amp;
+
+mv skani_ANI.tsv skani_ANI_VentPlume_sulfurViruses.tsv
+
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_VentPlume_sulfurViruses.tsv -o skani_ANI_VentPlume_sulfurViruses_processed.tsv</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Filter for &gt;50AF</li>
+</ol>
+<pre class="bash"><code>awk &#39;{ if ($4 &gt;= 50 &amp;&amp; $5 &gt;= 50) print $1 &quot;\t&quot; $2 &quot;\t&quot; $3 &quot;\t&quot; $4 &quot;\t&quot; $5 &quot;\t&quot; $6 &quot;\t&quot; $7 }&#39; skani_ANI_VentPlume_sulfurViruses.tsv &gt; skani_ANI_VentPlume_sulfurViruses_50AF.tsv</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Also preprocess the sulfur only viruses ANI with AF50</li>
+</ol>
+<pre class="bash"><code>/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_VentPlume_sulfurViruses_50AF.tsv -o skani_ANI_VentPlume_sulfurViruses_50AF_processed.tsv</code></pre>
+<p><strong>This made me realize the problem with skani triangle is it won’t filter by AF. With this method I just used, I can see the ANI of sulfur viruses for those that have AF ≥50%. Do this, get the viruses, then use those in skani triangle for more accurate picture of ANI</strong></p>
 </div>
 <div id="clustering-using-drep" class="section level2">
 <h2>Clustering using dRep</h2>
@@ -1136,6 +1178,17 @@ bedtools getfasta -fi ../../../MAGs_microbial/PlumeVent_MAGs_3872.fna -bed MAG_c
 
 diamond blastp --db GenomesToBlast/sulfur_MAGs.db.dmnd --query GenomesToBlast/sulfur_vUnbinned_vMAGs.faa --out VentPlume_Virus_toMAGs_diamond.txt --id 80 --evalue 1e-3 --threads 25 --outfmt 6 qtitle stitle pident length qstart qend sstart send evalue bitscore --max-target-seqs 1 &amp;</code></pre>
 </div>
+</div>
+<div id="comparison-of-sulfur-viruses-to-gov" class="section level2">
+<h2>Comparison of sulfur viruses to GOV</h2>
+<p>I want to see if the viruses that infect sulfur cycling microbes are similar to viruses from the GOV.</p>
+<ol style="list-style-type: decimal">
+<li><p>Download GOV from this <a href="https://de.cyverse.org/data/ds/iplant/home/shared/iVirus/GOV2.0">link</a> in CyVerse</p></li>
+<li><p>Use skani to compare ANI</p></li>
+</ol>
+<pre class="bash"><code>cat GOV2_viral_populations_larger_than_5KB_or_circular.fasta ../skani/sulfur_viruses/sulfur_vUnbinned.fna &gt; sulfur_vUnbinned_GOV5kb_circ.fasta
+
+nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbinned_GOV5kb_circ.fasta -d ../skani/sulfur_viruses/VirusGenomes/vMAGs/VirusGenomes/vMAGs/ -x .fasta --outdir . -o sulfurVirus50comp_GOV_skani_ani.tsv -f 50.0 -t 30 &amp;</code></pre>
 </div>
 </div>
 </div>

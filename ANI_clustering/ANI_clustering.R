@@ -343,9 +343,13 @@ mcl_clusters <- mcl_clusters %>% filter(id!="1")
 
 #fix vRhyme virus genome names
 #separate the vrhyme and non-vrhyme to make life easier
-mcl_clusters_vrhyme <- mcl_clusters %>% filter(grepl("vRhyme", Virus))
+mcl_clusters_vrhyme <- mcl_clusters %>% 
+  filter(grepl("vRhyme", Virus)) %>%
+  rename(Virus,"Virus_scaffold" = "Virus")
+
+mcl_clusters_vrhyme$Virus <- mcl_clusters_vrhyme$Virus_scaffold
 mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% separate(Virus, c("Virus", NA), 
-                                                        sep= "(?=_scaffold|_NODE|_k95)")
+                                                              sep= "(?=_scaffold|_NODE|_k95)")
 mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% separate(Virus, c("Virus", "Site"), 
                                                         sep= "(__)")
 mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% 
@@ -353,6 +357,7 @@ mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>%
 mcl_clusters_vrhyme$Virus <- paste0(mcl_clusters_vrhyme$Site, "_", mcl_clusters_vrhyme$Virus)
 mcl_clusters_vrhyme <- mcl_clusters_vrhyme %>% select(-Site)
 #put the data frames back together again
+
 mcl_clusters <- mcl_clusters %>% filter(!grepl("vRhyme", Virus))
 mcl_clusters <- rbind(mcl_clusters_vrhyme, mcl_clusters)
 
@@ -365,32 +370,36 @@ mcl_clusters_sulfur <- unique(mcl_clusters_sulfur)
 
 mcl_clusters_sulfur <- mcl_clusters[mcl_clusters$id %in% mcl_clusters_sulfur$id,]
 
-####################### add average ANI value to mcl sulfur cluster table ###########################
-skani_ANI <- read.delim2(file = "Input/skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv", header = FALSE)
-#fix vRhyme names
+####################### see ANI values of sulfur viruses ###########################
+skani_ANI <- read.delim2(file = "Input/skani_ANI_VentPlume_sulfurViruses_50AF_processed.tsv", header = FALSE)
+
+#remove ANI where hits are something to itself
+#test <- skani_ANI[skani_ANI$Ref_name != skani_ANI$Query_name, ]
+
+#transform columns into virus genome names
+#rename column
+skani_ANI <- rename(skani_ANI, c("Ref" = "V1", "Query" = "V2", "ANI" = "V3"))
+
+#fix vRhyme virus genome names
+#separate the vrhyme and non-vrhyme to make life easier
 skani_ANI_vrhyme <- skani_ANI %>% 
-  
+  filter(grepl("vRhyme", Ref)) %>%
+  filter(grepl("vRhyme", Query))
+skani_ANI_vrhyme <- data.frame(RefQuery = c(skani_ANI_vrhyme$Ref, skani_ANI_vrhyme$Query))
 
+skani_ANI_vrhyme$Virus <- skani_ANI_vrhyme$RefQuery
+skani_ANI_vrhyme <- skani_ANI_vrhyme %>% separate(Virus, c("Virus", NA), 
+                                                        sep= "(?=_scaffold|_NODE|_k95)")
+skani_ANI_vrhyme <- skani_ANI_vrhyme %>% separate(Virus, c("Virus", "Site"), 
+                                                        sep= "(__)")
+skani_ANI_vrhyme <- skani_ANI_vrhyme %>% 
+  mutate(Virus = str_replace(Virus, "vRhyme_", "vRhyme_bin_"))
+skani_ANI_vrhyme$Virus <- paste0(skani_ANI_vrhyme$Site, "_", skani_ANI_vrhyme$Virus)
+skani_ANI_vrhyme <- skani_ANI_vrhyme %>% select(-Site)
 
-#Add counts to filter for clusters that occur more than once (not a singleton)
-mcl_clusters_noSingle <- mcl_clusters %>%
-  add_count(id) %>% 
-  filter(n!=1) %>%
-  select(-n)
+skani_ANI_vrhyme <- unique(skani_ANI_vrhyme)
 
-#number of clusters with 1+ rep from all sites:
-table(mcl_clusters_noSingle$Site)
-
-#group by secondary cluster, count occurrences of Site
-mcl_count <- mcl_clusters_noSingle %>% group_by(id) %>% count(Site)
-#see if any cluster now occurs twice
-mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
-
-
-
-
-
-
-
-
+#put the data frames back together again
+mcl_clusters <- mcl_clusters %>% filter(!grepl("vRhyme", Virus))
+mcl_clusters <- rbind(mcl_clusters_vrhyme, mcl_clusters)
 

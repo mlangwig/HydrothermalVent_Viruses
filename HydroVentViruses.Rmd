@@ -847,6 +847,36 @@ nohup mcl PlumeVent_Viruses_5kb.mci -use-tab PlumeVent_Viruses_5kb.mcxload -o Pl
 sed 's/\t/,/g' PlumeVent_Viruses_5kb.clusters > PlumeVent_Viruses_5kb.clusters.csv
 ```
 
+## Redoing skani with only sulfur cycling viruses
+
+1. Rerun skani on just sulfur cycling viruses (on Sulfur)
+```{bash, eval = FALSE}
+nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbinned.fna -d VirusGenomes/vMAGs/ -x .fasta --outdir . &
+
+mv skani_ANI.tsv skani_ANI_VentPlume_sulfurViruses.tsv
+
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_VentPlume_sulfurViruses.tsv -o skani_ANI_VentPlume_sulfurViruses_processed.tsv
+```
+
+2. Filter for >50AF
+```{bash, eval = FALSE}
+awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_ANI_VentPlume_sulfurViruses.tsv > skani_ANI_VentPlume_sulfurViruses_50AF.tsv
+```
+
+3. Also preprocess the sulfur only viruses ANI with AF50
+```{bash, eval = FALSE}
+/storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_VentPlume_sulfurViruses_50AF.tsv -o skani_ANI_VentPlume_sulfurViruses_50AF_processed.tsv
+```
+**This made me realize the problem with skani triangle is it won't filter by AF. With this method I just used, I can see the ANI of sulfur viruses for those that have AF ≥50%. Do this, get the viruses, then use those in skani triangle for more accurate picture of ANI**
+
+4. Rerun skani triangle to get the matrix for ANI plotting using new info learned. Here I am only giving it the viruses I know have an aligned fraction of ≥50 for **both** viruses, not just 1 way. You can use the --min_af option but might still get misleading results because one of the virus pairs could have low % aligned fraction.
+```{bash, eval = FALSE}
+skani triangle -s 80 --full-matrix --min-af 49 sulfur_genomes_for_SkaniTriangle/* > skani_ani_sulfur_FullMatrix.txt
+
+sed 's+sulfur_genomes_for_SkaniTriangle/++g' skani_ani_sulfur_FullMatrix.txt > skani_ani_sulfur_FullMatrix_renamed.txt
+```
+
+
 ## Clustering using dRep
 
 1. Split the unbinned viruses into individual files. I realized I need to replace the "=" in the header name because Unix does not like it
@@ -1149,4 +1179,24 @@ diamond makedb --in sulfur_MAGs.faa -d sulfur_MAGs.db
 
 diamond blastp --db GenomesToBlast/sulfur_MAGs.db.dmnd --query GenomesToBlast/sulfur_vUnbinned_vMAGs.faa --out VentPlume_Virus_toMAGs_diamond.txt --id 80 --evalue 1e-3 --threads 25 --outfmt 6 qtitle stitle pident length qstart qend sstart send evalue bitscore --max-target-seqs 1 &
 ```
+
+## Comparison of sulfur viruses to GOV
+
+I want to see if the viruses that infect sulfur cycling microbes are similar to viruses from the GOV.
+
+1. Download GOV from this [link](https://de.cyverse.org/data/ds/iplant/home/shared/iVirus/GOV2.0) in CyVerse
+
+2. Use skani to compare ANI
+```{bash, eval = FALSE}
+cat GOV2_viral_populations_larger_than_5KB_or_circular.fasta ../skani/sulfur_viruses/sulfur_vUnbinned.fna > sulfur_vUnbinned_GOV5kb_circ.fasta
+
+nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbinned_GOV5kb_circ.fasta -d ../skani/sulfur_viruses/VirusGenomes/vMAGs/VirusGenomes/vMAGs/ -x .fasta --outdir . -o sulfurVirus50comp_GOV_skani_ani.tsv -f 50.0 -t 30 &
+```
+
+
+
+
+
+
+
 
