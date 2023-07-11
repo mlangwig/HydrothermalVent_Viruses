@@ -400,6 +400,10 @@ skani_ANI_vrhyme <- skani_ANI_vrhyme %>% select(-Site)
 skani_ANI_vrhyme <- unique(skani_ANI_vrhyme)
 
 #put the data frames back together again
-mcl_clusters <- mcl_clusters %>% filter(!grepl("vRhyme", Virus))
-mcl_clusters <- rbind(mcl_clusters_vrhyme, mcl_clusters)
-
+skani_ANI <- data.frame(RefQuery = c(skani_ANI$Ref, skani_ANI$Query))
+skani_ANI <- skani_ANI %>% filter(!grepl("vRhyme", RefQuery))
+skani_ANI <- unique(skani_ANI)
+skani_ANI$Virus <- skani_ANI$RefQuery
+skani_ANI_list <- rbind(skani_ANI_vrhyme, skani_ANI)
+write.table(skani_ANI_list, file = "Output/skani_SulfurViruses_aniAF50.tsv", col.names = TRUE,
+            quote = FALSE, sep = "\t", row.names = FALSE)

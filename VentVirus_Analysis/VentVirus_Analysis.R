@@ -190,6 +190,19 @@ table(master_table_vMAGs_noProtein['checkv_quality'])
 table(master_table_unbinned_noProtein['checkv_quality'])
 #CheckV --> Complete: 145, High-qual: 185, Med-qual: 418, Low-qual: 16727, Not-determ: 8003
 
+
+########## Count for all viruses Vent and Plume #######
+#LYTIC OR LYSOGENIC
+table(master_table_noProtein['type'])
+#VIBRANT - 2125 lysogenic, 35,889 lytic
+table(master_table_noProtein['provirus'])
+#CheckV - 668 lysogenic, 37,346 lytic
+
+#CHECKV QUALITY
+table(master_table_noProtein['checkv_quality'])
+#CheckV --> Complete: 319, High-qual: 873, Med-qual: 1726, 
+#Low-qual: 25549, Not-determ: 9547
+
 ################################# Mapping iphop to new tables ##################################
 #New tables to avoid duplicates
 

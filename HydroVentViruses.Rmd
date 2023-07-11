@@ -1142,6 +1142,14 @@ for i in *.txt; do python3 /storage2/scratch/langwig/scripts/hmm_parser.py -i $i
 **Note that some are 0 because did not have trusted cutoff**. \n
 **Also this did not actually grab best hits as expected but organized nicely**
 
+## Annotating MAGs using Disco
+
+```{bash, eval = FALSE}
+nohup perl /storage2/scratch/langwig/Tools/DiSCo/tool/DiSCo.pl -i MAGs_microbial/PlumeVent_MAGs_3872.faa -d /storage2/scratch/langwig/Projects/VentPlumeViruses/Disco/ -o -n 30 &
+
+```
+
+
 ### Sulfur hmm search parsing
 
 **File that is named subset_sulfurHMM_MAG_names_final_uniq.txt contains the names of microbial MAGs that encode aprA, dsrABD, fccB, soxBCY, or phsA**
@@ -1192,6 +1200,7 @@ cat GOV2_viral_populations_larger_than_5KB_or_circular.fasta ../skani/sulfur_vir
 
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbinned_GOV5kb_circ.fasta -d ../skani/sulfur_viruses/VirusGenomes/vMAGs/VirusGenomes/vMAGs/ -x .fasta --outdir . -o sulfurVirus50comp_GOV_skani_ani.tsv -f 50.0 -t 30 &
 ```
+
 
 
 

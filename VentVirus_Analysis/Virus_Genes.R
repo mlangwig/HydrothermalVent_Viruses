@@ -28,7 +28,7 @@ sulfur_VentVirus_AMGs_filtered <- sulfur_VentVirus_AMGs_filtered[OrderMixed(sulf
 sulfur_VentVirus_AMGs_filtered$protein2 <- sub("_[^_]+$", "", sulfur_VentVirus_AMGs_filtered$protein)
 
 test <- sulfur_VentVirus_AMGs_filtered %>%
-  na_if('')
+  mutate_all(na_if,"")
 
 ## Loop for detecting AMG and Vogs
 protein.vec <- unique(test$protein2)
@@ -128,14 +128,15 @@ sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
   count(KO, name = "KO_count")
 
 #add metadata
-sulfur_VentVirus_AMGs <- sulfur_viruses %>%
-  dplyr::select("Virus", "c") %>%
-  right_join(sulfur_VentVirus_AMGs, by = c("Virus" = "Virus")) %>%
-  unique()
+# sulfur_VentVirus_AMGs <- sulfur_viruses %>%
+#   dplyr::select("Virus", "c") %>%
+#   right_join(sulfur_VentVirus_AMGs, by = c("Virus" = "Virus")) %>%
+#   unique()
 
 sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
-  mutate(c = str_replace(c, "c__", "")) %>%
-  na_if('')
+  mutate(c = str_replace(c, "c__", ""))
+sulfur_VentVirus_AMGs$c <- sulfur_VentVirus_AMGs$c %>%
+  na_if("")
 sulfur_VentVirus_AMGs$c <- sulfur_VentVirus_AMGs$c %>% replace_na("Bacteria") #replace blank cell with Bac
 
 #fix gene names
@@ -207,9 +208,6 @@ sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
 sulfur_VentVirus_AMGs <- sulfur_VentVirus_AMGs %>%
   group_by(VirusSite, c, Description, Pathway) %>%
   summarise("KO_count_perSite" = sum(KO_count))
-  
-
-################### vlookup to
 
 ############# plot ##################
 # library(randomcoloR)
@@ -228,35 +226,36 @@ dev.off()
 p <- ggplot(sulfur_VentVirus_AMGs, aes(y=Description, x=VirusSite))+
   #geom_point(aes(size=KO_count, colour = c))+ 
   geom_point(color='black', shape = 21, stroke = .15, aes(fill=factor(c), size=KO_count_perSite)) + # THE SHAPE = 21 IS CRITICAL TO GET THE CIRCLE BORDER
-  #scale_size_continuous(breaks = c(1, 2, 3), range = c(1, 4))+
+  scale_size_continuous(breaks = c(1, 6, 12), range = c(4, 14))+
   scale_fill_discrete(guide="legend", type = col_vector)+ #type = "viridis for color
   theme_bw()+
   theme(strip.background = element_blank(),
-        strip.text.y = element_text(angle=360, size = 8),
-        strip.text.x = element_text(angle = 90, size = 8),
+        strip.text.y = element_text(angle=360, size = 22),
+        strip.text.x = element_text(angle = 90, size = 22),
         #panel.grid = element_blank(),
-        axis.text.x = element_text(angle=45, size = 7, vjust = 1, hjust = 1),
-        axis.text.y = element_text(size = 7),
+        axis.text.x = element_text(angle=45, size = 19, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 20),
         text = element_text(color="black"),
         legend.position="right",
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 8),
-        axis.title.y = element_text(size = 10),
+        legend.text = element_text(size = 22),
+        legend.title = element_text(size = 22),
+        axis.title.y = element_text(size = 24),
+        axis.title.x = element_text(size = 24),
         panel.spacing = unit(.15, "lines"))+
   scale_x_discrete(position="bottom")+
-  xlab("")+
-  ylab("Virus Site")+
+  guides(fill = guide_legend(override.aes = list(size = 10)))+
+  xlab("Viruses by Site")+
+  ylab("Gene")+
   labs(size = "Gene count",
        fill = "Host class") +
   facet_grid(Pathway ~ c, scales = "free", space = "free") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
-  scale_y_discrete(limits=rev) # has to be this instead of factor 
+  scale_y_discrete(limits=rev) #+ # has to be this instead of factor 
+  # coord_flip()
 p  
 
-ggsave("output/VentVirus_AVGs_plot_bySite_long.png", p, width = 9, height = 11)
+#ggsave("output/VentVirus_AVGs_wide_QC.png", p, width = 30, height = 14)
 
-
-
-
-
+ggsave("output/VentVirus_AVGs_long_QC.png", p, width = 22, height = 25)
+ggsave("output/VentVirus_AVGs_long_QC.svg", p, width = 20, height = 25)
 
 ################### Spencer helping with

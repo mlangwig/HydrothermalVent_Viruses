@@ -99,37 +99,12 @@ iphop_VentPlume<-unique(iphop_VentPlume)
 write.table(file = "output/iphop_VentPlumeresults_qc.txt", iphop_VentPlume, quote = FALSE, sep = "\t", col.names = TRUE,
             row.names = FALSE)
 
-########################## subset just sulfur cycling infecting viruses ##########################
-#map
-iphop_VentPlume_sulfur <- sulfur_cyclers %>%
-  dplyr::select(Virus, MAG_w_sulfur, Method) %>%
-  right_join(iphop_VentPlume, by = c("Virus" = "Virus")) %>%
-  drop_na(MAG_w_sulfur)
-  
-iphop_VentPlume_sulfur_high_qual <- iphop_VentPlume_sulfur %>% filter(!str_detect(checkv_quality,
-                                                                                  "Low-quality"))
-
-iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% rename("VirusSite" = "Site")
-iphop_VentPlume_sulfur$MAGSite <- iphop_VentPlume_sulfur$MAG_w_sulfur # copy column
-iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% separate(MAGSite, c("Site", NA),
-                                                  sep= "(?=_maxbin|_metabat)") #separate by NODE and k95
-iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>% rename("MAGSite" = "Site")
-
-#replace specific site to get general sites - do this for 2 columns at once
-sulf_cols<-c("VirusSite", "MAGSite")
-iphop_VentPlume_sulfur <- iphop_VentPlume_sulfur %>%
-  mutate_at(vars(sulf_cols), ~ str_replace(., ".*ELSC.*","Lau_Basin")) %>%
-  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Brothers.*","Brothers_Volcano")) %>%
-  mutate_at(vars(sulf_cols), ~ str_replace(., ".*Guaymas.*","Guaymas_Basin")) %>%
-  mutate_at(vars(sulf_cols), ~ str_replace(., ".*MAR.*","Mid_Atlantic_Ridge")) %>%
-  mutate_at(vars(sulf_cols), ~ str_replace(., ".*EPR.*","East_Pacific_Rise"))
-
 ####################### Generate the network, starting with the nodes file ########################################
 
 ##subset virus and host genus
 virus_host_iphop<-iphop_VentPlume[,c("Virus", "Host.genus", "List.of.methods")]
 
-virus_host_iphop<-iphop_VentPlume_sulfur[,c("Virus", "Host.genus", "List.of.methods")]
+virus_host_iphop<-iphop_genus_genome_sulfur_50comp[,c("Virus", "Host.genus", "List.of.methods")]
 
 ###USE THIS SEGMENT OF CODE IF YOU WANT EACH HOST MATCH TO BE UNIQUE (don't group by taxa)
 ##Add unique columns with x and y coordinates

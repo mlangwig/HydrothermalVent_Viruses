@@ -120,6 +120,11 @@ iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separat
 write.csv(file = "output/iphop_VentPlume_sulfur_50comp.csv", iphop_genus_genome_sulfur_50comp,
           row.names = FALSE, quote = FALSE)
 
+## see how many viruses matched via BLAST 
+test <- iphop_genus_genome_sulfur_50comp %>% filter(str_detect(Method,"blast"))
+length(unique(test$Virus))
+length(unique(test$Host.genome))
+
 ########### Making input data for a bubble plot of sulfur cycling microbes and their viruses ########################################
 mag_sulfur_hits <- read.delim(file = "input/dissim_sulfur_MAGs_GeneContent.txt", header = TRUE)
 
@@ -226,7 +231,7 @@ p <- ggplot(mag_sulfur_plotting, aes(y=class, x=gene))+
   scale_y_discrete(limits=rev) # has to be this instead of factor
 p  
 
-ggsave("output/iphop_sulfur_50comp_genes.png", width = 7, height = 6)
+ggsave("output/iphop_sulfur_50comp_genes_log.png", width = 7, height = 6)
   
   
 # ########################## old ##########################

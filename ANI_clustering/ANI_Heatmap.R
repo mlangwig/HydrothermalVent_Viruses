@@ -83,17 +83,17 @@ my_colour = list(
 dev.off()
 #heatmap
 yep_cor<-pheatmap::pheatmap(ani_sulfur_filter, 
-                            fontsize = 6, 
-                            fontsize_row = 5, 
-                            fontsize_col = 5,
+                            fontsize = 12, 
+                            fontsize_row = 12, 
+                            fontsize_col = 12,
                             show_colnames = TRUE,
                             show_rownames = TRUE,
                             annotation_row = metadata_tax2,
                             annotation_col = metadata_tax,
                             clustering_method = "ward.D",
                             annotation_colors = my_colour,
-                            cellwidth = 10,
-                            cellheight = 10,
+                            cellwidth = 20,
+                            cellheight = 20,
                             border_color = "grey",
                             display_numbers = round(ani_sulfur_filter,1),
                             number_color = "black")
@@ -107,7 +107,7 @@ save_pheatmap_png <- function(x, filename, width=2700, height=2300, res = 300) {
   dev.off()
 }
 
-save_pheatmap_png(yep_cor, "Output/sulfur_VirusANI_pheatmap.png")
+save_pheatmap_png(yep_cor, "Output/sulfur_VirusANI_pheatmap_larger.png")
 
 ##pdf
 save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
@@ -119,13 +119,14 @@ save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
   dev.off()
 }
 
-save_pheatmap_pdf(yep_cor, "Output/sulfur_VirusANI_pheatmap.pdf")
+save_pheatmap_pdf(yep_cor, "Output/sulfur_VirusANI_pheatmap_larger.pdf")
 
 
 dev.off()
 
 
 #save as svg
-ggsave(filename = "Output/sulfur_VirusANI_pheatmap.svg", plot = yep_cor, height = 14)
+ggsave(filename = "Output/sulfur_VirusANI_pheatmap_larger.svg", 
+       plot = yep_cor, height = 20, width = 20)
 
 
