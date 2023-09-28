@@ -173,13 +173,14 @@ write.table(dRep_clusters_noSingle_plot,
 library()
 
 
+
 ############################################ mcl ####################################################
 
 mcl_clusters <- read.csv2(file = "Input/vUnbinned_vMAGs_PlumeVents.clusters.csv", sep = ",", header = FALSE)
-
 #mcl 1kb clusters with 50AF
 mcl_clusters <- read.csv2(file = "Input/out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv", sep = ",", header = FALSE)
-
+#mcl clusters all viruses, skani parameters -m500 -cm 30 -s 70 -f 50 -ma .7 
+mcl_clusters <- read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF.clusters", sep = "\t", header = FALSE)
 
 #add id number to rows
 mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
@@ -188,8 +189,11 @@ mcl_clusters <- melt(mcl_clusters, id.vars = "id")
 #drop variable column
 mcl_clusters <- select(mcl_clusters, -variable)
 #drop blanks in value column
+  # mcl_clusters <- mcl_clusters %>%
+  #   na_if(value, "") %>%
+  #   na.omit()
 mcl_clusters <- mcl_clusters %>%
-  na_if("") %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
   na.omit()
 #rename column
 mcl_clusters <- rename(mcl_clusters, "Site" = "value")
@@ -219,14 +223,20 @@ mcl_clusters_noSingle <- mcl_clusters %>%
   select(-n)
 #number of clusters with more than 1 rep according to dRep
 length(unique(mcl_clusters_noSingle$id))
-#2797
+#2,797
 #1,020 with 50AF
+#4,967 with 50AF and new skani parameters
+#2,757 with skani and 3kb
+#1,051 with skani and 3kb and 50AF
 
 #number of clusters with 1+ rep from Plume and Vent:
 table(mcl_clusters_noSingle$Site)
 #699 plume and 1591 vent with 50AF
+#2,903 Plume and 11,078 Vent with 50AF and skani parameters
+#1,420 plume and 6,422 vent with skani parameter and 3kb
+#597 plume and 1805 vent with skani parameters, 3kb, and 50AF
 
-#group by secondary cluster, count occurrences of Site
+#group by cluster, count occurrences of Site
 mcl_count <- mcl_clusters_noSingle %>% group_by(id) %>% count(Site)
 #see if any cluster now occurs twice
 mcl_count <-  mcl_count %>% group_by(id) %>% filter(n()>1)
@@ -237,6 +247,10 @@ mcl_clusters <- read.csv2(file = "Input/vUnbinned_vMAGs_PlumeVents.clusters.csv"
 #mcl 1kb clusters with 50AF
 mcl_clusters <- read.csv2(file = "Input/out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv", sep = ",", header = FALSE)
 
+#mcl clusters all viruses, skani parameters -m500 -cm 30 -s 70 -f 50 -ma .7 
+#1,051 non-singleton clusters with 2,402 viruses
+mcl_clusters <- read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF.clusters", sep = "\t", header = FALSE)
+
 #add id number to rows
 mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
 #melt by id
@@ -245,7 +259,7 @@ mcl_clusters <- melt(mcl_clusters, id.vars = "id")
 mcl_clusters <- select(mcl_clusters, -variable)
 #drop blanks in value column
 mcl_clusters <- mcl_clusters %>%
-  na_if("") %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
   na.omit()
 #rename column
 mcl_clusters <- rename(mcl_clusters, "Site" = "value")
@@ -314,8 +328,8 @@ plot <- mcl_count %>%
   coord_flip()
 plot
 
-ggsave(plot, filename = "Output/mcl_clusters_1kb_distant_sites.png", dpi = 500, height = 5, width = 6)
-ggsave(plot, filename = "Output/mcl_clusters_5kb_90ani_distant_sites.png", dpi = 500)
+#ggsave(plot, filename = "Output/mcl_clusters_1kb_distant_sites.png", dpi = 500, height = 5, width = 6)
+#ggsave(plot, filename = "Output/mcl_clusters_5kb_90ani_distant_sites.png", dpi = 500)
 
 ############################ see sulfur virus relatedness ###########################
 
@@ -407,3 +421,75 @@ skani_ANI$Virus <- skani_ANI$RefQuery
 skani_ANI_list <- rbind(skani_ANI_vrhyme, skani_ANI)
 write.table(skani_ANI_list, file = "Output/skani_SulfurViruses_aniAF50.tsv", col.names = TRUE,
             quote = FALSE, sep = "\t", row.names = FALSE)
+
+################## Calculate ANI per cluster, all clusters #######################
+
+ani_perClust<-read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF_renamed.tsv")
+
+#remove .fasta
+ani_perClust$Ref_file <- gsub(".fasta","",ani_perClust$Ref_file)
+ani_perClust$Query_file <- gsub(".fasta","",ani_perClust$Query_file)
+
+#remove rows where comparing to self
+ani_perClust = subset(ani_perClust, ani_perClust$Ref_name != ani_perClust$Query_name)
+
+###test
+#remove duplicates when same in either direction
+#ani_perClust <- ani_perClust[!duplicated(t(apply(ani_perClust,1,sort))),]
+
+library(dplyr)
+library(textshape)
+library(magrittr)
+
+ani_perClust_filter <- ani_perClust %>% 
+  mutate(nv1 = paste0(Ref_name, Align_fraction_ref),
+         nv2 = paste0(Query_name, Align_fraction_query)) %>% 
+  unique_pairs("nv1", "nv2") %>% 
+  select(-nv1, -nv2)
+
+#remove Pseudomonas contam cluster
+mcl_clusters <- mcl_clusters %>% filter(id!="1")
+
+#map cluster number to ANI table
+#CREATE ani_perClust_filter_map
+ani_perClust_filter_map <- mcl_clusters %>%
+  dplyr::select("id", "Site") %>%
+  left_join(ani_perClust_filter, by = c("Site" = "Ref_name")) %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
+  na.omit()
+#rename column
+ani_perClust_filter_map <- rename(ani_perClust_filter_map, "Ref_name" = "Site")
+
+#make number columns numeric
+ani_perClust_filter_map <- transform(ani_perClust_filter_map,
+                                     id = as.numeric(id),
+                                     ANI = as.numeric(ANI),
+                                     Align_fraction_ref = as.numeric(Align_fraction_ref),
+                                     Align_fraction_query = as.numeric(Align_fraction_query))
+
+#create a column with the lower ANI value
+ani_perClust_filter_map$align_frac = ifelse(ani_perClust_filter_map$Align_fraction_ref < ani_perClust_filter_map$Align_fraction_query,
+                                            ani_perClust_filter_map$Align_fraction_ref, ani_perClust_filter_map$Align_fraction_query)
+
+#multiply ANI by the lowest ANI value
+ani_perClust_filter_map$ANI_norm = ani_perClust_filter_map$ANI*ani_perClust_filter_map$align_frac/100
+
+#get average ANI per cluster
+ani_perClust_filter_map <- ani_perClust_filter_map %>% 
+  group_by(id) %>% 
+  mutate(ANI_mean = mean(ANI_norm))
+
+#create one column of vMAG file name and unbinned scaffold name
+ani_perClust_filter_map$Ref<-paste(ani_perClust_filter_map$Ref_name, ani_perClust_filter_map$Ref_file)
+ani_perClust_filter_map$Ref = ifelse(grepl("unbinned",ani_perClust_filter_map$Ref_file), ani_perClust_filter_map$Ref_name, ani_perClust_filter_map$Ref_file)
+
+ani_perClust_filter_map<-select(ani_perClust_filter_map, c(-Ref_name, -Ref_file))
+
+ani_perClust_filter_map$Query<-paste(ani_perClust_filter_map$Query_name, ani_perClust_filter_map$Query_file)
+ani_perClust_filter_map$Query = ifelse(grepl("unbinned",ani_perClust_filter_map$Query_file), ani_perClust_filter_map$Query_name, ani_perClust_filter_map$Query_file)
+
+ani_perClust_filter_map<-select(ani_perClust_filter_map, c(-Query_name, -Query_file))
+
+
+
+

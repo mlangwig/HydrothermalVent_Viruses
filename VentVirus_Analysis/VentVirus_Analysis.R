@@ -225,6 +225,9 @@ write.table(master_table_unbinned, file = "output/master_table_unbinned.tsv", co
 write.table(gensize_kb, file = "output/gensize_VentPlume.tsv", col.names = TRUE,
             row.names = FALSE, sep = "\t", quote = FALSE)
 
+write.table(master_table_noProtein, file = "output/master_table_VentPlumeViruses.tsv",
+            col.names = TRUE, row.names = FALSE, sep ="\t", quote = FALSE)
+
 ######################################## Visualize ##################################################
 
 ############################### CheckV quality ##################################

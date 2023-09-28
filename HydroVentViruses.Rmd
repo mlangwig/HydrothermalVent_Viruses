@@ -876,6 +876,50 @@ skani triangle -s 80 --full-matrix --min-af 49 sulfur_genomes_for_SkaniTriangle/
 sed 's+sulfur_genomes_for_SkaniTriangle/++g' skani_ani_sulfur_FullMatrix.txt > skani_ani_sulfur_FullMatrix_renamed.txt
 ```
 
+## Get ANI per cluster using Cody's git repo
+
+1. Install
+```{bash, eval = FALSE}
+git clone https://github.com/cody-mar10/skani-vMAG.git
+cd skani-vMAG
+mamba create -n vskani -c conda-forge -c bioconda "skani>=0.1" "polars>=0.18"
+pip install -e .
+```
+
+2. Run
+```{bash, eval = FALSE}
+vskani summarize -i skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -mo mcl/PlumeVent/vUnbinned_vMAGs_PlumeVents.clusters -o ani_skani_PlumeVent.tsv
+```
+
+```{bash, eval = FALSE}
+vskani summarize -i skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv -mo mcl/out_vUnbinned_vMAGs_PlumeVents_50AF.clusters -o ani_skani_PlumeVent_50AF.tsv
+```
+
+### Rerun skani and mcl using Cody's git repo and dif parameters
+
+1. Running on virserver
+```{bash, eval = FALSE}
+nohup vskani all -c Virus_Genomes/fna/unbinned_PlumeVentViruses.fna -d Virus_Genomes/fna/fna_vMAGs_separate/ -x .fasta --outdir skani/PlumeVent_500m30cm -o skani_ANI_VentPlume_500m30cm.tsv -m500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
+```
+
+2. Didn't make it to mcl so running that manually:
+```{bash, eval = FALSE}
+mcxload -abc skani_processed.tsv -o mcl/vUnbinned_vMAGs_PlumeVents.mci -write-tab mcl/vUnbinned_vMAGs_PlumeVents.mcxload
+
+mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcxload -o mcl_VentPlume_skani500m30cm.clusters
+```
+
+3. Summarize ANI values
+```{bash, eval = FALSE}
+vskani summarize -i ../skani_ANI_VentPlume_500m30cm.tsv -mo mcl_VentPlume_skani500m30cm.clusters -o ani_skani_500m30cm_PlumeVent.tsv
+```
+
+### Same as above but with ≥3kb viruses
+
+I was being dumb before, just needed to install mcl in the conda env. Then it is good to go and produces all output.
+```{bash, eval = FALSE}
+nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani_ANI_VentPlume_500m30cm_3kb.tsv -m500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
+```
 
 ## Clustering using dRep
 
@@ -1011,6 +1055,19 @@ sed 's+/dRep/input_viruses_fna+/dRep/dRep_1kb/input_viruses_fna+g' vMAG_paths.tx
 nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb_debug -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -nc .5 -l 5000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 --debug --skip_plots &
 ```
 
+
+
+## skani v0.2.0 
+
+Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off for >5k genomes
+
+```{bash, eval = FALSE}
+nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani_ANI_VentPlume_500m30cm_3kb.tsv -m500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
+```
+
+
+
+
 # Using Seqkit to get genome size of vMAGs
 
 1. I have to run this because the CheckV contig length is going to be off since that was run on vMAGs that were N-linked.
@@ -1145,8 +1202,7 @@ for i in *.txt; do python3 /storage2/scratch/langwig/scripts/hmm_parser.py -i $i
 ## Annotating MAGs using Disco
 
 ```{bash, eval = FALSE}
-nohup perl /storage2/scratch/langwig/Tools/DiSCo/tool/DiSCo.pl -i MAGs_microbial/PlumeVent_MAGs_3872.faa -d /storage2/scratch/langwig/Projects/VentPlumeViruses/Disco/ -o -n 30 &
-
+nohup perl /storage2/scratch/langwig/Tools/DiSCo/tool/DiSCo.pl -i MAGs_microbial/PlumeVent_MAGs_3872.faa -d /storage2/scratch/langwig/Projects/VentPlumeViruses/Disco/ -o -n 30 -m /storage2/scratch/langwig/Tools/DiSCo/tool/DiSCo_HMMlib -f /storage2/scratch/langwig/Tools/DiSCo/tool/filter_DiSCo.pl &
 ```
 
 
@@ -1201,7 +1257,25 @@ cat GOV2_viral_populations_larger_than_5KB_or_circular.fasta ../skani/sulfur_vir
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbinned_GOV5kb_circ.fasta -d ../skani/sulfur_viruses/VirusGenomes/vMAGs/VirusGenomes/vMAGs/ -x .fasta --outdir . -o sulfurVirus50comp_GOV_skani_ani.tsv -f 50.0 -t 30 &
 ```
 
+# Run Virsorter on viruses
 
+YOU NEED TO MAKE SURE YOUR PYTHON IS SET UP CORRECTLY. Even though I had the correct versions in my conda env, it was still reading from /home/langwig/.local/lib and using the wrong python version, so float was deprecated. The following fixed it: 
+```{bash, eval = FALSE}
+rm -r /home/langwig/.local/lib
+
+mamba create -n virsorter -c conda-forge -c bioconda "numpy<1.20" virsorter=2
+
+nohup virsorter run -i test.fa --min-length 1500 -j 4 all -d /storage2/databases/VirSorter2/db &
+```
+
+You can use this command **inside the activated conda env** to see what python versions the env is actually using and reading.
+```{bash, eval = FALSE}
+python -c 'import sys; print(sys.path)'
+```
+
+```{bash, eval = FALSE}
+nohup virsorter run -i Virus_Genomes/fna/unbinned_vMAGs_1500Ns_PlumeVentViruses.fna -w Virsorter/output -d /storage2/databases/VirSorter2/db/ -j 30 --keep-original-seq  --prep-for-dramv --viral-gene-enrich-off --rm-tmpdir &
+```
 
 
 
