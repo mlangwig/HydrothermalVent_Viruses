@@ -182,6 +182,9 @@ mcl_clusters <- read.csv2(file = "Input/out_vUnbinned_vMAGs_PlumeVents_50AF.clus
 #mcl clusters all viruses, skani parameters -m500 -cm 30 -s 70 -f 50 -ma .7 
 mcl_clusters <- read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF.clusters", sep = "\t", header = FALSE)
 
+#mcl clusters using skani v0.2.0
+mcl_clusters <- read.delim2(file = "Input/skani_v2/dereplicated_virus.clusters", sep = "\t", header = FALSE)
+
 #add id number to rows
 mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
 #melt by id
@@ -423,23 +426,33 @@ write.table(skani_ANI_list, file = "Output/skani_SulfurViruses_aniAF50.tsv", col
             quote = FALSE, sep = "\t", row.names = FALSE)
 
 ################## Calculate ANI per cluster, all clusters #######################
+library(dplyr)
+library(textshape)
+library(magrittr)
 
 ani_perClust<-read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF_renamed.tsv")
+#skani v0.2.0
+ani_perClust<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_500m30cm_3kb.tsv")
+
+#make number columns numeric
+ani_perClust <- transform(ani_perClust,
+                                     ANI = as.numeric(ANI),
+                                     Align_fraction_ref = as.numeric(Align_fraction_ref),
+                                     Align_fraction_query = as.numeric(Align_fraction_query))
+#filter for >50AF
+ani_perClust<-filter(ani_perClust, Align_fraction_ref >= 50.0)
+ani_perClust<-filter(ani_perClust, Align_fraction_query >= 50.0)
+
 
 #remove .fasta
 ani_perClust$Ref_file <- gsub(".fasta","",ani_perClust$Ref_file)
 ani_perClust$Query_file <- gsub(".fasta","",ani_perClust$Query_file)
+#remove 3kb_vMAGs
+ani_perClust$Ref_file <- gsub("3kb_vMAGs/","",ani_perClust$Ref_file)
+ani_perClust$Query_file <- gsub("3kb_vMAGs/","",ani_perClust$Query_file)
 
 #remove rows where comparing to self
 ani_perClust = subset(ani_perClust, ani_perClust$Ref_name != ani_perClust$Query_name)
-
-###test
-#remove duplicates when same in either direction
-#ani_perClust <- ani_perClust[!duplicated(t(apply(ani_perClust,1,sort))),]
-
-library(dplyr)
-library(textshape)
-library(magrittr)
 
 ani_perClust_filter <- ani_perClust %>% 
   mutate(nv1 = paste0(Ref_name, Align_fraction_ref),
@@ -489,6 +502,41 @@ ani_perClust_filter_map$Query<-paste(ani_perClust_filter_map$Query_name, ani_per
 ani_perClust_filter_map$Query = ifelse(grepl("unbinned",ani_perClust_filter_map$Query_file), ani_perClust_filter_map$Query_name, ani_perClust_filter_map$Query_file)
 
 ani_perClust_filter_map<-select(ani_perClust_filter_map, c(-Query_name, -Query_file))
+
+
+################## Map metadata to cluster table with ANI #######################
+
+#change one column name so they match
+vUnbinned_VP_master <- vUnbinned_VP_master %>% rename(vMAG = scaffold)
+#get columns of interest
+vMAG <- vMAG_VP_master %>% select(c('vMAG', 'type', 'contig_length',
+                                           'checkv_quality', 'provirus',
+                                           'completeness', 'contamination'))
+
+vUnbinned <- vUnbinned_VP_master %>% select(c('vMAG', 'type', 'contig_length',
+                                              'checkv_quality', 'provirus',
+                                              'completeness', 'contamination'))
+#bind/concatenate
+allVirus_master <- allVirus_master %>% rbind(vMAG, vUnbinned) %>%
+  unique()
+
+#melt the ani map file so can do vlookups
+
+
+#vlookup
+test <- allVirus_master %>%
+  dplyr::select('vMAG', 'type', 'contig_length',
+                'checkv_quality', 'provirus',
+                'completeness', 'contamination') %>%
+  right_join(ani_perClust_filter_map, by = c("vMAG" = "Ref")) %>%
+  rename(Ref = vMAG)
+
+test <- allVirus_master %>%
+  dplyr::select('vMAG', 'type', 'contig_length',
+                'checkv_quality', 'provirus',
+                'completeness', 'contamination') %>%
+  right_join(ani_perClust_filter_map, by = c("vMAG" = "Query")) %>%
+  rename(Query = vMAG)
 
 
 

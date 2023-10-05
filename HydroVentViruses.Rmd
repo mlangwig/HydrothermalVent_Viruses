@@ -1059,10 +1059,14 @@ nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data1
 
 ## skani v0.2.0 
 
-Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off for >5k genomes
+Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off for >5k genomes.
 
 ```{bash, eval = FALSE}
-nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani_ANI_VentPlume_500m30cm_3kb.tsv -m500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
+mamba activate vskani
+mamba remove skani
+source ~/.bashrc
+
+nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani2_ANI_VentPlume_500m30cm_3kb.tsv -m 500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
 ```
 
 
