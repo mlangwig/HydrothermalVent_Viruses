@@ -1084,6 +1084,33 @@ nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data1
 </div>
 <div id="skani-v0.2.0" class="section level2">
 <h2>skani v0.2.0</h2>
+<p>Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off for &gt;5k genomes.</p>
+<ol style="list-style-type: decimal">
+<li>vskani not functioning as expected yet so I am running skani, filtering it for 50AF, then using those genomes to cluster with mcl</li>
+</ol>
+<pre class="bash"><code>mamba activate vskani
+mamba remove skani
+source ~/.bashrc
+
+nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani2_ANI_VentPlume_200m30cm_3kb.tsv -m 200 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &amp;
+
+awk &#39;{ if ($4 &gt;= 50 &amp;&amp; $5 &gt;= 50) print $1 &quot;\t&quot; $2 &quot;\t&quot; $3 &quot;\t&quot; $4 &quot;\t&quot; $5 &quot;\t&quot; $6 &quot;\t&quot; $7 }&#39; skani2_ANI_VentPlume_200m30cm_3kb.tsv &gt; skani2_ANI_VentPlume_200m30cm_3kb_50AF.tsv</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Then downloaded the 50AF file to remove self matches so could get an accurate list of virus names for clustering</li>
+</ol>
+<pre class="bash"><code>cut -f1 skani2_ANI_VentPlume_noSelf.tsv | grep -v &quot;unbinned&quot; | sort | uniq &gt; vMAGs.txt
+
+cat vUnbinned.txt vUnbinned_2.txt | sort | uniq &gt; vUnbinned_final.txt
+
+for i in `cat vMAGs.txt`; do cp ../../PlumeVent_500m30cm_3kb/3kb_vMAGs/$i 3kb_vMAGs_50AF/; done
+
+perl /scratch/langwig/scripts/screen_list_new.pl vUnbinned_final.txt ../../PlumeVent_500m30cm_3kb/unbinned_PlumeVentViruses_3kb.fna keep &gt; unbinned_PlumeVentViruses_3kb_50AF.fna</code></pre>
+<p>Col 1 gives same name results as col 2. 6 and 7 had unique unbinned.</p>
+<ol start="3" style="list-style-type: decimal">
+<li>run vskani on 50AF genomes</li>
+</ol>
+<pre class="bash"><code>nohup vskani all -c unbinned_PlumeVentViruses_3kb_50AF.fna -d vMAGs_3kb_50AF/ -x .fasta -o skani2_ANI_VentPlume_200m30cm_3kb_50AF.tsv -m 200 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &amp;</code></pre>
+<p>Then import the skani tsv file into R for processing.</p>
 </div>
 </div>
 <div id="using-seqkit-to-get-genome-size-of-vmags" class="section level1">

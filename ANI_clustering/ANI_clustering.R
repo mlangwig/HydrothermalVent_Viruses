@@ -250,9 +250,8 @@ mcl_clusters <- read.csv2(file = "Input/vUnbinned_vMAGs_PlumeVents.clusters.csv"
 #mcl 1kb clusters with 50AF
 mcl_clusters <- read.csv2(file = "Input/out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv", sep = ",", header = FALSE)
 
-#mcl clusters all viruses, skani parameters -m500 -cm 30 -s 70 -f 50 -ma .7 
-#1,051 non-singleton clusters with 2,402 viruses
-mcl_clusters <- read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF.clusters", sep = "\t", header = FALSE)
+#mcl clusters all viruses, skani parameters -m200 -cm 30 -s 70 -f 50 -ma .7 
+mcl_clusters <- read.delim2(file = "Input/skani_v2/dereplicated_virus.clusters", sep = "\t", header = FALSE)
 
 #add id number to rows
 mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
@@ -432,7 +431,7 @@ library(magrittr)
 
 ani_perClust<-read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF_renamed.tsv")
 #skani v0.2.0
-ani_perClust<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_500m30cm_3kb.tsv")
+ani_perClust<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_50AF.tsv")
 
 #make number columns numeric
 ani_perClust <- transform(ani_perClust,
@@ -448,11 +447,13 @@ ani_perClust<-filter(ani_perClust, Align_fraction_query >= 50.0)
 ani_perClust$Ref_file <- gsub(".fasta","",ani_perClust$Ref_file)
 ani_perClust$Query_file <- gsub(".fasta","",ani_perClust$Query_file)
 #remove 3kb_vMAGs
-ani_perClust$Ref_file <- gsub("3kb_vMAGs/","",ani_perClust$Ref_file)
-ani_perClust$Query_file <- gsub("3kb_vMAGs/","",ani_perClust$Query_file)
+ani_perClust$Ref_file <- gsub("vMAGs_3kb_50AF/","",ani_perClust$Ref_file)
+ani_perClust$Query_file <- gsub("vMAGs_3kb_50AF/","",ani_perClust$Query_file)
 
 #remove rows where comparing to self
 ani_perClust = subset(ani_perClust, ani_perClust$Ref_name != ani_perClust$Query_name)
+# write.table(ani_perClust, file = "Output/skani2_ANI_VentPlume_noSelf.tsv", quote = FALSE, sep = "\t",
+#             row.names = FALSE)
 
 ani_perClust_filter <- ani_perClust %>% 
   mutate(nv1 = paste0(Ref_name, Align_fraction_ref),
@@ -464,14 +465,36 @@ ani_perClust_filter <- ani_perClust %>%
 mcl_clusters <- mcl_clusters %>% filter(id!="1")
 
 #map cluster number to ANI table
-#CREATE ani_perClust_filter_map
+#CREATE ani_perClust_filter_map and map ID to Ref_name
 ani_perClust_filter_map <- mcl_clusters %>%
   dplyr::select("id", "Site") %>%
   left_join(ani_perClust_filter, by = c("Site" = "Ref_name")) %>%
   mutate_if(is.character, list(~na_if(.,""))) %>%
-  na.omit()
+  na.omit() %>%
+  rename("Ref_name" = "Site")
 #rename column
 ani_perClust_filter_map <- rename(ani_perClust_filter_map, "Ref_name" = "Site")
+
+###### Now map the cluster ID to Query_name and only keep the pairwise comparisons that match ######
+### TO DO THIS I THINK NEED TO DUPLICATE MCL CLUSTER FILE AND MAP AS ID2 AKA CHANGE COLUMN NAME SO CAN MAP AGAIN
+
+#temporarily change col name for mapping
+mcl_clusters <- mcl_clusters %>%
+  rename("id_Q" = "id")
+
+#map onto Query now instead of Ref
+ani_perClust_filter_map <- mcl_clusters %>%
+  dplyr::select("id_Q", "Site") %>%
+  left_join(ani_perClust_filter_map, by = c("Site" = "Query_name")) %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
+  na.omit() %>%
+  rename("Query_name" = "Site")
+#change col name back
+mcl_clusters <- mcl_clusters %>%
+  rename("id" = "id_Q")
+
+#filter out IDs that aren't the same
+ani_perClust_filter_map <- subset(ani_perClust_filter_map, id_Q == id)
 
 #make number columns numeric
 ani_perClust_filter_map <- transform(ani_perClust_filter_map,
@@ -501,7 +524,7 @@ ani_perClust_filter_map<-select(ani_perClust_filter_map, c(-Ref_name, -Ref_file)
 ani_perClust_filter_map$Query<-paste(ani_perClust_filter_map$Query_name, ani_perClust_filter_map$Query_file)
 ani_perClust_filter_map$Query = ifelse(grepl("unbinned",ani_perClust_filter_map$Query_file), ani_perClust_filter_map$Query_name, ani_perClust_filter_map$Query_file)
 
-ani_perClust_filter_map<-select(ani_perClust_filter_map, c(-Query_name, -Query_file))
+ani_perClust_filter_map<-select(ani_perClust_filter_map, c(-Query_name, -Query_file, -id_Q))
 
 
 ################## Map metadata to cluster table with ANI #######################
@@ -521,7 +544,13 @@ allVirus_master <- allVirus_master %>% rbind(vMAG, vUnbinned) %>%
   unique()
 
 #melt the ani map file so can do vlookups
+ani_map_long <- ani_perClust_filter_map %>% select(c('id', 'ANI_mean', 'Ref', 'Query'))
+ani_map_long <- melt(ani_map_long, id = c('id', 'ANI_mean')) %>%
+  select(-'variable') %>%
+  unique()
 
+#HOW ARE THERE DUPS?
+test <- as.data.frame(duplicated(ani_map_long$value))
 
 #vlookup
 test <- allVirus_master %>%
