@@ -431,7 +431,7 @@ library(magrittr)
 
 ani_perClust<-read.delim2(file = "Input/skani_ANI_VentPlume_500m30cm_3kb_50AF_renamed.tsv")
 #skani v0.2.0
-ani_perClust<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_50AF.tsv")
+ani_perClust<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb.tsv")
 
 #make number columns numeric
 ani_perClust <- transform(ani_perClust,
@@ -442,7 +442,6 @@ ani_perClust <- transform(ani_perClust,
 ani_perClust<-filter(ani_perClust, Align_fraction_ref >= 50.0)
 ani_perClust<-filter(ani_perClust, Align_fraction_query >= 50.0)
 
-
 #remove .fasta
 ani_perClust$Ref_file <- gsub(".fasta","",ani_perClust$Ref_file)
 ani_perClust$Query_file <- gsub(".fasta","",ani_perClust$Query_file)
@@ -450,19 +449,40 @@ ani_perClust$Query_file <- gsub(".fasta","",ani_perClust$Query_file)
 ani_perClust$Ref_file <- gsub("vMAGs_3kb_50AF/","",ani_perClust$Ref_file)
 ani_perClust$Query_file <- gsub("vMAGs_3kb_50AF/","",ani_perClust$Query_file)
 
-#remove rows where comparing to self
+#remove Pseudomonas contam cluster
+mcl_clusters <- mcl_clusters %>% filter(id!="1")
+
+###################### create file for mcl clustering ######################
+ani <- ani_perClust %>% 
+  select(-Ref_file, -Query_file)
+
+#only keep lowest AF
+ani$align_frac = ifelse(ani$Align_fraction_ref < ani$Align_fraction_query,
+                                            ani$Align_fraction_ref, ani$Align_fraction_query)
+
+#normalize ANI by lowest AF
+ani$ANI_norm = ani$ANI*ani$align_frac/100^2
+
+#final file
+ani <- ani %>%
+  select(-ANI, -Align_fraction_ref, -Align_fraction_query, -align_frac)
+
+write.table(ani, file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv",
+            quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+
+###################### after mcl clustering ######################
+
+#remove rows where comparing self to self
 ani_perClust = subset(ani_perClust, ani_perClust$Ref_name != ani_perClust$Query_name)
 # write.table(ani_perClust, file = "Output/skani2_ANI_VentPlume_noSelf.tsv", quote = FALSE, sep = "\t",
 #             row.names = FALSE)
 
+#remove duplicate rows when comparing same thing but in different order
 ani_perClust_filter <- ani_perClust %>% 
   mutate(nv1 = paste0(Ref_name, Align_fraction_ref),
          nv2 = paste0(Query_name, Align_fraction_query)) %>% 
   unique_pairs("nv1", "nv2") %>% 
   select(-nv1, -nv2)
-
-#remove Pseudomonas contam cluster
-mcl_clusters <- mcl_clusters %>% filter(id!="1")
 
 #map cluster number to ANI table
 #CREATE ani_perClust_filter_map and map ID to Ref_name
@@ -472,18 +492,15 @@ ani_perClust_filter_map <- mcl_clusters %>%
   mutate_if(is.character, list(~na_if(.,""))) %>%
   na.omit() %>%
   rename("Ref_name" = "Site")
-#rename column
-ani_perClust_filter_map <- rename(ani_perClust_filter_map, "Ref_name" = "Site")
 
 ###### Now map the cluster ID to Query_name and only keep the pairwise comparisons that match ######
-### TO DO THIS I THINK NEED TO DUPLICATE MCL CLUSTER FILE AND MAP AS ID2 AKA CHANGE COLUMN NAME SO CAN MAP AGAIN
 
 #temporarily change col name for mapping
 mcl_clusters <- mcl_clusters %>%
   rename("id_Q" = "id")
 
 #map onto Query now instead of Ref
-ani_perClust_filter_map <- mcl_clusters %>%
+ani_perClust_filter_map2 <- mcl_clusters %>%
   dplyr::select("id_Q", "Site") %>%
   left_join(ani_perClust_filter_map, by = c("Site" = "Query_name")) %>%
   mutate_if(is.character, list(~na_if(.,""))) %>%
@@ -548,24 +565,20 @@ ani_map_long <- ani_perClust_filter_map %>% select(c('id', 'ANI_mean', 'Ref', 'Q
 ani_map_long <- melt(ani_map_long, id = c('id', 'ANI_mean')) %>%
   select(-'variable') %>%
   unique()
+#2987 clusters but should be 2994 (3,014 - 18). Because 18 viruses in a cluster are E. coli viruses contamination so were removed.
 
-#HOW ARE THERE DUPS?
-test <- as.data.frame(duplicated(ani_map_long$value))
+# write.table(ani_map_long, file = "Output/ani_map_long.tsv", quote = FALSE,
+#             row.names = FALSE, sep = "\t")
+
+# check for dups
+#test <- as.data.frame(duplicated(ani_map_long$value)) 
 
 #vlookup
 test <- allVirus_master %>%
   dplyr::select('vMAG', 'type', 'contig_length',
                 'checkv_quality', 'provirus',
                 'completeness', 'contamination') %>%
-  right_join(ani_perClust_filter_map, by = c("vMAG" = "Ref")) %>%
-  rename(Ref = vMAG)
-
-test <- allVirus_master %>%
-  dplyr::select('vMAG', 'type', 'contig_length',
-                'checkv_quality', 'provirus',
-                'completeness', 'contamination') %>%
-  right_join(ani_perClust_filter_map, by = c("vMAG" = "Query")) %>%
-  rename(Query = vMAG)
+  right_join(ani_map_long, by = c("vMAG" = "value"))
 
 
 
