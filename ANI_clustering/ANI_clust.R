@@ -158,13 +158,119 @@ vUnbinned <- vUnbinned_VP_master %>% select(c('vMAG', 'type', 'contig_length',
 allVirus_master <- allVirus_master %>% rbind(vMAG, vUnbinned) %>%
   unique()
 
-#change vMAG names from first scaffold to file name for mapping
+#####change vMAG names from first scaffold name to file name for mapping
 
+#separate the vrhyme and non-vrhyme to make life easier
+ani_long_vrhyme <- ani_long %>% 
+  filter(grepl("vRhyme", value)) %>%
+  rename(value, "Virus"= "value" )
+
+ani_long_vrhyme <- ani_long_vrhyme %>% separate(Virus, c("Virus", NA), 
+                                                        sep= "(?=_scaffold|_NODE|_k95)")
+ani_long_vrhyme <- ani_long_vrhyme %>% separate(Virus, c("Virus", "Site"), 
+                                                        sep= "(__)")
+ani_long_vrhyme <- ani_long_vrhyme %>% 
+  mutate(Virus = str_replace(Virus, "vRhyme_", "vRhyme_bin_"))
+ani_long_vrhyme$Virus <- paste0(ani_long_vrhyme$Site, "_", ani_long_vrhyme$Virus)
+ani_long_vrhyme <- ani_long_vrhyme %>% select(-Site)
+
+#put the data frames back together again
+ani_long <- ani_long %>% filter(!grepl("vRhyme", value)) %>%
+  rename("Virus" = "value")
+ani_long <- rbind(ani_long_vrhyme, ani_long)
 
 #vlookup
-test <- allVirus_master %>%
+ani_long_metadata <- allVirus_master %>%
   dplyr::select('vMAG', 'type', 'contig_length',
                 'checkv_quality', 'provirus',
                 'completeness', 'contamination') %>%
-  right_join(ani_long, by = c("vMAG" = "value"))
+  right_join(ani_long, by = c("vMAG" = "Virus"))
+
+
+################################ see clusters that have vent and plume ##########################################
+
+#replace strings with Vent or Plume
+ani_long_metadata$Site <- gsub(".*Lau_Basin.*","Plume",ani_long_metadata$vMAG) #the placement of the periods is crucial for replacing whole string
+ani_long_metadata$Site <- gsub(".*Cayman.*","Plume",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*Guaymas_Basin.*","Plume",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*Axial.*","Plume",ani_long_metadata$Site)
+#separate the plume and vent dataframes to make life easier
+temp_plume <- ani_long_metadata %>% filter(Site == "Plume")
+#remove Plume from mcl clusters so can make all names left Vent
+ani_long_metadata <- ani_long_metadata %>% filter(Site != "Plume")
+ani_long_metadata$Site <- "Vent"
+#Now put them back together
+ani_long_metadata <- rbind(ani_long_metadata, temp_plume)
+
+#Add counts to filter for clusters that occur more than once (not a singleton)
+# temp_count <- ani_long_metadata %>%
+#   add_count(id) %>% 
+#   filter(n!=1) %>%
+#   select(-n)
+
+#number of viruses from Plume and Vent:
+table(ani_long_metadata$Site)
+#406 plume and 1030 vent with skani parameters, 3kb, and 50AF
+
+#group by cluster, count occurrences of Site
+temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
+#see if any cluster now occurs twice
+temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
+#no cluster contains plume + vent
+
+################################ see clusters that contain distinct sites ##########################################
+
+#replace strings with 7 general site names
+ani_long_metadata$Site <- gsub(".*Lau_Basin.*","Lau_Basin",ani_long_metadata$vMAG)
+ani_long_metadata$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*ELSC.*","Lau_Basin",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*Guaymas.*","Guaymas_Basin",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*Brothers.*","Brothers_Volcano",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*MAR.*","Mid_Atlantic_Ridge",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*EPR.*","EPR",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub(".*Axial.*","Axial_Seamount",ani_long_metadata$Site) 
+
+#number of clusters with 1+ rep from all sites:
+table(ani_long_metadata$Site)
+
+#count occurrences of Site
+temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
+#see if any cluster now occurs twice
+temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
+
+############################ visualize counts across sites ###########################
+temp_count$id <- as.character(temp_count$id)
+
+#plot
+dev.off()
+plot <- temp_count %>%
+  ggplot(aes(x = reorder(id, rev(sort(as.numeric(id)))), y = as.numeric(n), fill = Site)) + #reorder is a fun new trick! to sort the order for plotting without changing the str type
+  geom_bar(stat = "identity") +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Cluster", y = "Viral genomes") +
+  guides(fill=guide_legend(override.aes = list(size=3))) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5, size = 8),
+        axis.text.y = element_text(size = 8),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_rect(fill = "transparent"),
+        panel.background = element_rect(fill = "transparent"),
+        #panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_y_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  scale_fill_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
+                             "#8c510a", "#000000")) +
+  #ggtitle("dRep Clusters 1kb, 95% ANI") +
+  coord_flip()
+plot
+
+#ggsave(plot, filename = "Output/mcl_GeoDistinct_clusters.png", dpi = 500, height = 6, width = 6)
+
+
+
+
+
+
 
