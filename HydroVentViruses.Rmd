@@ -917,6 +917,7 @@ vskani summarize -i ../skani_ANI_VentPlume_500m30cm.tsv -mo mcl_VentPlume_skani5
 ### Same as above but with ≥3kb viruses
 
 I was being dumb before, just needed to install mcl in the conda env. Then it is good to go and produces all output.
+
 ```{bash, eval = FALSE}
 nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani_ANI_VentPlume_500m30cm_3kb.tsv -m500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
 ```
@@ -1090,6 +1091,17 @@ Col 1 gives same name results as col 2. 6 and 7 had unique unbinned.
 nohup vskani all -c unbinned_PlumeVentViruses_3kb_50AF.fna -d vMAGs_3kb_50AF/ -x .fasta -o skani2_ANI_VentPlume_200m30cm_3kb_50AF.tsv -m 200 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
 ```
 Then import the skani tsv file into R for processing.
+
+
+I realized I want to filter the skani results before clustering. So I took the file `skani2_ANI_VentPlume_200m30cm_3kb.tsv` produced above from `vskani all` and created the processed file in R with 3 columns, no headers, calling it `skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv`. ANI was normalized by lowest AF (ANI*lowest AF/100^2) and filtered for ≥70. Now finishing clustering manually:
+
+```{bash, eval = FALSE}
+conda activate vskani
+
+mcxload -abc skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv -o skani_processed.mci -write-tab skani_processed.mcxload
+
+nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_virus.clusters &
+```
 
 # Using Seqkit to get genome size of vMAGs
 

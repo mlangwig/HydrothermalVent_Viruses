@@ -201,10 +201,21 @@ mcl_clusters <- mcl_clusters %>%
 #rename column
 mcl_clusters <- rename(mcl_clusters, "Site" = "value")
 
+#remove singleton clusters
+mcl_clusters <- mcl_clusters %>%
+  group_by(id) %>%
+  mutate(count=n()) %>%
+  filter(count >= 2) %>%
+  select(-count) %>%
+  filter(id!="1") %>%
+  ungroup()
+
 #write the mcl table in this format
 # write.table(mcl_clusters,
 #             file = "Output/mcl_formatted_table_VentPlumeViruses.tsv", sep = "\t", quote = FALSE,
 #             row.names = FALSE, col.names = TRUE)
+
+################################## mcl cluster analyses by vent site ##################################
 
 #replace strings with Vent or Plume
 mcl_clusters$Site <- gsub(".*Lau_Basin.*","Plume",mcl_clusters$Site) #the placement of the periods is crucial for replacing whole string
@@ -448,9 +459,11 @@ ani_perClust$Query_file <- gsub(".fasta","",ani_perClust$Query_file)
 #remove 3kb_vMAGs
 ani_perClust$Ref_file <- gsub("vMAGs_3kb_50AF/","",ani_perClust$Ref_file)
 ani_perClust$Query_file <- gsub("vMAGs_3kb_50AF/","",ani_perClust$Query_file)
+ani_perClust$Ref_file <- gsub("3kb_vMAGs/","",ani_perClust$Ref_file)
+ani_perClust$Query_file <- gsub("3kb_vMAGs/","",ani_perClust$Query_file)
 
-#remove Pseudomonas contam cluster
-mcl_clusters <- mcl_clusters %>% filter(id!="1")
+# #remove Pseudomonas contam cluster
+# mcl_clusters <- mcl_clusters %>% filter(id!="1")
 
 ###################### create file for mcl clustering ######################
 ani <- ani_perClust %>% 
@@ -467,10 +480,13 @@ ani$ANI_norm = ani$ANI*ani$align_frac/100^2
 ani <- ani %>%
   select(-ANI, -Align_fraction_ref, -Align_fraction_query, -align_frac)
 
+# final final - remove  ANI below 70
+ani<-filter(ani, ANI_norm >= 0.70)
+
 write.table(ani, file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv",
             quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
 
-###################### after mcl clustering ######################
+################################## after mcl clustering ########################################
 
 #remove rows where comparing self to self
 ani_perClust = subset(ani_perClust, ani_perClust$Ref_name != ani_perClust$Query_name)
@@ -543,6 +559,55 @@ ani_perClust_filter_map$Query = ifelse(grepl("unbinned",ani_perClust_filter_map$
 
 ani_perClust_filter_map<-select(ani_perClust_filter_map, c(-Query_name, -Query_file, -id_Q))
 
+######## After mcl clustering new
+
+#remove rows where comparing self to self
+ani = subset(ani, ani$Ref_name != ani$Query_name)
+
+#remove duplicate rows when comparing same thing but in different order
+ani <- ani %>% 
+  mutate(nv1 = paste0(Ref_name, ANI_norm),
+         nv2 = paste0(Query_name, ANI_norm)) %>% 
+  unique_pairs("nv1", "nv2") %>% 
+  select(-nv1, -nv2)
+
+#map cluster number to ANI table
+#CREATE ani_perClust_filter_map and map ID to Ref_name
+ani2 <- mcl_clusters %>%
+  dplyr::select("id", "Site") %>%
+  left_join(ani, by = c("Site" = "Ref_name")) %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
+  na.omit() %>%
+  rename("Ref_name" = "Site")
+
+#temporarily change col name for mapping
+mcl_clusters <- mcl_clusters %>%
+  rename("id_Q" = "id")
+
+#map onto Query now instead of Ref
+ani3 <- mcl_clusters %>%
+  dplyr::select("id_Q", "Site") %>%
+  left_join(ani2, by = c("Site" = "Query_name")) %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
+  na.omit() %>%
+  rename("Query_name" = "Site")
+#change col name back
+mcl_clusters <- mcl_clusters %>%
+  rename("id" = "id_Q")
+
+#filter out IDs that aren't the same
+ani3 <- subset(ani3, id_Q == id)
+
+#get average ANI per cluster
+ani3 <- ani3 %>% 
+  group_by(id) %>% 
+  mutate(ANI_mean = mean(ANI_norm))
+
+#melt the ani file so can do vlookups
+ani3_long <- ani3 %>% select(c('id', 'ANI_mean', 'Ref_name', 'Query_name'))
+ani3_long <- melt(ani3_long, id = c('id', 'ANI_mean')) %>%
+  select(-'variable') %>%
+  unique()
 
 ################## Map metadata to cluster table with ANI #######################
 
