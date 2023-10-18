@@ -15,6 +15,8 @@ library(magrittr)
 
 skani_ani<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb.tsv")
 mcl_clusters <- read.delim2(file = "Input/skani_v2/dereplicated_virus.clusters", sep = "\t", header = FALSE)
+genomad <- read.delim2(file = "../../genomad/vUnbinned_vMAGs_1500Ns_PlumeVent_virus_summary.tsv")
+iphop <- read.csv(file = "../iPHoP/input/Host_prediction_to_genus_m90.csv")
 
 #################################### skani preprocessed ################################################
 # After running skani, create the processed file here:
@@ -186,6 +188,19 @@ ani_long_metadata <- allVirus_master %>%
                 'completeness', 'contamination') %>%
   right_join(ani_long, by = c("vMAG" = "Virus"))
 
+#add genomad taxonomy
+ani_long_metadata <- genomad %>%
+  dplyr::select('seq_name', 'taxonomy', 'n_genes', 'n_hallmarks') %>%
+  right_join(ani_long_metadata, by = c("seq_name" = "vMAG")) %>%
+  rename("vMAG" = "seq_name")
+
+#NOTE THAT MAPPING IPHOP DUPLICATES SOME VIRUSES BC SOME VIRUSES HAVE 1+ HOST PREDICTION SO DON'T DO THIS IF COUNTING
+#add iphop-predicted hosts
+ani_long_metadata <- iphop %>%
+  dplyr::select('Virus', 'Host.genus', 'List.of.methods') %>%
+  right_join(ani_long_metadata, by = c("Virus" = "vMAG")) %>%
+  rename("vMAG" = "Virus")
+
 
 ################################ see clusters that have vent and plume ##########################################
 
@@ -238,6 +253,10 @@ temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
 #see if any cluster now occurs twice
 temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
 
+#see these clusters from ani_long_metadata
+ids <- as.integer(unique(temp_count$id))
+ani_long_meta_gd <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
+
 ############################ visualize counts across sites ###########################
 temp_count$id <- as.character(temp_count$id)
 
@@ -269,8 +288,117 @@ plot
 #ggsave(plot, filename = "Output/mcl_GeoDistinct_clusters.png", dpi = 500, height = 6, width = 6)
 
 
+################################## plot ani vs virus completeness ################################################
+
+skani_ani<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb.tsv")
+
+#make number columns numeric
+skani_ani <- transform(skani_ani,
+                       ANI = as.numeric(ANI),
+                       Align_fraction_ref = as.numeric(Align_fraction_ref),
+                       Align_fraction_query = as.numeric(Align_fraction_query))
+
+#remove .fasta
+skani_ani$Ref_file <- gsub(".fasta","",skani_ani$Ref_file)
+skani_ani$Query_file <- gsub(".fasta","",skani_ani$Query_file)
+#remove 3kb_vMAGs
+skani_ani$Ref_file <- gsub("3kb_vMAGs/","",skani_ani$Ref_file)
+skani_ani$Query_file <- gsub("3kb_vMAGs/","",skani_ani$Query_file)
+
+#create ani file
+ani <- skani_ani %>% 
+  select(-Ref_file, -Query_file)
+
+#only keep lowest AF
+ani$align_frac = ifelse(ani$Align_fraction_ref < ani$Align_fraction_query,
+                        ani$Align_fraction_ref, ani$Align_fraction_query)
+
+#normalize ANI by lowest AF
+ani$ANI_norm = ani$ANI*ani$align_frac/100^2
+
+#remove extraneous columns
+ani <- ani %>%
+  select(-ANI, -Align_fraction_ref, -Align_fraction_query, -align_frac)
+
+#remove rows where comparing self to self
+ani = subset(ani, ani$Ref_name != ani$Query_name)
+
+#remove duplicate rows when comparing same thing but in different order
+ani <- ani %>% 
+  mutate(nv1 = paste0(Ref_name, ANI_norm),
+         nv2 = paste0(Query_name, ANI_norm)) %>% 
+  unique_pairs("nv1", "nv2") %>% 
+  select(-nv1, -nv2)
+
+#melt the data
+ani_long <- ani %>% pivot_longer(cols = c('Ref_name', 'Query_name')) %>%
+  select(-name) %>%
+  group_by(value) %>% 
+  mutate(ANI_mean = mean(ANI_norm)) %>%
+  select(-ANI_norm) %>%
+  unique()
+
+###change vMAG names from first scaffold name to file name for mapping
+
+#separate the vrhyme and non-vrhyme to make life easier
+ani_long_vrhyme <- ani_long %>% 
+  filter(grepl("vRhyme", value)) %>%
+  rename(value, "Virus"= "value" )
+
+ani_long_vrhyme <- ani_long_vrhyme %>% separate(Virus, c("Virus", NA), 
+                                                sep= "(?=_scaffold|_NODE|_k95)")
+ani_long_vrhyme <- ani_long_vrhyme %>% separate(Virus, c("Virus", "Site"), 
+                                                sep= "(__)")
+ani_long_vrhyme <- ani_long_vrhyme %>% 
+  mutate(Virus = str_replace(Virus, "vRhyme_", "vRhyme_bin_"))
+ani_long_vrhyme$Virus <- paste0(ani_long_vrhyme$Site, "_", ani_long_vrhyme$Virus)
+ani_long_vrhyme <- ani_long_vrhyme %>% select(-Site)
+
+#put the data frames back together again
+ani_long <- ani_long %>% filter(!grepl("vRhyme", value)) %>%
+  rename("Virus" = "value")
+ani_long <- rbind(ani_long_vrhyme, ani_long)
+
+#vlookup
+ani_long_metadata_all <- allVirus_master %>%
+  dplyr::select('vMAG', 'type', 'contig_length',
+                'checkv_quality', 'provirus',
+                'completeness', 'contamination') %>%
+  right_join(ani_long, by = c("vMAG" = "Virus"))
+
+#drop NAs to see if that fixes plotting probs
+ani_long_metadata_all <- ani_long_metadata_all %>%
+  filter_at(vars(completeness), all_vars(!is.na(.)))
+#6755 viruses remaining from 8364 that had ANI averages
 
 
+library(scales)
+ani_long_metadata_all$completeness <- as.numeric(ani_long_metadata_all$completeness)
 
+#### plot ANI and completeness
+#plot
+dev.off()
+plot <- ani_long_metadata_all %>%
+  ggplot(aes(x = as.numeric(completeness), y = as.numeric(ANI_mean))) + #reorder is a fun new trick! to sort the order for plotting without changing the str type 
+  geom_point() +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Percent Completeness", y = "ANI") +
+  #guides(fill=guide_legend(override.aes = list(size=3))) +
+  theme_bw() +
+  theme(#axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5, size = 8),
+        #axis.text.y = element_text(size = 2),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_rect(fill = "transparent"),
+        panel.background = element_rect(fill = "transparent"),
+        #panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  #scale_x_continuous(breaks = c(0, 100, by = 20)) #+ #turn this on to make it look aligned with ticks
+  # scale_fill_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
+  #                            "#8c510a", "#000000")) +
+  #ggtitle("dRep Clusters 1kb, 95% ANI") +
+  coord_flip()
+plot
 
 
