@@ -257,6 +257,9 @@ temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
 ids <- as.integer(unique(temp_count$id))
 ani_long_meta_gd <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 
+write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
+            col.names = TRUE, sep = "\t")
+
 ############################ visualize counts across sites ###########################
 temp_count$id <- as.character(temp_count$id)
 
@@ -287,6 +290,14 @@ plot
 
 #ggsave(plot, filename = "Output/mcl_GeoDistinct_clusters.png", dpi = 500, height = 6, width = 6)
 
+
+################################ see intra-vent viral clusters ##########################################
+
+#Create Site column and create site names
+ani_long_metadata$Site <- ani_long_metadata$vMAG
+ani_long_metadata <- ani_long_metadata %>% separate(Site, c("Site", NA), sep= "(?=_scaffold|_NODE|_k95|_vRhyme)")
+
+#
 
 ################################## plot ani vs virus completeness ################################################
 
@@ -398,7 +409,8 @@ plot <- ani_long_metadata_all %>%
   # scale_fill_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
   #                            "#8c510a", "#000000")) +
   #ggtitle("dRep Clusters 1kb, 95% ANI") +
-  coord_flip()
+  coord_flip() +
+  geom_hline(yintercept = 0.70, linetype = 3)
 plot
 
 

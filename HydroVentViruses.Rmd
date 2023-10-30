@@ -1313,8 +1313,208 @@ nohup virsorter run -i Virus_Genomes/fna/unbinned_vMAGs_1500Ns_PlumeVentViruses.
 ```
 
 
+# Comparing regions of overlap of viruses in ANI clusters
 
+1. Set up so that the viral genomes in a cluster are in separate folders.
 
+a. Split virus genome file into individual files (had to rename = to _)
+```{bash, eval = FALSE}
+rfasta split -i unbinned_viruses_GeoDistinct.fna -d unbinned_fna_split -m genome
+```
 
+b. split txt file into many txt files
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/txt_files/split_txts
 
+awk -F'\t' '{print>$2".txt"}' viruses_GeoDistinct.txt
+
+for i in *txt; do cut -f1 $i >> $i.renamed; done
+for i in *renamed; do sed 's/$/.fasta/g' $i >> $i.renamed; done
+rename 's/txt.renamed.renamed/_final.txt/g' *renamed.renamed
+rename 's/._final/_final/g' *final.txt
+for i in *final.txt; do sed -i 's/=/_/g' $i; done
+```
+
+c. Created copy_files.sh with the help of chatGPT. Script is the following to use txt files to make fna files of all genomes per cluster:
+```{bash, eval = FALSE}
+#!/bin/bash
+
+# Directory where the text files are located
+source_txt_dir="/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/txt_files/split_txts"
+# Directory where the files to be concatenated are located
+source_files_dir="/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/fna_genomes"
+# Directory where you want to save the concatenated files with the "fna" extension
+destination_dir="/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses"
+
+# Loop through each text file
+for txt_file in "$source_txt_dir"/*.txt; do
+    if [ -f "$txt_file" ]; then
+        # Get the directory name without the ".txt" extension
+        directory_name=$(basename "$txt_file" .txt)
+
+        # Create an output file with the same name as the text file (without ".txt") and ".fna" extension
+        output_file="$destination_dir/$directory_name.fna"
+
+        # Initialize an empty concatenated file
+        > "$output_file"
+
+        # Read each filename from the text file and concatenate the corresponding files
+        while IFS= read -r filename; do
+            cat "$source_files_dir/$filename" >> "$output_file"
+        done < "$txt_file"
+    fi
+done
+```
+
+2. Run blastn on viruses
+
+a. Get fnas into separate directories for running blastn
+```{bash, eval = FALSE}
+rename 's/_final/_VirusClust/g' *fna
+
+#!/bin/bash
+
+# Directory where the FNA files are located
+fna_dir="/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses"
+
+# Loop through each FNA file
+for fna_file in "$fna_dir"/*.fna; do
+    if [ -f "$fna_file" ]; then
+        # Get the base name of the file (without extension)
+        file_name=$(basename -- "$fna_file")
+        directory_name="${file_name%.fna}"
+
+        # Create the directory with the same name as the FNA file (without "fna")
+        mkdir -p "$directory_name"
+
+        # Copy the FNA file into the corresponding directory
+        cp "$fna_file" "$directory_name/"
+    fi
+done
+```
+
+b. Run makeblastdb on all the fnas. Used version 2.14.1+ of makeblastdb.
+```{bash, eval = FALSE}
+#!/bin/bash
+
+# Directory where the FNA files are located
+base_dir="/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses"
+
+# Loop through directories containing FNA files with "VirusClust" in their names
+for dir in "$base_dir"/*VirusClust*/; do
+    if [ -d "$dir" ]; then
+        # Extract the directory name without the path
+        dir_name=$(basename "$dir")
+
+        # Loop through FNA files in the current directory
+        for fna_file in "$dir"/*.fna; do
+            if [ -f "$fna_file" ]; then
+                # Get the base name of the file (without extension)
+                file_name=$(basename -- "$fna_file")
+                file_name_no_ext="${file_name%.fna}"
+
+                # Define the output database file path with "_db" suffix
+                database_file="$dir/${file_name_no_ext}_db"
+
+                # Run makeblastdb
+                makeblastdb -in "$fna_file" -out "$database_file" -dbtype nucl
+            fi
+        done
+    fi
+done
+
+```
+
+c. Run blastn on all the fnas with their dbs.
+```{bash, eval = FALSE}
+./run_blastn.sh
+
+#!/bin/bash
+
+# Directory where the FNA files are located
+base_dir="/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses"
+
+# Loop through directories containing FNA files with "VirusClust" in their names
+for dir in "$base_dir"/*VirusClust*/; do
+    if [ -d "$dir" ]; then
+        # Extract the directory name without the path
+        dir_name=$(basename "$dir")
+
+        # Loop through FNA files in the current directory
+        for fna_file in "$dir"/*.fna; do
+            if [ -f "$fna_file" ]; then
+                # Get the base name of the file (without extension)
+                file_name=$(basename -- "$fna_file")
+                file_name_no_ext="${file_name%.fna}"
+
+                # Define the output database file path with "_db" suffix
+                database_file="$dir/${file_name_no_ext}_db"
+
+		# Define the output file with ".txt" suffix
+                output_file="$dir/${file_name_no_ext}.txt"
+
+                # Run makeblastdb
+                blastn -query "$fna_file" -db "$database_file" -out "$output_file" -outfmt "6 qseqid sseqid evalue bitscore length pident qstart qend sstart send" -max_target_seqs 2 -max_hsps 1
+            fi
+        done
+    fi
+done
+```
+
+3. Parse output to get regions of overlap among viruses.
+
+a. I created an R script to read the blast output file and remove self to self blasts as well as duplicate comparisons when the first sequence and second sequence are compared identically but flipped order (subject vs query sequence).
+
+```{bash, eval = FALSE}
+find -name "*.txt" -exec cp {} . \;
+cat *txt > all_VirusClust_blastn.txt
+
+Rscript parse_blastn.R
+```
+
+b. Take filtered_blastn_results.txt file produced from R script and extract coordinates you want to grab.  
+```{bash, eval = FALSE}
+cut -f1,7,8 filtered_blastn_results.txt > query_results.txt
+cut -f2,9,10 filtered_blastn_results.txt > subj_results.txt
+
+cat query_results.txt subj_results.txt > all_VirusClust_blastn_filtered.txt
+```
+
+4. bedtools to obtain ORFs of interest that have overlap
+```{bash, eval = FALSE}
+mamba install -c bioconda bedtools
+
+bedtools intersect -a bed_GeoDistinct_VirusClusts.tsv -b bed_PlumeVent_viruses.tsv -wa -wb > result.txt
+```
+-f 0.50 option for 50% overlap. Or -F?
+
+# Running coverm to obtain virus abundance
+
+1. Get paths to all the reads in one folder using symbolic links
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/Reads
+
+find /storage2/Reads/HydroPlume/ -name "*gz" | xargs -i ln -s {} .
+
+find /storage2/Reads/HydroVents_ZhouReysenbach/ -name "*gz" | xargs -i ln -s {} .
+```
+
+2. Get paths to all viral genomes in one folder using symbolic links
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/abundance/Genomes_fna
+
+find ../../Virus_Genomes/fna/fna_vMAGs_separate/ -name "*fasta" | xargs -i ln -s {} .
+
+./split_fasta.sh unbinned_PlumeVentViruses_renamed.fna
+
+find ../../Virus_Genomes/fna/split_fasta_files/ -name "*fasta" | xargs -i ln -s {} .
+```
+
+3. Run the bash script to run coverm
+```{bash, eval = FALSE}
+time nohup ./run_coverm.sh &
+```
 

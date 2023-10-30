@@ -1,11 +1,5 @@
 ## this project
-side-docs/*
-data/*
-microbiomeSeq/*
-MapFigure/data/*
-MapFigure/data.zip
-ANI_clustering/Output/mcl_formatted_table_VentPlumeViruses_renamedFinal_taxonomy_hosts.txt
-ANI_clustering/Output/mcl_formatted_table_VentPlumeViruses_renamedFinal_taxonomy.txt
+VentVirus_Analysis/input/PlumeVentVirus-vs-Reads-CoverM.tsv
 
 # R #
 ######

@@ -194,6 +194,8 @@
             <li><a href="#comparison-of-sulfur-viruses-to-gov">Comparison of sulfur viruses to GOV</a></li>
             </ul></li>
             <li><a href="#run-virsorter-on-viruses">Run Virsorter on viruses</a></li>
+            <li><a href="#comparing-regions-of-overlap-of-viruses-in-ani-clusters">Comparing regions of overlap of viruses in ANI clusters</a></li>
+            <li><a href="#running-coverm-to-obtain-virus-abundance">Running coverm to obtain virus abundance</a></li>
             </ul>
           </div>
           <div data-position="sidebar:post-end" class="InjectedComponents"><div class="dark-theme-toggler"><div class="toggle "><div class="toggle-track"><div class="toggle-track-check"><img src="data:image/png;base64,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" role="presentation" style="pointer-events: none;" width="16" height="16"></div> <div class="toggle-track-x"><img src="data:image/png;base64,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" role="presentation" style="pointer-events: none;" width="16" height="16"></div></div> <div class="toggle-thumb"></div></div> <input type="checkbox" aria-label="Switch between Dark and Default theme" class="toggler-screen-reader-only"></div></div>
@@ -1114,9 +1116,9 @@ perl /scratch/langwig/scripts/screen_list_new.pl vUnbinned_final.txt ../../Plume
 <p>I realized I want to filter the skani results before clustering. So I took the file <code>skani2_ANI_VentPlume_200m30cm_3kb.tsv</code> produced above from <code>vskani all</code> and created the processed file in R with 3 columns, no headers, calling it <code>skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv</code>. ANI was normalized by lowest AF (ANI*lowest AF/100^2) and filtered for ≥70. Now finishing clustering manually:</p>
 <pre class="bash"><code>conda activate vskani
 
-mcxload -abc skani_ANI_vUnbinned_vMAGs_PlumeVents_processed.tsv -o vUnbinned_vMAGs_PlumeVents.mci -write-tab vUnbinned_vMAGs_PlumeVents.mcxload
+mcxload -abc skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv -o skani_processed.mci -write-tab skani_processed.mcxload
 
-nohup mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcxload -o vUnbinned_vMAGs_PlumeVents.clusters &amp;</code></pre>
+nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_virus.clusters &amp;</code></pre>
 </div>
 </div>
 <div id="using-seqkit-to-get-genome-size-of-vmags" class="section level1">
@@ -1286,6 +1288,196 @@ nohup virsorter run -i test.fa --min-length 1500 -j 4 all -d /storage2/databases
 <p>You can use this command <strong>inside the activated conda env</strong> to see what python versions the env is actually using and reading.</p>
 <pre class="bash"><code>python -c &#39;import sys; print(sys.path)&#39;</code></pre>
 <pre class="bash"><code>nohup virsorter run -i Virus_Genomes/fna/unbinned_vMAGs_1500Ns_PlumeVentViruses.fna -w Virsorter/output -d /storage2/databases/VirSorter2/db/ -j 30 --keep-original-seq  --prep-for-dramv --viral-gene-enrich-off --rm-tmpdir &amp;</code></pre>
+</div>
+<div id="comparing-regions-of-overlap-of-viruses-in-ani-clusters" class="section level1">
+<h1>Comparing regions of overlap of viruses in ANI clusters</h1>
+<ol style="list-style-type: decimal">
+<li>Set up so that the viral genomes in a cluster are in separate folders.</li>
+</ol>
+<ol style="list-style-type: lower-alpha">
+<li>Split virus genome file into individual files (had to rename = to _)</li>
+</ol>
+<pre class="bash"><code>rfasta split -i unbinned_viruses_GeoDistinct.fna -d unbinned_fna_split -m genome</code></pre>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>split txt file into many txt files</li>
+</ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/txt_files/split_txts
+
+awk -F&#39;\t&#39; &#39;{print&gt;$2&quot;.txt&quot;}&#39; viruses_GeoDistinct.txt
+
+for i in *txt; do cut -f1 $i &gt;&gt; $i.renamed; done
+for i in *renamed; do sed &#39;s/$/.fasta/g&#39; $i &gt;&gt; $i.renamed; done
+rename &#39;s/txt.renamed.renamed/_final.txt/g&#39; *renamed.renamed
+rename &#39;s/._final/_final/g&#39; *final.txt
+for i in *final.txt; do sed -i &#39;s/=/_/g&#39; $i; done</code></pre>
+<ol start="3" style="list-style-type: lower-alpha">
+<li>Created copy_files.sh with the help of chatGPT. Script is the following to use txt files to make fna files of all genomes per cluster:</li>
+</ol>
+<pre class="bash"><code>#!/bin/bash
+
+# Directory where the text files are located
+source_txt_dir=&quot;/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/txt_files/split_txts&quot;
+# Directory where the files to be concatenated are located
+source_files_dir=&quot;/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/fna_genomes&quot;
+# Directory where you want to save the concatenated files with the &quot;fna&quot; extension
+destination_dir=&quot;/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses&quot;
+
+# Loop through each text file
+for txt_file in &quot;$source_txt_dir&quot;/*.txt; do
+    if [ -f &quot;$txt_file&quot; ]; then
+        # Get the directory name without the &quot;.txt&quot; extension
+        directory_name=$(basename &quot;$txt_file&quot; .txt)
+
+        # Create an output file with the same name as the text file (without &quot;.txt&quot;) and &quot;.fna&quot; extension
+        output_file=&quot;$destination_dir/$directory_name.fna&quot;
+
+        # Initialize an empty concatenated file
+        &gt; &quot;$output_file&quot;
+
+        # Read each filename from the text file and concatenate the corresponding files
+        while IFS= read -r filename; do
+            cat &quot;$source_files_dir/$filename&quot; &gt;&gt; &quot;$output_file&quot;
+        done &lt; &quot;$txt_file&quot;
+    fi
+done</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Run blastn on viruses</li>
+</ol>
+<ol style="list-style-type: lower-alpha">
+<li>Get fnas into separate directories for running blastn</li>
+</ol>
+<pre class="bash"><code>rename &#39;s/_final/_VirusClust/g&#39; *fna
+
+#!/bin/bash
+
+# Directory where the FNA files are located
+fna_dir=&quot;/storage2/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses&quot;
+
+# Loop through each FNA file
+for fna_file in &quot;$fna_dir&quot;/*.fna; do
+    if [ -f &quot;$fna_file&quot; ]; then
+        # Get the base name of the file (without extension)
+        file_name=$(basename -- &quot;$fna_file&quot;)
+        directory_name=&quot;${file_name%.fna}&quot;
+
+        # Create the directory with the same name as the FNA file (without &quot;fna&quot;)
+        mkdir -p &quot;$directory_name&quot;
+
+        # Copy the FNA file into the corresponding directory
+        cp &quot;$fna_file&quot; &quot;$directory_name/&quot;
+    fi
+done</code></pre>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>Run makeblastdb on all the fnas. Used version 2.14.1+ of makeblastdb.</li>
+</ol>
+<pre class="bash"><code>#!/bin/bash
+
+# Directory where the FNA files are located
+base_dir=&quot;/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses&quot;
+
+# Loop through directories containing FNA files with &quot;VirusClust&quot; in their names
+for dir in &quot;$base_dir&quot;/*VirusClust*/; do
+    if [ -d &quot;$dir&quot; ]; then
+        # Extract the directory name without the path
+        dir_name=$(basename &quot;$dir&quot;)
+
+        # Loop through FNA files in the current directory
+        for fna_file in &quot;$dir&quot;/*.fna; do
+            if [ -f &quot;$fna_file&quot; ]; then
+                # Get the base name of the file (without extension)
+                file_name=$(basename -- &quot;$fna_file&quot;)
+                file_name_no_ext=&quot;${file_name%.fna}&quot;
+
+                # Define the output database file path with &quot;_db&quot; suffix
+                database_file=&quot;$dir/${file_name_no_ext}_db&quot;
+
+                # Run makeblastdb
+                makeblastdb -in &quot;$fna_file&quot; -out &quot;$database_file&quot; -dbtype nucl
+            fi
+        done
+    fi
+done
+</code></pre>
+<ol start="3" style="list-style-type: lower-alpha">
+<li>Run blastn on all the fnas with their dbs.</li>
+</ol>
+<pre class="bash"><code>./run_blastn.sh
+
+#!/bin/bash
+
+# Directory where the FNA files are located
+base_dir=&quot;/scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/blastn_ClustViruses&quot;
+
+# Loop through directories containing FNA files with &quot;VirusClust&quot; in their names
+for dir in &quot;$base_dir&quot;/*VirusClust*/; do
+    if [ -d &quot;$dir&quot; ]; then
+        # Extract the directory name without the path
+        dir_name=$(basename &quot;$dir&quot;)
+
+        # Loop through FNA files in the current directory
+        for fna_file in &quot;$dir&quot;/*.fna; do
+            if [ -f &quot;$fna_file&quot; ]; then
+                # Get the base name of the file (without extension)
+                file_name=$(basename -- &quot;$fna_file&quot;)
+                file_name_no_ext=&quot;${file_name%.fna}&quot;
+
+                # Define the output database file path with &quot;_db&quot; suffix
+                database_file=&quot;$dir/${file_name_no_ext}_db&quot;
+
+        # Define the output file with &quot;.txt&quot; suffix
+                output_file=&quot;$dir/${file_name_no_ext}.txt&quot;
+
+                # Run makeblastdb
+                blastn -query &quot;$fna_file&quot; -db &quot;$database_file&quot; -out &quot;$output_file&quot; -outfmt &quot;6 qseqid sseqid evalue bitscore length pident qstart qend sstart send&quot; -max_target_seqs 2 -max_hsps 1
+            fi
+        done
+    fi
+done</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Parse output to get regions of overlap among viruses.</li>
+</ol>
+<ol style="list-style-type: lower-alpha">
+<li>I created an R script to read the blast output file and remove self to self blasts as well as duplicate comparisons when the first sequence and second sequence are compared identically but flipped order (subject vs query sequence).</li>
+</ol>
+<pre class="bash"><code>find -name &quot;*.txt&quot; -exec cp {} . \;
+cat *txt &gt; all_VirusClust_blastn.txt
+
+Rscript parse_blastn.R</code></pre>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>Take filtered_blastn_results.txt file produced from R script and extract coordinates you want to grab.</li>
+</ol>
+<pre class="bash"><code>cut -f1,7,8 filtered_blastn_results.txt &gt; query_results.txt
+cut -f2,9,10 filtered_blastn_results.txt &gt; subj_results.txt
+
+cat query_results.txt subj_results.txt &gt; all_VirusClust_blastn_filtered.txt</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>bedtools to obtain ORFs of interest that have overlap</li>
+</ol>
+<pre class="bash"><code>mamba install -c bioconda bedtools
+
+bedtools intersect -a bed_GeoDistinct_VirusClusts.tsv -b bed_PlumeVent_viruses.tsv -wa -wb &gt; result.txt</code></pre>
+<p>-f 0.50 option for 50% overlap. Or -F?</p>
+</div>
+<div id="running-coverm-to-obtain-virus-abundance" class="section level1">
+<h1>Running coverm to obtain virus abundance</h1>
+<ol style="list-style-type: decimal">
+<li>Get paths to all the reads in one folder using symbolic links</li>
+</ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/Reads
+
+find /storage2/Reads/HydroPlume/ -name &quot;*gz&quot; | xargs -i ln -s {} .
+
+find /storage2/Reads/HydroVents_ZhouReysenbach/ -name &quot;*gz&quot; | xargs -i ln -s {} .</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Get paths to all viral genomes in one folder using symbolic links</li>
+</ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/abundance/Genomes_fna
+
+find ../../Virus_Genomes/fna/fna_vMAGs_separate/ -name &quot;*fasta&quot; | xargs -i ln -s {} .
+</code></pre>
 </div>
 </div>
 
