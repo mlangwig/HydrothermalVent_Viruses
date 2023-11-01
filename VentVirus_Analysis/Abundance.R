@@ -72,15 +72,89 @@ abun_long_iphop <- abun_long_iphop %>% rename("Taxa" = "p")
 #put the data frames back together
 abun_long_iphop <- rbind(abun_long_iphop, abun_long_proteo)
 
+############################ Sum abundance by predicted host and site #############################
+
+abun_long_iphop_p <- abun_long_iphop %>%
+  group_by(Site, Taxa) %>% 
+  summarise(value=sum(as.numeric(value))) %>% #summing the group
+  filter(grepl("c__Gammaproteobacteria|p__Campylobacterota", Taxa)) %>% #only grab Gamma and Campylo
+  ungroup() 
 
 ############################ Set order of sites for plotting #############################
-#set order of x axis 
-# coverm_long_final$SiteFull <- factor(coverm_long_final$SiteFull, levels=c("4_1_July", "4_1_Oct", "4_1_Jan", "4_1_May",
-#                                                                           "8_1_July", "8_1_Oct", "8_1_Jan", "8_1_May",
-#                                                                           "13_July", "13_Oct", "13_Jan", "13_May",
-#                                                                           "21_July", "21_Oct", "21_Jan", "21_May",
-#                                                                           "24_July", "24_Oct", "24_Jan", "24_May")) 
 
+# abun_iphop_p_Camp <- abun_long_iphop_p %>%
+#   filter(grepl("p__Campylobacterota", Taxa)) %>%
+#   group_by(Taxa) %>% 
+#   arrange(desc(value))
+# 
+# abun_iphop_p_Gam <- abun_long_iphop_p %>%
+#   filter(!grepl("p__Campylobacterota", Taxa)) %>%
+#   group_by(Taxa) %>% 
+#   arrange(value)
+#   
+# #put the data frames back together
+# abun_long_iphop_p <- rbind(abun_iphop_p_Camp, abun_iphop_p_Gam)
+#     
+# # lock in factor level order
+# #abun_long_iphop_p$value <- factor(abun_long_iphop_p$value, levels = abun_long_iphop_p$value)
+# abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site, levels = unique(abun_long_iphop_p$Site))
+
+#set order of x axis 
+abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site, 
+                                 levels=c("Lau_Basin_Kilo_Moana_min1000_4", "Lau_Basin_Tahi_Moana_min1000_2", 
+                                          "Brothers_NWCB_S139", "Brothers_NWCB_S012",
+                                          "Lau_Basin_Abe_min1000_2", "Lau_Basin_Abe_min1000_3", 
+                                          "Cayman_Shallow_min1000_2", "MAR_Rainbow_354-166",
+                                          "Brothers_NWCB_S140", "MAR_Rainbow_355-202", "Cayman_Deep_min1000_3", 
+                                          "Brothers_NWCB_S141", "EPR_4281-140", "Lau_Basin_Kilo_Moana_min1000_2", 
+                                          "Cayman_Shallow_min1000_1", "Lau_Basin_Tahi_Moana_min1000_1",
+                                          "Brothers_NWCB_S146", "Cayman_Deep_min1000_2", "Lau_Basin_Kilo_Moana_min1000_3",
+                                          "ELSC_Tui_Malila_134-614", "ELSC_Tui_Malila_T2", "Lau_Basin_Mariner_min1000_2",
+                                          "Lau_Basin_Mariner_min1000_1", "Lau_Basin_Kilo_Moana_min1000_1",
+                                          "Lau_Basin_Abe_min1000_1", "Cayman_Shallow_min1000_3", "MAR_Lucky_356-308", "ELSC_Abe_128-326",
+                                          "ELSC_Abe_A3", "ELSC_Vai_Lili_V2", "MAR_Lucky_356-284", "Lau_Basin_Tui_Malila_min1000",
+                                          "Cayman_Deep_min1000_1", "Axial_Plume_scaffolds_min1000", "Guaymas_Basin_min1000",
+                                          "Brothers_Diffuse_S009", "Axial_Seawater_scaffolds_min1000", "EPR_PIR-30", #end Gamma highest to lowest
+                                          "Brothers_Diffuse_S015", "ELSC_Abe_A1", "Brothers_NWCA_S143", "Brothers_LC_S014",
+                                          "ELSC_Tui_Malila_T11", "ELSC_Tui_Malila_T10", "Brothers_NWCA_S144",
+                                          "Guaymas_4571-419", "Guaymas_4559-240", "Brothers_LC_S016",
+                                          "Guaymas_4561-380", "ELSC_Mariner_131-447", "Brothers_NWCA_S013",
+                                          "ELSC_Mariner_M17", "ELSC_Bowl_M2", "ELSC_Tui_Malila_132-544",
+                                          "Brothers_UC_S147", "ELSC_Bowl_M1", "Brothers_UC_S010", "Brothers_NWCA_S017",
+                                          "Brothers_UC_S011", "ELSC_Mariner_M10", "Guaymas_4561-384",
+                                          "Brothers_NWCA_S145", "Brothers_NWCA_S142")) # start Camp lowest to highest 
+############################ Plot  #############################
+
+
+####The following produces Figure X, which was modified in Biorender
+dev.off()
+plot <- abun_long_iphop_p %>%
+  ggplot(aes(x = as.numeric(value), y = Site, fill = Taxa)) + #y = reorder(Site, value, sum)
+  geom_bar(stat = "identity") +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  labs(x = "% Relative Abundance", y = "Site") +
+  guides(fill=guide_legend(override.aes = list(size=3))) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_rect(fill = "transparent"),
+        panel.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+        #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  ggtitle("Viral Abundance") #+ #Change for top X grabbed
+  #facet_wrap(.~Taxa) 
+#scale_y_continuous(breaks = seq(0, 45, by=5))
+#coord_flip()
+plot
+
+# ggsave("Output/coverm_abun.png", plot, width = 10, height = 5, dpi = 500,
+#        bg = "transparent")
+# ggsave("Output/coverm_abun.pdf", plot, width = 10, height = 5, dpi = 500,
+#        bg = "transparent")
 
 
 
