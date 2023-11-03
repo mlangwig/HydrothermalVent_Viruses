@@ -101,7 +101,17 @@ abun_long_iphop_p <- abun_long_iphop %>%
 
 abun_long_iphop_p$Site <- gsub("min1000","Plume", abun_long_iphop_p$Site) 
 abun_long_iphop_p$Site <- gsub("_scaffolds_Plume","", abun_long_iphop_p$Site) 
-abun_long_iphop_p$Site <- gsub("Seawater_scaffolds_Plume","Seawater", abun_long_iphop_p$Site) 
+#abun_long_iphop_p$Site <- gsub("Seawater_scaffolds_Plume","Seawater", abun_long_iphop_p$Site) 
+
+#add column for plume vs vent
+abun_long_iphop_p$Locat <- abun_long_iphop_p$Site
+abun_long_iphop_p$Locat <- gsub(".*Plume.*","Plume", abun_long_iphop_p$Locat)
+abun_long_iphop_p$Locat <- gsub(".*Seawater.*","Plume", abun_long_iphop_p$Locat)
+abun_long_iphop_p$Locat <- gsub(".*Brothers.*","Vent", abun_long_iphop_p$Locat)
+abun_long_iphop_p$Locat <- gsub(".*ELSC.*","Vent", abun_long_iphop_p$Locat)
+abun_long_iphop_p$Locat <- gsub(".*EPR.*","Vent", abun_long_iphop_p$Locat)
+abun_long_iphop_p$Locat <- gsub(".*Guaymas.*","Vent", abun_long_iphop_p$Locat)
+abun_long_iphop_p$Locat <- gsub(".*MAR.*","Vent", abun_long_iphop_p$Locat)
 
 #set order of x axis 
 abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site, 
@@ -151,20 +161,57 @@ plot <- abun_long_iphop_p %>%
         plot.background = element_rect(fill = "transparent", color = NA)) +
         #panel.border = element_blank()) + #turn this off to get the outline back)
   scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  #geom_hline(yintercept = 16.5) +
   ggtitle("Viral Abundance") + #Change for top X grabbed
-  #facet_wrap(.~Taxa) 
+  facet_wrap(.~Locat) +
   scale_y_discrete(limits=rev)
 #coord_flip()
 plot
 
 ggsave("Output/coverm_abun_CampGamma.png", plot, width = 10, height = 8, dpi = 500,
        bg = "transparent")
+
+ggsave("Output/coverm_abun_CampGamma_ChaoOrder.png", plot, width = 9, height = 7, dpi = 500,
+       bg = "transparent")
+
+ggsave("Output/coverm_abun_CampGamma_PlumeVentFacet.png", plot, width = 9, height = 7, dpi = 500,
+       bg = "transparent")
 # ggsave("Output/coverm_abun.pdf", plot, width = 10, height = 5, dpi = 500,
 #        bg = "transparent")
 
 
+############################ Plot same order as Chaos #############################
 
+abun_long_iphop_p <- abun_long_iphop %>%
+  group_by(Site, Taxa) %>% 
+  summarise(value=sum(as.numeric(value))) %>% #summing the group
+  filter(grepl("c__Gammaproteobacteria|p__Campylobacterota", Taxa)) %>% #only grab Gamma and Campylo
+  ungroup()
 
+abun_long_iphop_p$Site <- gsub("min1000","Plume", abun_long_iphop_p$Site) 
+abun_long_iphop_p$Site <- gsub("_scaffolds_Plume","", abun_long_iphop_p$Site) 
+abun_long_iphop_p$Site <- gsub("Seawater_scaffolds_Plume","Seawater", abun_long_iphop_p$Site) 
 
+abun_long_iphop_p <- abun_long_iphop_p %>% filter(!grepl('Plume|Seawater', Site))
 
+#set order of x axis 
+abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site, 
+                                 levels=c("Brothers_NWCB_S139", "Brothers_NWCB_S140", "Brothers_NWCB_S012",
+                                          "MAR_Lucky_356-308", "ELSC_Abe_A3", "MAR_Rainbow_354-166",
+                                          "ELSC_Tui_Malila_134-614", "EPR_4281-140", "ELSC_Tui_Malila_T2", 
+                                          "MAR_Rainbow_355-202", "Brothers_NWCA_S144", "ELSC_Mariner_M17", 
+                                          "ELSC_Bowl_M2", "ELSC_Mariner_131-447", "ELSC_Tui_Malila_132-544",
+                                          "Brothers_UC_S010", "Brothers_UC_S147", "Brothers_UC_S011", 
+                                          "ELSC_Bowl_M1", "ELSC_Tui_Malila_T11", "Guaymas_4571-419", 
+                                          "Guaymas_4561-384", "ELSC_Mariner_M10", "Brothers_NWCA_S145", 
+                                          "Brothers_NWCA_S142", "Brothers_NWCA_S017",
+                                          
+                                          "Brothers_NWCB_S141", 
+                                          "Brothers_NWCB_S146", "ELSC_Abe_128-326",
+                                          "ELSC_Vai_Lili_V2", "MAR_Lucky_356-284",
+                                          "Brothers_Diffuse_S009", "EPR_PIR-30",
+                                          "Brothers_Diffuse_S015", "ELSC_Abe_A1", "Brothers_NWCA_S143", "Brothers_LC_S014",
+                                          "ELSC_Tui_Malila_T10", 
+                                          "Guaymas_4559-240", "Brothers_LC_S016",
+                                          "Guaymas_4561-380", "Brothers_NWCA_S013"))
 
