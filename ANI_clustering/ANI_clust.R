@@ -225,7 +225,7 @@ ani_long_metadata <- rbind(ani_long_metadata, temp_plume)
 
 #number of viruses from Plume and Vent:
 table(ani_long_metadata$Site)
-#406 plume and 1030 vent with skani parameters, 3kb, and 50AF
+#406 plume and 1042 vent with skani parameters, 3kb, and 50AF
 
 #group by cluster, count occurrences of Site
 temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
@@ -256,6 +256,11 @@ temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
 #see these clusters from ani_long_metadata
 ids <- as.integer(unique(temp_count$id))
 ani_long_meta_gd <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
+
+#remove undetermined from ani_long_meta_gd
+#test <- ani_long_meta_gd %>% filter(checkv_quality != "Not-determined")
+ani_long_meta_gd <- ani_long_meta_gd %>% filter(taxonomy != "NA") %>% 
+  filter(taxonomy != "Unclassified")
 
 write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
             col.names = TRUE, sep = "\t")
@@ -297,7 +302,28 @@ plot
 ani_long_metadata$Site <- ani_long_metadata$vMAG
 ani_long_metadata <- ani_long_metadata %>% separate(Site, c("Site", NA), sep= "(?=_scaffold|_NODE|_k95|_vRhyme)")
 
-#
+#Remove some parts of site names
+ani_long_metadata$Site <- gsub("_A[0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("_M10","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("_T[0-9][0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("_T[0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("_M10","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*_S0[0-9][0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*_S1[0-9][0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*_M1[0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*_M[0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*_[0-9][0-9][0-9]-[0-9][0-9][0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*-380","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*-384","",ani_long_metadata$Site)
+
+#count occurrences of Site
+temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
+#see if any cluster now occurs twice
+temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
+
+#see these clusters from ani_long_metadata
+ids <- as.integer(unique(temp_count$id))
+ani_long_meta_iv <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 
 ################################## plot ani vs virus completeness ################################################
 
