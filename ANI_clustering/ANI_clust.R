@@ -325,6 +325,53 @@ temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
 ids <- as.integer(unique(temp_count$id))
 ani_long_meta_iv <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 
+#remove viruses that are Unclassified or NA
+ani_long_meta_iv_filt <- ani_long_meta_iv %>% filter(taxonomy != "NA") %>% 
+  filter(taxonomy != "Unclassified") %>%
+  #filter(checkv_quality != "Low-quality") %>%
+  #filter(checkv_quality != "Not-determined") %>%
+  filter(grepl("Lau", Site)) %>%
+  filter(ANI_mean > 0.95)
+
+#write the table
+write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
+            col.names = TRUE, sep = "\t")
+
+################################## plot id and site composition ################################################
+
+plot_iv <- ani_long_meta_iv %>%
+  group_by(id) %>% 
+  count(Site)
+
+library(RColorBrewer)
+n <- 25
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+pie(rep(1,n), col=sample(col_vector, n))
+
+dev.off()
+plot <- plot_iv %>%
+  ggplot(aes(x = as.character(id), y = as.numeric(n), fill = Site)) + 
+  geom_bar(stat = "identity") +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Cluster", y = "Viral genomes") +
+  guides(fill=guide_legend(override.aes = list(size=3))) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5, size = 8),
+        axis.text.y = element_text(size = 8),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_rect(fill = "transparent"),
+        panel.background = element_rect(fill = "transparent"),
+        #panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_y_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  scale_fill_manual(values=col_vector) +
+  #ggtitle("dRep Clusters 1kb, 95% ANI") +
+  coord_flip()
+plot
+
 ################################## plot ani vs virus completeness ################################################
 
 skani_ani<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb.tsv")
