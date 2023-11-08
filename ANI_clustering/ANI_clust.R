@@ -330,18 +330,28 @@ ani_long_meta_iv_filt <- ani_long_meta_iv %>% filter(taxonomy != "NA") %>%
   filter(taxonomy != "Unclassified") %>%
   #filter(checkv_quality != "Low-quality") %>%
   #filter(checkv_quality != "Not-determined") %>%
-  filter(grepl("Lau", Site)) %>%
-  filter(ANI_mean > 0.95)
+  filter(grepl("Lau", Site)) #%>%
+  #filter(ANI_mean > 0.95)
 
 #write the table
 write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
             col.names = TRUE, sep = "\t")
 
-################################## plot id and site composition ################################################
+################################## calculate num of times combos of sites occur ################################################
 
-plot_iv <- ani_long_meta_iv %>%
+plot_iv <- ani_long_meta_iv_filt %>%
   group_by(id) %>% 
   count(Site)
+
+#count the occurrences of dif combos of sites grouped by cluster ID
+plot_iv <- ani_long_meta_iv_filt %>%
+  group_by(id) %>%
+  mutate(Site = toString(Site)) #toString to get them in the comma separated list
+
+table(plot_iv$Site)
+length(unique(plot_iv$Site)) # can unique_pairs be used? --> table(unique_pairs(test$Site))
+
+################################## plot id and site composition ################################################
 
 library(RColorBrewer)
 n <- 25
