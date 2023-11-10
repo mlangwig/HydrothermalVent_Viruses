@@ -328,9 +328,9 @@ ani_long_meta_iv <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 #remove viruses that are Unclassified or NA
 ani_long_meta_iv_filt <- ani_long_meta_iv %>% filter(taxonomy != "NA") %>% 
   filter(taxonomy != "Unclassified") %>%
-  #filter(checkv_quality != "Low-quality") %>%
-  #filter(checkv_quality != "Not-determined") %>%
-  filter(grepl("Lau", Site)) #%>%
+  filter(checkv_quality != "Low-quality") %>%
+  filter(checkv_quality != "Not-determined") %>%
+  filter(grepl("ELSC", Site)) #%>%
   #filter(ANI_mean > 0.95)
 
 #write the table
@@ -347,8 +347,9 @@ plot_iv <- ani_long_meta_iv_filt %>%
 plot_iv <- ani_long_meta_iv_filt %>%
   group_by(id) %>%
   mutate(Site = toString(Site)) #toString to get them in the comma separated list
+test <- table(plot_iv$Site)
+plot_iv <- as.data.frame(test)
 
-table(plot_iv$Site)
 length(unique(plot_iv$Site)) # can unique_pairs be used? --> table(unique_pairs(test$Site))
 
 ################################## plot id and site composition ################################################
@@ -361,7 +362,7 @@ pie(rep(1,n), col=sample(col_vector, n))
 
 dev.off()
 plot <- plot_iv %>%
-  ggplot(aes(x = as.character(id), y = as.numeric(n), fill = Site)) + 
+  ggplot(aes(x = as.character(Var1), y = as.numeric(Freq))) + 
   geom_bar(stat = "identity") +
   #scale_fill_manual(values = col_vector) +
   labs(x = "Cluster", y = "Viral genomes") +
@@ -377,7 +378,7 @@ plot <- plot_iv %>%
         plot.background = element_rect(fill = "transparent", color = NA)) +
   #panel.border = element_blank()) + #turn this off to get the outline back)
   scale_y_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
-  scale_fill_manual(values=col_vector) +
+  #scale_fill_manual(values=col_vector) +
   #ggtitle("dRep Clusters 1kb, 95% ANI") +
   coord_flip()
 plot
