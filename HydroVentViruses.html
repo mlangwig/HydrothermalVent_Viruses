@@ -1477,7 +1477,21 @@ find /storage2/Reads/HydroVents_ZhouReysenbach/ -name &quot;*gz&quot; | xargs -i
 /scratch/langwig/Projects/VentPlumeViruses/abundance/Genomes_fna
 
 find ../../Virus_Genomes/fna/fna_vMAGs_separate/ -name &quot;*fasta&quot; | xargs -i ln -s {} .
-</code></pre>
+
+./split_fasta.sh unbinned_PlumeVentViruses_renamed.fna
+
+find ../../Virus_Genomes/fna/split_fasta_files/ -name &quot;*fasta&quot; | xargs -i ln -s {} .</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Run the bash script to run coverm</li>
+</ol>
+<pre class="bash"><code>time nohup ./run_coverm.sh &amp;</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Running again with the count option in –methods to also get count of reads mapped</li>
+</ol>
+<pre class="bash"><code>mamba activate coverm
+
+nohup ./run_coverm_count.sh &amp;</code></pre>
+<p>Had to add –min-covered-fraction 0 to the script based on error: “The ‘counts’ coverage estimator cannot be used when –min-covered-fraction is &gt; 0 as it does not calculate the covered fraction. You may wish to set the –min-covered-fraction to 0 and/or run this estimator separately.”</p>
 </div>
 </div>
 

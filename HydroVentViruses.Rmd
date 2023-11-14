@@ -1518,3 +1518,14 @@ find ../../Virus_Genomes/fna/split_fasta_files/ -name "*fasta" | xargs -i ln -s 
 time nohup ./run_coverm.sh &
 ```
 
+4. Running again with the count option in --methods to also get count of reads mapped
+```{bash, eval = FALSE}
+mamba activate coverm
+
+nohup ./run_coverm_count.sh &
+```
+Had to add --min-covered-fraction 0 to the script based on error: "The 'counts' coverage estimator cannot be used when --min-covered-fraction is > 0 as it does not calculate the covered fraction. You may wish to set the --min-covered-fraction to 0 and/or run this estimator separately."
+
+
+
+
