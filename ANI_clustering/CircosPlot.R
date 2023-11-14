@@ -3,10 +3,14 @@ library(circlize)
 library(tidyverse)
 library(dplyr)
 
+########################### major inputs ################################################
+
 #sort the ani_long_gd in alph order to avoid headaches
 ani_long_meta_gd <- ani_long_meta_gd %>%
   group_by(id) %>%
   arrange(Site, .by_group = T)
+
+######################### creating inpit matrix ################################################
 
 #transform ani_long_meta_gd from ANI_clust.R to input for circlize
 circ_mat <- ani_long_meta_gd %>%
@@ -15,7 +19,8 @@ circ_mat <- ani_long_meta_gd %>%
   group_by(id) %>%
   #count(Site)
   mutate(Site = toString(Site)) %>%
-  unique()
+  unique() %>%
+  ungroup()
 
 #get the counts of unique strings
 circ_mat2 <- as.data.frame(table(circ_mat$Site))
@@ -23,21 +28,41 @@ circ_mat2 <- as.data.frame(table(circ_mat$Site))
 #separate strings for summing same site match in different order
 circ_mat2 <- circ_mat2 %>% separate(Var1, c("Site1", "Site2"), 
                                   sep= ",")
+#remove weird spaces
+circ_mat2$Site1 <- gsub(" ","", circ_mat2$Site1) #remove spaces
+circ_mat2$Site2 <- gsub(" ","", circ_mat2$Site2) #remove spaces
 
-mat <- circ_mat2 %>%
-  pivot_wider(names_from = "Site1", values_from = "Freq") #%>%
-  remove_rownames() %>%
-  column_to_rownames(var="Site2") %>%
-  replace(is.na(.), 0)
+#tidy complete Site1 first
+df1 <- circ_mat2 %>%
+  complete(Site1, Site2, fill = list(Freq = 0))
+#get the ones with values and flip Site1 and Site2 order
+df_temp <- df1 %>% 
+  filter(Freq > 0) %>%
+  select(c("Site2", "Site1", "Freq")) %>%
+  rename("Site" = "Site2") %>%
+  rename("Site2" = "Site1") %>%
+  rename("Site1" = "Site")
+df1 <- bind_rows(df1, df_temp)
 
-mat <- read.delim2(file = "Input/circ_input.tsv", sep = "\t")
-mat <- mat %>%
-  remove_rownames() %>%
-  column_to_rownames(var="X")
+#tidy complete Site2 first, then switch the name order and drop repeats
+df2 <- circ_mat2 %>%
+  complete(Site2, Site1, fill = list(Freq = 0)) %>%
+  rename("Site" = "Site2") %>%
+  rename("Site2" = "Site1") %>%
+  rename("Site1" = "Site") %>%
+  filter(Freq < 1)
+
+#combine the two complete test dfs, sort uniq, and complete again for full one
+df<-bind_rows(df1, df2) %>%
+  unique() %>%
+  complete(Site1, Site2, fill = list(Freq = 0))
+
+#create the matrix
+mat <- as.data.frame.matrix(xtabs(Freq ~ Site1 + Site2, df))
 mat <- as.matrix(mat)
 
+######################### visualize ################################################
 
-#visualize
 dev.off()
 circos.clear()
 #set font size
@@ -85,3 +110,17 @@ circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
   #             sector.index = sector.name
   # )
 }, bg.border = NA)
+
+
+####################### unused
+
+# temp <- df %>%
+#   pivot_wider(names_from = "Site1", values_from = "Freq") #%>%
+#   remove_rownames() %>%
+#   column_to_rownames(var="Site2") %>%
+#   replace(is.na(.), 0)
+
+#mat <- read.delim2(file = "Input/circ_input.tsv", sep = "\t")
+# mat <- mat %>%
+#   remove_rownames() %>%
+#   column_to_rownames(var="X")
