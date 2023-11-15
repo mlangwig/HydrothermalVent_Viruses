@@ -374,30 +374,41 @@ plot_iv$Var1 <- gsub("Guaymas_","", plot_iv$Var1)
 plot_iv$Var1 <- gsub("EPR_","", plot_iv$Var1)
 plot_iv$Var1 <- gsub("_"," ", plot_iv$Var1)
 #fix up site names for outer label
-plot_iv$Site <- gsub("Lau","Lau Basin", plot_iv$Site)
+plot_iv$Site <- gsub("Lau","Lau Basin Plume", plot_iv$Site)
+plot_iv$Site <- gsub("ELSC","Lau Basin Vent", plot_iv$Site)
 plot_iv$Site <- gsub("Brothers","Brothers Volcano", plot_iv$Site)
 plot_iv$Site <- gsub("Guaymas","Guaymas Basin", plot_iv$Site)
+plot_iv$Site <- gsub("Axial","Axial Seamount", plot_iv$Site)
+plot_iv$Site <- gsub("EPR","East Pacific Rise", plot_iv$Site)
+plot_iv$Site <- gsub("Cayman","Mid-Cayman Rise", plot_iv$Site)
 
 #factor outer label sites
-plot_iv$Site_f = factor(plot_iv$Site, levels=c('Axial','Cayman','Lau Basin', 'ELSC',
-                                               'EPR', 'Guaymas Basin', 'Brothers Volcano'))
+plot_iv$Site_f = factor(plot_iv$Site, levels=c('Axial Seamount','Mid-Cayman Rise','Lau Basin Plume', 'Lau Basin Vent',
+                                               'East Pacific Rise', 'Guaymas Basin', 'Brothers Volcano'))
 #add ordering column for plotting in order within each facet
-plot_iv <- plot_iv %>%
-  group_by(Site) %>%
-  arrange(desc(Freq), .by_group = T)
+# plot_iv <- plot_iv %>%
+#   group_by(Site) %>%
+#   arrange(desc(Freq), .by_group = T)
+# 
+# test <- plot_iv %>%
+#   mutate(Var1 = reorder_within(as.character(Var1), desc(as.numeric(Freq)), Site_f)) %>%
+#   separate(Var1, c("Var1", NA), sep= "__")
 
-test <- plot_iv %>%
-  mutate(Var1 = reorder_within(as.character(Var1), desc(as.numeric(Freq)), Site_f)) %>%
-  separate(Var1, c("Var1", NA), sep= "__")
-
-install.packages("tidytext")
+#install.packages("tidytext")
 library(tidytext)
+
+#thank you https://juliasilge.com/blog/reorder-within/ for your helpful example
+
+colors <- c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478",
+                      "Guaymas Basin" = "#28827A", "Lau Basin Plume" = "#3F78C1",
+                      "Lau Basin Vent" = "#72a0db", "Mid-Cayman Rise" = "#000000", "East Pacific Rise" = "#CE9A28")
 
 dev.off()
 plot <- plot_iv %>%
-  ggplot(aes(x = as.numeric(Freq), y = reorder_within(as.character(Var1), desc(as.numeric(Freq)), Site_f, sep = " "))) + 
+  ggplot(aes(x = as.numeric(Freq), y = reorder_within(as.character(Var1), desc(as.numeric(Freq)), Site_f), fill = Site_f), alpha = Var1) + #reorder within to get desc nums in faceted plot
   geom_bar(stat = "identity") +
-  #scale_fill_manual(values = col_vector) +
+  scale_alpha_continuous(range= c(0.1,1)) +
+  scale_fill_manual(values = colors, name = "Site") +
   labs(y = "Cluster", x = "Viral clusters") +
   guides(fill=guide_legend(override.aes = list(size=3))) +
   theme_bw() +
@@ -413,48 +424,13 @@ plot <- plot_iv %>%
   #panel.border = element_blank()) + #turn this off to get the outline back)
   scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
   scale_y_reordered(limits=rev) +
+  # scale_fill_brewer(palette = "Set1",
+  #                   name = "Site") +
+  # scale_alpha_discrete(range= c(0.4,1)) +
   facet_grid(Site_f ~ ., scales = "free_y", space = "free_y") #+
   #ggtitle("dRep Clusters 1kb, 95% ANI") +
   #coord_flip()
 plot
-
-# test
-
-dev.off()
-plot_iv %>%
-  mutate(Var1 = reorder_within(Var1, Freq, Site_f)) %>%
-  separate(Var1, c("Var1", NA), sep= "__") %>% #get rid of name change from reorder_within
-  ggplot(aes(Freq, Var1)) + 
-  geom_col() +
-  #scale_fill_manual(values = col_vector) +
-  labs(y = "Cluster", x = "Viral clusters") +
-  guides(fill=guide_legend(override.aes = list(size=3))) +
-  theme_bw() +
-  theme(axis.text.y = element_text(hjust = 1, vjust = .5, size = 8),
-        axis.text.x = element_text(size = 8),
-        legend.background = element_rect(color = "white"),
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.background = element_rect(fill = "transparent"),
-        #panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.background = element_rect(fill = "transparent", color = NA),
-        strip.text.y = element_text(angle = 0)) +
-  #panel.border = element_blank()) + #turn this off to get the outline back)
-  scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
-  scale_y_reordered() + #limits=rev
-  facet_grid(Site_f ~ ., scales = "free_y", space = "free_y") #+
-#ggtitle("dRep Clusters 1kb, 95% ANI") +
-#coord_flip()
-plot
-
-
-
-
-
-
-
-
-
 
 ################################## plot ani vs virus completeness ################################################
 
