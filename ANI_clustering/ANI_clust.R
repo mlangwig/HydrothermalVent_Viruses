@@ -157,8 +157,9 @@ vUnbinned <- vUnbinned_VP_master %>% select(c('vMAG', 'type', 'contig_length',
                                               'checkv_quality', 'provirus',
                                               'completeness', 'contamination'))
 #bind/concatenate
-allVirus_master <- allVirus_master %>% rbind(vMAG, vUnbinned) %>%
+allVirus_master <- rbind(vMAG, vUnbinned) %>%
   unique()
+#allVirus_master %>% 
 
 #####change vMAG names from first scaffold name to file name for mapping
 
@@ -286,11 +287,11 @@ plot <- temp_count %>%
         panel.grid.minor = element_blank(),
         plot.background = element_rect(fill = "transparent", color = NA)) +
   #panel.border = element_blank()) + #turn this off to get the outline back)
-  scale_y_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
-  scale_fill_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
-                             "#8c510a", "#000000")) +
+  scale_y_continuous(expand = c(0, 0)) #+ #turn this on to make it look aligned with ticks
+  # scale_fill_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
+  #                            "#8c510a", "#000000")) +
   #ggtitle("dRep Clusters 1kb, 95% ANI") +
-  coord_flip()
+  #coord_flip()
 plot
 
 #ggsave(plot, filename = "Output/mcl_GeoDistinct_clusters.png", dpi = 500, height = 6, width = 6)
@@ -325,12 +326,17 @@ temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
 ids <- as.integer(unique(temp_count$id))
 ani_long_meta_iv <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 
+#remove clusters that are geo distinct
+id_rem <- unique(ani_long_meta_gd$id)
+"%ni%" <- Negate("%in%")
+ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %ni% id_rem)
+
 #remove viruses that are Unclassified or NA
-ani_long_meta_iv_filt <- ani_long_meta_iv %>% filter(taxonomy != "NA") %>% 
-  filter(taxonomy != "Unclassified") %>%
-  filter(checkv_quality != "Low-quality") %>%
-  filter(checkv_quality != "Not-determined") %>%
-  filter(grepl("ELSC", Site)) #%>%
+ani_long_meta_iv_filt <- ani_long_meta_iv #%>% filter(taxonomy != "NA") %>%
+  # filter(taxonomy != "Unclassified") %>%
+  # filter(checkv_quality != "Low-quality") %>%
+  # filter(checkv_quality != "Not-determined") %>%
+  # filter(grepl("ELSC", Site)) #%>%
   #filter(ANI_mean > 0.95)
 
 #write the table
@@ -350,38 +356,105 @@ plot_iv <- ani_long_meta_iv_filt %>%
 test <- table(plot_iv$Site)
 plot_iv <- as.data.frame(test)
 
-length(unique(plot_iv$Site)) # can unique_pairs be used? --> table(unique_pairs(test$Site))
+length(unique(plot_iv$Var1)) # can unique_pairs be used? --> table(unique_pairs(test$Site))
 
 ################################## plot id and site composition ################################################
 
-library(RColorBrewer)
-n <- 25
-qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
-col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-pie(rep(1,n), col=sample(col_vector, n))
+#modify input for faceting
+plot_iv$Site <- plot_iv$Var1 
+plot_iv$Site <- as.character(plot_iv$Site)
+plot_iv <- plot_iv %>% separate(Site, c("Site", NA), sep= "_")
+#remove long names in Var1
+plot_iv$Var1 <- gsub("Lau_Basin_","", plot_iv$Var1)
+plot_iv$Var1 <- gsub("Brothers_","", plot_iv$Var1)
+plot_iv$Var1 <- gsub("Axial_","", plot_iv$Var1)
+plot_iv$Var1 <- gsub("Cayman_","", plot_iv$Var1)
+plot_iv$Var1 <- gsub("ELSC_","", plot_iv$Var1)
+plot_iv$Var1 <- gsub("Guaymas_","", plot_iv$Var1)
+plot_iv$Var1 <- gsub("EPR_","", plot_iv$Var1)
+plot_iv$Var1 <- gsub("_"," ", plot_iv$Var1)
+#fix up site names for outer label
+plot_iv$Site <- gsub("Lau","Lau Basin", plot_iv$Site)
+plot_iv$Site <- gsub("Brothers","Brothers Volcano", plot_iv$Site)
+plot_iv$Site <- gsub("Guaymas","Guaymas Basin", plot_iv$Site)
+
+#factor outer label sites
+plot_iv$Site_f = factor(plot_iv$Site, levels=c('Axial','Cayman','Lau Basin', 'ELSC',
+                                               'EPR', 'Guaymas Basin', 'Brothers Volcano'))
+#add ordering column for plotting in order within each facet
+plot_iv <- plot_iv %>%
+  group_by(Site) %>%
+  arrange(desc(Freq), .by_group = T)
+
+test <- plot_iv %>%
+  mutate(Var1 = reorder_within(as.character(Var1), desc(as.numeric(Freq)), Site_f)) %>%
+  separate(Var1, c("Var1", NA), sep= "__")
+
+install.packages("tidytext")
+library(tidytext)
 
 dev.off()
 plot <- plot_iv %>%
-  ggplot(aes(x = as.character(Var1), y = as.numeric(Freq))) + 
+  ggplot(aes(x = as.numeric(Freq), y = reorder_within(as.character(Var1), desc(as.numeric(Freq)), Site_f, sep = " "))) + 
   geom_bar(stat = "identity") +
   #scale_fill_manual(values = col_vector) +
-  labs(x = "Cluster", y = "Viral genomes") +
+  labs(y = "Cluster", x = "Viral clusters") +
   guides(fill=guide_legend(override.aes = list(size=3))) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5, size = 8),
-        axis.text.y = element_text(size = 8),
+  theme(axis.text.y = element_text(hjust = 1, vjust = .5, size = 8),
+        axis.text.x = element_text(size = 8),
         legend.background = element_rect(color = "white"),
         legend.box.background = element_rect(fill = "transparent"),
         panel.background = element_rect(fill = "transparent"),
         #panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.background = element_rect(fill = "transparent", color = NA)) +
+        plot.background = element_rect(fill = "transparent", color = NA),
+        strip.text.y = element_text(angle = 0)) +
   #panel.border = element_blank()) + #turn this off to get the outline back)
-  scale_y_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
-  #scale_fill_manual(values=col_vector) +
+  scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  scale_y_reordered(limits=rev) +
+  facet_grid(Site_f ~ ., scales = "free_y", space = "free_y") #+
   #ggtitle("dRep Clusters 1kb, 95% ANI") +
-  coord_flip()
+  #coord_flip()
 plot
+
+# test
+
+dev.off()
+plot_iv %>%
+  mutate(Var1 = reorder_within(Var1, Freq, Site_f)) %>%
+  separate(Var1, c("Var1", NA), sep= "__") %>% #get rid of name change from reorder_within
+  ggplot(aes(Freq, Var1)) + 
+  geom_col() +
+  #scale_fill_manual(values = col_vector) +
+  labs(y = "Cluster", x = "Viral clusters") +
+  guides(fill=guide_legend(override.aes = list(size=3))) +
+  theme_bw() +
+  theme(axis.text.y = element_text(hjust = 1, vjust = .5, size = 8),
+        axis.text.x = element_text(size = 8),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_rect(fill = "transparent"),
+        panel.background = element_rect(fill = "transparent"),
+        #panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        strip.text.y = element_text(angle = 0)) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  scale_y_reordered() + #limits=rev
+  facet_grid(Site_f ~ ., scales = "free_y", space = "free_y") #+
+#ggtitle("dRep Clusters 1kb, 95% ANI") +
+#coord_flip()
+plot
+
+
+
+
+
+
+
+
+
 
 ################################## plot ani vs virus completeness ################################################
 
@@ -498,3 +571,9 @@ plot <- ani_long_metadata_all %>%
 plot
 
 
+########################### unused
+# library(RColorBrewer)
+# n <- 61
+# qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+# col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+# pie(rep(1,n), col=sample(col_vector, n))
