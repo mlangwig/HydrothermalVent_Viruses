@@ -123,10 +123,67 @@ dev.off()
 ######################### creating input matrix ################################################
 ######################### intra vent #####################################
 
-#sort the ani_long_gd in alph order to avoid headaches
+#sort the ani_long_iv in alphabetical order to avoid headaches
 ani_long_meta_iv <- ani_long_meta_iv %>%
   group_by(id) %>%
   arrange(Site, .by_group = T)
+
+test <- ani_long_meta_iv %>%
+  select(Site, id) %>%
+  group_by(Site, id) %>%
+  distinct()
+
+length(unique(test$id))
+
+## Can we just make a zero-filled matrix
+t.mat <- matrix(nrow = length(unique(test$Site)), ncol = length(unique(test$Site)), data = NA)
+colnames(t.mat) <- unique(test$Site)
+rownames(t.mat) <- unique(test$Site)
+
+## Holder dataframe
+df.hold <- data.frame(from = NA, to = NA, id = NA)
+cluster.list <- unique(test$id)
+for(i in 1:length(cluster.list)){
+  clust.tmp <- cluster.list[i]
+  id.tmp <- test[test$id == clust.tmp, ]
+    pw <- apply(combn(id.tmp$Site,2),2,paste,collapse=' ')
+    pw <- data.frame(SitePair = pw)
+    pw <- tidyr::separate(pw, col = SitePair, into = c("from", "to"), sep = " ")
+    pw$id <- rep(unique(id.tmp$id), nrow(pw))
+    df.hold <- rbind(df.hold, pw)
+  }
+
+df.hold <- df.hold[complete.cases(df.hold),]
+
+## Take the pairs and calculate the number of times they are the same
+df.hold$Unique <- paste0(df.hold$from, "__", df.hold$to)
+
+test <- df.hold %>%
+  group_by(Unique) %>%
+  count() %>%
+  separate(col = Unique, into = c("from", "to"), sep = "__")
+
+for(i in 1:nrow(test)){
+  tmp <- test[i,]
+  to.tmp <- test$to[i]
+  from.tmp <- test$from[i]
+  val.tmp <- test$n[i]
+  t.mat[colnames(t.mat) == from.tmp, rownames(t.mat) == to.tmp] <- val.tmp
+  t.mat[colnames(t.mat) == to.tmp, rownames(t.mat) == from.tmp] <- val.tmp
+  
+}
+
+t.mat[is.na(t.mat)] <- 0
+
+dev.off()
+circos.clear()
+#set font size
+par(cex = 1, mar = c(0, 0, 0, 0))
+#set gaps between blocks
+circos.par(gap.after = c(rep(1, length(unique(colnames(t.mat)))))) #this is crucial to plot
+chordDiagram(t.mat)
+
+#create a loop to do what you want :)
 
 #transform ani_long_meta_gd from ANI_clust.R to input for circlize
 circ_mat <- ani_long_meta_iv %>%
@@ -142,11 +199,15 @@ circ_mat <- ani_long_meta_iv %>%
 circ_mat2 <- as.data.frame(table(circ_mat$Site))
 
 #separate strings for summing same site match in different order
-circ_mat2 <- circ_mat2 %>% separate(Var1, c("Site1", "Site2"), 
+circ_mat2 <- circ_mat2 %>% separate(Var1, c("Site1", "Site2", "Site3", "Site4", "Site5"), 
                                     sep= ",")
 #remove weird spaces
 circ_mat2$Site1 <- gsub(" ","", circ_mat2$Site1) #remove spaces
 circ_mat2$Site2 <- gsub(" ","", circ_mat2$Site2) #remove spaces
+circ_mat2$Site3 <- gsub(" ","", circ_mat2$Site3) #remove spaces
+circ_mat2$Site4 <- gsub(" ","", circ_mat2$Site4) #remove spaces
+circ_mat2$Site5 <- gsub(" ","", circ_mat2$Site5) #remove spaces
+
 
 #tidy complete Site1 first
 df1 <- circ_mat2 %>%
