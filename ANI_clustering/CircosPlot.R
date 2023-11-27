@@ -68,8 +68,9 @@ mat <- as.matrix(mat)
 
 
 dev.off()
-png("Output/Circos_gd.png", res = 300, width = 350, height = 350, units="mm", 
-    pointsize = 13)
+# png("Output/Circos_gd.png", res = 300, width = 350, height = 350, units="mm", 
+#     pointsize = 13)
+svg("Output/Circos_gd.svg")
 #pdf(file = "Output/Circos_gd.pdf")
 #tiff("Output/Circos_gd.tiff", width = 3, height = 3, units = 'in', res = 300)
 circos.clear()
@@ -233,6 +234,7 @@ col_fun = "grey" #specify color of links between them
 #reset before running
 dev.off()
 circos.clear()
+svg("Output/Circos_iv.svg")
 #set font size
 par(cex = 1, mar = c(0, 0, 0, 0))
 #set gaps between blocks
@@ -262,29 +264,37 @@ circos.track(track.index = 2, panel.fun = function(x, y) {
   #             labels = gsub("\\..*","", sector.name),
   #             col = "black", cex = 0.5, facing = "bending", 
   #             adj = c(0.5, 0.5), niceFacing = TRUE, font = 0.5)
-  circos.text(mean(xlim), mean(ylim), sector.index, cex = 0.5, niceFacing = TRUE)
+  circos.text(mean(xlim), mean(ylim), sector.index, cex = 0.5, niceFacing = TRUE,
+              col = "white")
 }, bg.border = NA)
 
 highlight.sector(sector.index = c("P Abe", "P Kilo Moana",
                                   "P Mariner", "P Tahi Moana",
                                   "P Tui Malila"), track.index = 1, col = "#3F78C1", 
-                 text = "Lau Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE)
+                 text = "Lau Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
 highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
                                   "D Bowl", "D Abe",
                                   "D Vai Lili V2"), track.index = 1, col = "#72a0db", 
-                 text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE)
+                 text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
 highlight.sector(sector.index = c("NWCA", "NWCB",
                                   "UC", "Diffuse"), track.index = 1, col = "#B56478", 
-                 text = "Brothers Volcano", cex = 0.6, text.col = "white", niceFacing = TRUE)
+                 text = "Brothers Volcano", cex = 0.6, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
 highlight.sector(sector.index = c("4561", "4571-419",
                                   "4559-240"), track.index = 1, col = "#28827A", 
-                 text = "Guaymas Basin", cex = 0.8, text.col = "white", niceFacing = TRUE)
+                 text = "Guaymas Basin", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
 highlight.sector(sector.index = c("Deep", "Shallow"), track.index = 1, col = "#000000", 
-                 text = "Mid-Cayman Rise", cex = 0.5, text.col = "white", niceFacing = TRUE)
+                 text = "Mid-Cayman Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
 highlight.sector(sector.index = c("Plume", "Seawater"), track.index = 1, col = "#4F508C", 
-                 text = "Axial Seamount", cex = 0.5, text.col = "white", niceFacing = TRUE)
+                 text = "Axial Seamount", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
 highlight.sector(sector.index = c("4281-140", "PIR-30"), track.index = 1, col = "#CE9A28", 
-                 text = "East Pacific Rise", cex = 0.5, text.col = "white", niceFacing = TRUE)
+                 text = "East Pacific Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
 
 dev.off()
 

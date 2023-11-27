@@ -269,3 +269,38 @@ abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site,
                                           "Guaymas_4559-240", "Brothers_LC_S016",
                                           "Guaymas_4561-380", "Brothers_NWCA_S013"))
 
+
+######## using coverm abun for inter/intra vent relatedness ###################
+
+abund <- read.delim2("../../abundance/PlumeVentVirus-vs-Reads-CoverM-Count.tsv")
+
+#drop SWIR
+abund <- abund %>% select(-contains("X58P_trim_1.fastq.gz"))
+abund <- abund %>% select(-contains("SWIR_B_trim_1.fastq.gz"))
+#remove unmapped
+abund <- abund[-1,]
+#convert 0s to NAs so they are not included in distribution assessments
+abund <- abund %>% dplyr::mutate_all(funs(ifelse(. == 0, NA, .)))
+
+#convert from wide to long
+abund_long <- melt(abund, id = c("Genome"), na.rm = TRUE) 
+#group by reads, add column with percentile rank of values
+abund_long <- abund_long %>% group_by(variable) %>%
+  mutate(Percentile_Rank=rank(as.numeric(value))/length(as.numeric(value)))
+
+#just take counts from long format to box plot their distributions
+abund_long_count <- abund_long %>% filter(grepl("Read.Count", variable))
+
+#tests of sorting
+# test <- apply(abund, 2, FUN = function(abund) sort(abund, decreasing = T)[1:floor(length(abund)/2)])
+# test <- apply(abund, 2, FUN = function(abund) sort(abund, decreasing = T)[1:floor(sum(!is.na(abund))/4)])
+
+
+#one column test
+# n <- 75
+# test <- abund[abund$A1_trim_1.fastq.gz.Read.Count > quantile(abund$A1_trim_1.fastq.gz.Read.Count,prob=1-n/100),]
+
+####################### plot distribution ###################
+
+
+
