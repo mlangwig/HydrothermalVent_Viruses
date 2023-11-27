@@ -16,7 +16,7 @@ library(magrittr)
 skani_ani<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb.tsv")
 mcl_clusters <- read.delim2(file = "Input/skani_v2/dereplicated_virus.clusters", sep = "\t", header = FALSE)
 genomad <- read.delim2(file = "../../genomad/vUnbinned_vMAGs_1500Ns_PlumeVent_virus_summary.tsv")
-iphop <- read.csv(file = "../iPHoP/input/Host_prediction_to_genus_m90.csv")
+iphop <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genus_m90.csv")
 
 #################################### skani preprocessed ################################################
 # After running skani, create the processed file here:
@@ -332,11 +332,12 @@ id_rem <- unique(ani_long_meta_gd$id)
 ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %ni% id_rem)
 
 #remove viruses that are Unclassified or NA
-ani_long_meta_iv_filt <- ani_long_meta_iv #%>% filter(taxonomy != "NA") %>%
-  # filter(taxonomy != "Unclassified") %>%
+ani_long_meta_iv_filt <- ani_long_meta_iv %>% 
+  filter(taxonomy != "NA") %>%
+  filter(taxonomy != "Unclassified") %>%
   # filter(checkv_quality != "Low-quality") %>%
   # filter(checkv_quality != "Not-determined") %>%
-  # filter(grepl("ELSC", Site)) #%>%
+  filter(grepl("Lau", Site)) #%>%
   #filter(ANI_mean > 0.95)
 
 #write the table

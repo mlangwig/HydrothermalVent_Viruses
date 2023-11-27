@@ -270,7 +270,7 @@ abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site,
                                           "Guaymas_4561-380", "Brothers_NWCA_S013"))
 
 
-######## using coverm abun for inter/intra vent relatedness ###################
+################### using coverm abun for inter/intra vent relatedness ###########################
 
 abund <- read.delim2("../../abundance/PlumeVentVirus-vs-Reads-CoverM-Count.tsv")
 
@@ -285,11 +285,29 @@ abund <- abund %>% dplyr::mutate_all(funs(ifelse(. == 0, NA, .)))
 #convert from wide to long
 abund_long <- melt(abund, id = c("Genome"), na.rm = TRUE) 
 #group by reads, add column with percentile rank of values
-abund_long <- abund_long %>% group_by(variable) %>%
-  mutate(Percentile_Rank=rank(as.numeric(value))/length(as.numeric(value)))
+abund_long <- abund_long %>% 
+  group_by(variable) %>%
+  mutate(Percentile_Rank=rank(as.numeric(value))/length(as.numeric(value))) %>%
+  ungroup()
 
 #just take counts from long format to box plot their distributions
 abund_long_count <- abund_long %>% filter(grepl("Read.Count", variable))
+
+#rename site names
+abund_long_count$variable <- gsub(".Read.Count","",abund_long_count$variable)
+abund_long_count <- abun_names %>%
+  dplyr::select("V1", "V2") %>%
+  right_join(abund_long_count, by = c("V2" = "variable"))
+#master_table<-rename(master_table,"vMAG" = "vMAG_name")
+#master_table<-rename(master_table,"contig_id" = "vMAG_scaffold")
+
+#take top 50% of distributions to reduce false positives read mapping
+abund_50 <- abund_long_count %>%
+  group_by(V2) %>%
+  filter(Percentile_Rank >= .50) %>%
+  ungroup()
+
+#test <- abund_long_count %>% filter(grepl("A1", variable))
 
 #tests of sorting
 # test <- apply(abund, 2, FUN = function(abund) sort(abund, decreasing = T)[1:floor(length(abund)/2)])
@@ -301,6 +319,32 @@ abund_long_count <- abund_long %>% filter(grepl("Read.Count", variable))
 # test <- abund[abund$A1_trim_1.fastq.gz.Read.Count > quantile(abund$A1_trim_1.fastq.gz.Read.Count,prob=1-n/100),]
 
 ####################### plot distribution ###################
+library(ggforce)
+
+#make values numeric
+abund_long_count$value <- as.numeric(abund_long_count$value)
+
+#plot
+dev.off()
+abund_long_count %>%
+  ggplot(aes(x=V1, y=value)) +
+  geom_boxplot() +
+  #scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+  #theme_ipsum() +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=11),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab("Reads mapped") +
+  xlab("Site") +
+  scale_y_continuous(expand = c(0,0)) +
+  facet_zoom(ylim = c(0, 500)) #3000 is interesting
+  #ggtitle("Violin chart") +
+  #xlab("")
+
+
+
+
 
 
 
