@@ -307,6 +307,16 @@ abund_50 <- abund_long_count %>%
   filter(Percentile_Rank >= .50) %>%
   ungroup()
 
+#create file for circos plot
+abund_50 <- rename(abund_50, "CovermReadCount" = "value")
+abund_50 <- rename(abund_50, "Reads_Site" = "V1")
+abund_50 <- rename(abund_50, "Reads" = "V2")
+abund_50$Genome_Site <- abund_50$Genome
+abund_50 <- abund_50 %>% separate(Genome_Site, c("Genome_Site", NA),
+           sep = "_NODE|_scaffold|_vRhyme|_k95")
+
+write_tsv(abund_50, file = "output/coverm_readCount_top50.tsv", col_names = TRUE)
+
 #test <- abund_long_count %>% filter(grepl("A1", variable))
 
 #tests of sorting
@@ -322,12 +332,12 @@ abund_50 <- abund_long_count %>%
 library(ggforce)
 
 #make values numeric
-abund_long_count$value <- as.numeric(abund_long_count$value)
+abund_long_count$Reads <- as.numeric(abund_long_count$Reads)
 
 #plot
 dev.off()
 abund_long_count %>%
-  ggplot(aes(x=V1, y=value)) +
+  ggplot(aes(x=CovermReadCount, y=Reads)) +
   geom_boxplot() +
   #scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
   #theme_ipsum() +

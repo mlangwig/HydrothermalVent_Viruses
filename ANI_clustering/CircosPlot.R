@@ -298,17 +298,16 @@ highlight.sector(sector.index = c("4281-140", "PIR-30"), track.index = 1, col = 
 
 dev.off()
 
-
 ####################### unused
 
-circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
-  xlim = get.cell.meta.data("xlim")
-  ylim = get.cell.meta.data("ylim")
-  sector.name = get.cell.meta.data("sector.index")
-  
-  circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index, 
-              facing = "inside", niceFacing = TRUE, adj = c(0, 0.5), font = 1)
-}, bg.border = NA)
+# circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
+#   xlim = get.cell.meta.data("xlim")
+#   ylim = get.cell.meta.data("ylim")
+#   sector.name = get.cell.meta.data("sector.index")
+#   
+#   circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index, 
+#               facing = "inside", niceFacing = TRUE, adj = c(0, 0.5), font = 1)
+# }, bg.border = NA)
 
 # temp <- df %>%
 #   pivot_wider(names_from = "Site1", values_from = "Freq") #%>%
@@ -374,3 +373,5 @@ circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
 # #create the matrix
 # mat <- as.data.frame.matrix(xtabs(Freq ~ Site1 + Site2, df))
 # mat <- as.matrix(mat)
+
+
