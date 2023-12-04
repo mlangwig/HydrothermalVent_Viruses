@@ -1526,6 +1526,11 @@ nohup ./run_coverm_count.sh &
 ```
 Had to add --min-covered-fraction 0 to the script based on error: "The 'counts' coverage estimator cannot be used when --min-covered-fraction is > 0 as it does not calculate the covered fraction. You may wish to set the --min-covered-fraction to 0 and/or run this estimator separately."
 
+5. Running again with the covered_fraction option in --methods to also get covered fraction because I want to filter for >75 covered fraction. Also added --min-read-percent-identity 90 --min-read-aligned-length 50 to be more stringent on reads mapped.
+```{bash, eval = FALSE}
+mamba activate coverm
 
+nohup ./run_coverm_count_MinCov.sh &
+```
 
 

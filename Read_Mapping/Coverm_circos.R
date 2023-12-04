@@ -15,7 +15,7 @@ library(RColorBrewer)
 ########################### major inputs ################################################
 
 #coverm count data
-coverm_rc <- read.delim2(file = "../../abundance/PlumeVentVirus-vs-Reads-CoverM-Count.tsv")
+coverm_rc <- read.delim2(file = "../../abundance/PlumeVentVirus-vs-Reads-CoverM-Count_MinCov.tsv")
 
 #metadata to change names
 abun_names <- read.delim2(file = "../VentVirus_Analysis/input/AssembliesToReads_Mapping.txt", header = FALSE)
@@ -27,6 +27,41 @@ coverm_rc <- coverm_rc %>% select(-contains("X58P_trim_1.fastq.gz"))
 coverm_rc <- coverm_rc %>% select(-contains("SWIR_B_trim_1.fastq.gz"))
 #remove unmapped
 coverm_rc <- coverm_rc[-1,]
+
+#making file for Spencer
+coverm_rc <- coverm_rc %>% select(-contains("Relative.Abundance...."))
+colnames(coverm_rc) = gsub(".Read.Count", "", colnames(coverm_rc))
+coverm_rc <- coverm_rc %>%
+  filter(!str_detect(Genome, remove.list))
+coverm_rc$Genome_Site <- coverm_rc$Genome
+coverm_rc <- coverm_rc %>% 
+  separate(Genome_Site, c("Genome_Site", NA), sep = "_NODE|_scaffold|_vRhyme|_k95")
+
+#faster replace all the naming patterns
+#test <- coverm_rc_long
+coverm_rc$Genome_Site <- stri_replace_all_regex(coverm_rc$Genome_Site,
+                                                     pattern=c("_A[0-9]",
+                                                               "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
+                                                               "_S1[0-9][0-9]", "_[0-9][0-9][0-9]-[0-9][0-9][0-9]",
+                                                               "-38[0-9]"),
+                                                     replacement='',
+                                                     vectorize=FALSE)
+
+coverm_rc$Genome_Site <- gsub("*_M1[0-9]","",coverm_rc$Genome_Site)
+coverm_rc$Genome_Site <- gsub("*_M[0-9]","",coverm_rc$Genome_Site)
+
+#change order to bring Genome_Site to front
+coverm_rc <- coverm_rc %>%
+  select(Genome_Site, everything())
+
+#convert to numeric
+coverm_rc <- coverm_rc %>%
+  mutate_at(vars(all_of(fraction_columns)), as.numeric)
+
+write_delim(coverm_rc, file = "Output/coverm_rc_output_CovFrac.tsv", delim = "\t")
+
+
+
 
 #convert from wide to long
 coverm_rc_long <- melt(coverm_rc, id = c("Genome"), na.rm = TRUE)
@@ -81,6 +116,8 @@ abun_names$V1 <- gsub("*_[0-9][0-9][0-9]-[0-9][0-9][0-9]","",abun_names$V1)
 abun_names$V1 <- gsub("*-380","",abun_names$V1)
 abun_names$V1 <- gsub("*-384","",abun_names$V1)
 
+write_delim(abun_names, file = "Output/read_name_mapping.tsv", delim = "\t")
+
 #rename site names on coverm file
 coverm_rc_long$Reads_Site <- gsub(".Read.Count","", coverm_rc_long$Reads_Site)
 coverm_rc_long <- abun_names %>%
@@ -134,6 +171,10 @@ for(i in 1:length(unique(coverm_rc_long$Reads_Site))){
     m.connect[rownames(m.connect) == site.tmp, colnames(m.connect) == site.tmp2] <- con.ct
   } #j
 } #i
+
+test.spencer <- coverm_rc_long %>% 
+  filter(Reads_Site %in% c("Brothers_Diffuse", "Brothers_LC")) %>%
+  filter(Genome_Site %in% c("Brothers_Diffuse", "Brothers_LC"))
 
 ######################## plot it in circlize ################################################
 

@@ -1,46 +1,80 @@
 ######################################### Read Input ################################################
 mmseqs <- read.csv2(file = "Input/PlumeVent_mmseqs_clusters.tsv", sep = "\t")
-#595,541 clusters, 460,233 without singletons
+#595,541 proteins clustered
+#note that output from mmseqs2 is in long format so repeat proteins in first column
+#mmseqs does not output singletons
 
 ############################################ mmseqs ####################################################
 
-#Filter for duplicates in cluster representative
-mmseqs_noSingle <- mmseqs %>%
-  add_count(cluster.representative) %>% 
-  filter(n!=1) %>%
-  select(-n)
+#Filter for non-self match in cluster
+mmseqs_dif <- mmseqs %>%
+  filter(cluster.representative != cluster.member)
+#this should now be number of clusters
+length(unique(mmseqs_dif$cluster.representative))
 
+# mmseqs_dif <- mmseqs_dif %>%
+#   add_count(cluster.representative)
+
+#this doesn't do what I thought:
+# #Filter for duplicates in cluster representative
+# mmseqs_noSingle <- mmseqs %>%
+#   add_count(cluster.representative) %>% 
+#   filter(n!=1) %>%
+#   select(-n)
+#
+
+#change format to longer
+mmseqs_dif_long <- mmseqs_dif %>%
+  group_by(cluster.representative) %>%
+  mutate(id = cur_group_id()) %>%
+  pivot_longer(cols = c('cluster.representative', 'cluster.member')) %>%
+  select(-name) %>%
+  rename("genome" = "value") %>%
+  ungroup() %>%
+  group_by(id) %>%
+  unique() %>%
+  ungroup()
+
+##### Find which clusters have proteins from Plume vs Vent
 #substitute names in second column
 #gsub to replace Plume names
-mmseqs_noSingle$cluster.member <- gsub(".*Lau_Basin.*","Plume",mmseqs_noSingle$cluster.member) #the placement of the periods is crucial for replacing whole string
-mmseqs_noSingle$cluster.member <- gsub(".*Cayman.*","Plume",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*Guaymas_Basin.*","Plume",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*Axial.*","Plume",mmseqs_noSingle$cluster.member)
+mmseqs_PV <- mmseqs_dif_long
+mmseqs_PV$genome <- gsub(".*Lau_Basin.*","Plume",mmseqs_PV$genome) #the placement of the periods is crucial for replacing whole string
+mmseqs_PV$genome <- gsub(".*Cayman.*","Plume",mmseqs_PV$genome)
+mmseqs_PV$genome <- gsub(".*Guaymas_Basin.*","Plume",mmseqs_PV$genome)
+mmseqs_PV$genome <- gsub(".*Axial.*","Plume",mmseqs_PV$genome)
 
 #Changing names to general site to see clusters from different sites (not same vent field)
-mmseqs_noSingle$cluster.member <- gsub(".*Lau_Basin.*","Lau_Basin",mmseqs_noSingle$cluster.member) #the placement of the periods is crucial for replacing whole string
-mmseqs_noSingle$cluster.member <- gsub(".*Cayman.*","Cayman",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*ELSC.*","ELSC",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*Guaymas.*","Guaymas",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*Brothers.*","Brothers",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*MAR.*","MAR",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*EPR.*","EPR",mmseqs_noSingle$cluster.member)
-mmseqs_noSingle$cluster.member <- gsub(".*Axial.*","Axial",mmseqs_noSingle$cluster.member)
+mmseqs_dif$cluster.member <- gsub(".*Lau_Basin.*","Lau_Basin",mmseqs_dif$cluster.member) #the placement of the periods is crucial for replacing whole string
+mmseqs_dif$cluster.member <- gsub(".*Cayman.*","Cayman",mmseqs_dif$cluster.member)
+mmseqs_dif$cluster.member <- gsub(".*ELSC.*","ELSC",mmseqs_dif$cluster.member)
+mmseqs_dif$cluster.member <- gsub(".*Guaymas.*","Guaymas",mmseqs_dif$cluster.member)
+mmseqs_dif$cluster.member <- gsub(".*Brothers.*","Brothers",mmseqs_dif$cluster.member)
+mmseqs_dif$cluster.member <- gsub(".*MAR.*","MAR",mmseqs_dif$cluster.member)
+mmseqs_dif$cluster.member <- gsub(".*EPR.*","EPR",mmseqs_dif$cluster.member)
+mmseqs_dif$cluster.member <- gsub(".*Axial.*","Axial",mmseqs_dif$cluster.member)
 
 #separate the plume and vent dataframes 
-mmseqs_noSingle_Plume <- mmseqs_noSingle %>% filter(cluster.member == "Plume")
+mmseqs_P <- mmseqs_PV %>% filter(genome == "Plume") #22,656 plume
 #remove Plume so can make all names left Vent
-mmseqs_noSingle <- mmseqs_noSingle %>% filter(cluster.member != "Plume")
-mmseqs_noSingle$cluster.member <- "Vent"
+mmseqs_PV <- mmseqs_PV %>% filter(genome != "Plume")
+mmseqs_PV$genome <- "Vent"
 #Now put them back together
-mmseqs_noSingle <- rbind(mmseqs_noSingle, mmseqs_noSingle_Plume)
+mmseqs_PV <- rbind(mmseqs_P, mmseqs_PV)
 
 #sort by unique
-mmseqs_noSingle_uniq <- unique(mmseqs_noSingle)
+mmseqs_PV_uniq <- unique(mmseqs_PV)
 #do any of the unique clusters now occur twice? (in cluster.rep column)
-mmseqs_noSingle_uniq <- mmseqs_noSingle_uniq %>% group_by(cluster.representative) %>% filter(n()>1)
-#326 proteins that occur in both vent and plume
+test <- mmseqs_PV_uniq %>% group_by(id) %>% filter(n()>1)
+#163 clusters that have a protein shared between vent and plume, X 326 proteins that occur in both vent and plume
 #49,362 proteins that occur in geographically distinct vents
+
+#make a list of the shared proteins
+prots_PV_list <- as.data.frame(unique(test$id)) %>%
+  rename("PV_clusters" = "unique(test$id)")
+#grab the protein names shared between vent and plume
+prots_PV <- mmseqs_dif_long[mmseqs_dif_long$id %in% prots_PV_list$PV_clusters,] #subset table using list of names
+
 
 ################################# get protein annotations  ####################################
 #read metadata inputs to map annotation info
