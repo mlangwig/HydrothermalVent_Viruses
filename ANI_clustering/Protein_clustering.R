@@ -1,6 +1,6 @@
 ######################################### Read Input ################################################
-mmseqs <- read.csv2(file = "Input/PlumeVent_mmseqs_clusters.tsv", sep = "\t")
-#595,541 proteins clustered
+mmseqs <- read.csv2(file = "../../mmseqs/PlumeVent_mmseqs_clusters.tsv", sep = "\t")
+#595,465 proteins clustered
 #note that output from mmseqs2 is in long format so repeat proteins in first column
 #mmseqs does not output singletons
 
@@ -10,7 +10,7 @@ mmseqs <- read.csv2(file = "Input/PlumeVent_mmseqs_clusters.tsv", sep = "\t")
 mmseqs_dif <- mmseqs %>%
   filter(cluster.representative != cluster.member)
 #this should now be number of clusters
-length(unique(mmseqs_dif$cluster.representative))
+length(unique(mmseqs_dif$cluster.representative)) #74,963
 
 # mmseqs_dif <- mmseqs_dif %>%
 #   add_count(cluster.representative)
@@ -45,14 +45,15 @@ mmseqs_PV$genome <- gsub(".*Guaymas_Basin.*","Plume",mmseqs_PV$genome)
 mmseqs_PV$genome <- gsub(".*Axial.*","Plume",mmseqs_PV$genome)
 
 #Changing names to general site to see clusters from different sites (not same vent field)
-mmseqs_dif$cluster.member <- gsub(".*Lau_Basin.*","Lau_Basin",mmseqs_dif$cluster.member) #the placement of the periods is crucial for replacing whole string
-mmseqs_dif$cluster.member <- gsub(".*Cayman.*","Cayman",mmseqs_dif$cluster.member)
-mmseqs_dif$cluster.member <- gsub(".*ELSC.*","ELSC",mmseqs_dif$cluster.member)
-mmseqs_dif$cluster.member <- gsub(".*Guaymas.*","Guaymas",mmseqs_dif$cluster.member)
-mmseqs_dif$cluster.member <- gsub(".*Brothers.*","Brothers",mmseqs_dif$cluster.member)
-mmseqs_dif$cluster.member <- gsub(".*MAR.*","MAR",mmseqs_dif$cluster.member)
-mmseqs_dif$cluster.member <- gsub(".*EPR.*","EPR",mmseqs_dif$cluster.member)
-mmseqs_dif$cluster.member <- gsub(".*Axial.*","Axial",mmseqs_dif$cluster.member)
+mmseqs_GD <- mmseqs_dif_long
+mmseqs_GD$genome <- gsub(".*Lau_Basin.*","Lau_Basin",mmseqs_GD$genome) #the placement of the periods is crucial for replacing whole string
+mmseqs_GD$genome <- gsub(".*Cayman.*","Cayman",mmseqs_GD$genome)
+mmseqs_GD$genome <- gsub(".*ELSC.*","Lau_Basin",mmseqs_GD$genome)
+mmseqs_GD$genome <- gsub(".*Guaymas.*","Guaymas",mmseqs_GD$genome)
+mmseqs_GD$genome <- gsub(".*Brothers.*","Brothers",mmseqs_GD$genome)
+mmseqs_GD$genome <- gsub(".*MAR.*","MAR",mmseqs_GD$genome)
+mmseqs_GD$genome <- gsub(".*EPR.*","EPR",mmseqs_GD$genome)
+mmseqs_GD$genome <- gsub(".*Axial.*","Axial",mmseqs_GD$genome)
 
 #separate the plume and vent dataframes 
 mmseqs_P <- mmseqs_PV %>% filter(genome == "Plume") #22,656 plume
@@ -64,10 +65,15 @@ mmseqs_PV <- rbind(mmseqs_P, mmseqs_PV)
 
 #sort by unique
 mmseqs_PV_uniq <- unique(mmseqs_PV)
+mmseqs_GD <- unique(mmseqs_GD)
 #do any of the unique clusters now occur twice? (in cluster.rep column)
 test <- mmseqs_PV_uniq %>% group_by(id) %>% filter(n()>1)
-#163 clusters that have a protein shared between vent and plume, X 326 proteins that occur in both vent and plume
-#49,362 proteins that occur in geographically distinct vents
+length(unique(test$id))
+test2 <- mmseqs_GD %>% group_by(id) %>% filter(n()>1)
+length(unique(test2$id))
+#152 clusters that have a protein shared between vent and plume, made up of 763 proteins
+#23,354-152= 23,202 clusters that have proteins that occur in geographically distinct vents
+#84,225-763= 83,462 proteins in geo distinct vents
 
 #make a list of the shared proteins
 prots_PV_list <- as.data.frame(unique(test$id)) %>%
@@ -75,6 +81,28 @@ prots_PV_list <- as.data.frame(unique(test$id)) %>%
 #grab the protein names shared between vent and plume
 prots_PV <- mmseqs_dif_long[mmseqs_dif_long$id %in% prots_PV_list$PV_clusters,] #subset table using list of names
 
+prots_GD_list <- as.data.frame(unique(test2$id)) %>%
+  rename("GD_clusters" = "unique(test2$id)")
+#grab the protein names shared between geo distinct vents
+prots_GD <- mmseqs_dif_long[mmseqs_dif_long$id %in% prots_GD_list$GD_clusters,]
+#remove the PV clusters from this
+ids <- as.data.frame(unique(prots_PV$id)) %>%
+  rename("id" = "unique(prots_PV$id)")
+prots_GD <- prots_GD[!(prots_GD$id %in% ids$id),]
+
+#remove the clusters in PV from GD
+prots_GD_PV <- rbind(prots_GD, prots_PV)
+prots_GD_PV <- prots_GD_PV %>%
+  group_by(id,genome) %>%
+  unique() %>%
+  ungroup()
+
+write_delim(prots_GD_PV, file = "Output/virus_proteins_mmseqsClusts_GD_PV.tsv", 
+            col_names = TRUE, delim = "\t")
+write_delim(prots_GD, file = "Output/virus_proteins_mmseqsClusts_GD.tsv", 
+            col_names = TRUE, delim = "\t")
+write_delim(prots_PV, file = "Output/virus_proteins_mmseqsClusts_PV.tsv", 
+            col_names = TRUE, delim = "\t")
 
 ################################# get protein annotations  ####################################
 #read metadata inputs to map annotation info

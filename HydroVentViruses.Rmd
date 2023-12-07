@@ -1534,3 +1534,55 @@ nohup ./run_coverm_count_MinCov.sh &
 ```
 
 
+# Translate viruses to protein yourself using prodigal
+1. Translate to proteins because confusion with the files I have. On virserver
+```{bash, eval = FALSE}
+cat vMAGs_PlumeVent_noNs.fna unbinned_PlumeVentViruses.fna > All_PlumeVent_Viruses.fna
+
+nohup prodigal -p meta -i All_PlumeVent_Viruses.fna -a ../faa/All_PlumeVent_Viruses_prodigal.faa -o ../faa/output.txt &
+```
+
+2. Remove E coli virus contamination
+```{bash, eval = FALSE}
+for i in `cat contam_virus_ecoli_list.txt; do grep $i All_PlumeVent_Viruses_prodigal.faa >> ecoli_faa_list_toRemove.txt; done
+
+sed 's/ /\t/g' ecoli_faa_list_toRemove.txt | cut -f1 | sed 's/\(.*\)_/\1 /' | sed 's/ /\t/g' | cut -f1 | sort | uniq | wc
+
+sed 's/>//g' ecoli_faa_list_toRemove.txt | sed 's/ /\t/g' | cut -f1 > ../faa/ecoli_faa_list_toRemove_renamed.txt
+
+perl /scratch/langwig/scripts/screen_list_new.pl ecoli_faa_list_toRemove_renamed.txt All_PlumeVent_Viruses_prodigal.faa > All_PlumeVent_Viruses_prodigal_noEcoli.faa
+```
+
+# Run mmseqs to cluster viral proteins
+
+Run mmseqs clustering
+```{bash, eval = FALSE}
+mamba install -c bioconda mmseqs2=15.6f452
+
+mmseqs createdb All_PlumeVent_Viruses_prodigal_noEcoli.faa PlumeVent_Viruses_DB
+
+nohup mmseqs cluster PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu /scratch/langwig/tmp --cov-mode 0 --min-seq-id 0.75 --threads 20 &
+
+mmseqs createtsv PlumeVent_Viruses_DB PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu PlumeVent_mmseqs_clusters.tsv --threads 20
+```
+
+# Run PHROGs to get viral protein annotations
+
+1. Run PHROGs
+```{bash, eval = FALSE}
+
+```
+
+# Run dramv to get viral protein annotations
+
+1. Run Virsorter to get dramv input file
+```{bash, eval = FALSE}
+
+```
+
+
+
+
+
+
+
