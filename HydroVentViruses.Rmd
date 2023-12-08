@@ -1570,17 +1570,53 @@ mmseqs createtsv PlumeVent_Viruses_DB PlumeVent_Viruses_DB PlumeVent_Viruses_DB_
 
 1. Run PHROGs
 ```{bash, eval = FALSE}
+mmseqs createdb All_PlumeVent_Viruses_prodigal_noEcoli.faa PlumeVirus_mmseqs_PHROGsDB
 
+nohup mmseqs search /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs ./tmp --threads 20 &
+
+mmseqs createtsv /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs results.tsv
 ```
+
+alternative command for increased sensitivity:
+```{bash, eval = FALSE}
+nohup mmseqs search /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs ./tmp -s 7 --threads 20 &
+
+nohup mmseqs search /storage1/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs ./tmp -s 1 --threads 30 &
+```
+
+2. Filter the PHROGs output for lowest e value. Then subset the PHROGs results for the proteins identified as GD and PV to see what they are
+```{bash, eval = FALSE}
+Rscript parse_evalue.R
+
+for i in `cat vir_prots_mmseqClusts_GD_PD.tsv`; do grep $i results_evalparsed.tsv >> results_GD_PD_viruses.txt; done
+```
+
 
 # Run dramv to get viral protein annotations
 
-1. Run Virsorter to get dramv input file
+1. Run Virsorter to get dramv input file - and make sure it processes all viruses
 ```{bash, eval = FALSE}
-
+nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter -i ../Virus_Genomes/All_PlumeVent_Viruses.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &
 ```
 
+2. Run DRAMv
+```{bash, eval = FALSE}
+DRAM-setup.py import_config --config_loc /storage2/databases/dram-latest/CONFIG 
 
+nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-affi-contigs-for-dramv_renamed.tab -o annotation --threads 50 &
+```
+
+3. Rename it for parsing
+```{bash, eval = FALSE}
+sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
+```
+
+# Get total read count for all fastq reads
+
+1. Read count using seqkit
+```{bash, eval = FALSE}
+nohup seqkit stats -To stats.tsv *.fastq.gz &
+```
 
 
 

@@ -104,6 +104,11 @@ write_delim(prots_GD, file = "Output/virus_proteins_mmseqsClusts_GD.tsv",
 write_delim(prots_PV, file = "Output/virus_proteins_mmseqsClusts_PV.tsv", 
             col_names = TRUE, delim = "\t")
 
+iris %>% 
+  group_by(Species) %>% 
+  arrange(Petal.Length) %>% 
+  slice(1)
+
 ################################# get protein annotations  ####################################
 #read metadata inputs to map annotation info
 vent_vMAG <- read.delim2(file = "../VentVirus_Analysis/output/master_table_vMAGs.tsv")
@@ -157,6 +162,15 @@ PV_master <- proteins_ventplume %>%
 PV_master_geodistinct <- proteins_geodistinct %>%
   dplyr::select("cluster.representative", "cluster.member") %>%
   left_join(PV_master, by = c("cluster.member" = "protein"))
+
+################################# protein annotations with DRAMv  ####################################
+
+#input
+dramv <- read.delim2(file = "../../DRAMv/annotations_renamed.tsv", header = TRUE, sep = "\t")
+
+#filter input for prots GD and PV
+
+
 
 ################################# write tables  ####################################
 write.table(PV_master, file = "Output/mmseqs_proteinsVentPlume.tsv", col.names = TRUE,
