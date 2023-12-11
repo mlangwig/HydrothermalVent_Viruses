@@ -28,6 +28,26 @@ coverm_rc <- coverm_rc %>% select(-contains("SWIR_B_trim_1.fastq.gz"))
 #remove unmapped
 coverm_rc <- coverm_rc[-1,]
 
+#remove contam viruses
+remove.list <- paste(c("ELSC_Bowl_M2_NODE_26941_length_5513_cov_204.284070",
+                       "Cayman_Deep_k95_329100_flag_3_multi_740.0000_len_5481",
+                       "ELSC_Abe_A3_NODE_22123_length_5513_cov_37.688452",
+                       "Guaymas_Basin_k95_702414_flag_3_multi_156.0000_len_5481",
+                       "Lau_Basin_Tahi_Moana_k95_522185_flag_3_multi_299.0000_len_5481",
+                       "ELSC_Vai_Lili_V2_NODE_3240_length_5513_cov_24.324359",
+                       "ELSC_Mariner_M17_NODE_20378_length_5513_cov_309.771259",
+                       "ELSC_Bowl_M1_NODE_4552_length_5513_cov_398.155589",
+                       "Cayman_Shallow_k95_556392_flag_3_multi_763.1417_len_5481",
+                       "ELSC_Tui_Malila_T10_NODE_9861_length_5513_cov_130.186966",
+                       "ELSC_Abe_A1_NODE_14649_length_5513_cov_85.977163",
+                       "ELSC_Tui_Malila_T11_NODE_11702_length_5513_cov_423.693093",
+                       "ELSC_Mariner_M10_NODE_9821_length_5513_cov_36.731526",
+                       "Lau_Basin_Mariner_k95_379953_flag_3_multi_286.0000_len_5481",
+                       "Lau_Basin_Abe_k95_1566522_flag_3_multi_441.0000_len_5481",
+                       "ELSC_Tui_Malila_T2_NODE_29080_length_5513_cov_220.766803",
+                       "Lau_Basin_Tui_Malila_k95_411308_flag_3_multi_152.0000_len_5481",
+                       "Lau_Basin_Kilo_Moana_k95_205532_flag_3_multi_561.0000_len_5481"), collapse = '|')
+
 #making file for Spencer
 coverm_rc <- coverm_rc %>% select(-contains("Relative.Abundance...."))
 colnames(coverm_rc) = gsub(".Read.Count", "", colnames(coverm_rc))
@@ -55,44 +75,14 @@ coverm_rc <- coverm_rc %>%
   select(Genome_Site, everything())
 
 #convert to numeric
+# Identify columns ending with "Covered.Fraction"
+fraction_columns <- grep("Covered\\.Fraction$", names(coverm_rc), value = TRUE)
+#convert those columns
 coverm_rc <- coverm_rc %>%
   mutate_at(vars(all_of(fraction_columns)), as.numeric)
 
-write_delim(coverm_rc, file = "Output/coverm_rc_output_CovFrac.tsv", delim = "\t")
+#write_delim(coverm_rc, file = "Output/coverm_rc_output_CovFrac.tsv", delim = "\t")
 
-
-
-
-#convert from wide to long
-coverm_rc_long <- melt(coverm_rc, id = c("Genome"), na.rm = TRUE)
-#remove 0s
-coverm_rc_long <- coverm_rc_long %>%  
-  filter(value > 0) %>%
-  rename("Reads_Site" = "variable") %>%
-  rename("Reads_count" = "value")
-
-#remove contam viruses
-remove.list <- paste(c("ELSC_Bowl_M2_NODE_26941_length_5513_cov_204.284070",
-                       "Cayman_Deep_k95_329100_flag_3_multi_740.0000_len_5481",
-                       "ELSC_Abe_A3_NODE_22123_length_5513_cov_37.688452",
-                       "Guaymas_Basin_k95_702414_flag_3_multi_156.0000_len_5481",
-                       "Lau_Basin_Tahi_Moana_k95_522185_flag_3_multi_299.0000_len_5481",
-                       "ELSC_Vai_Lili_V2_NODE_3240_length_5513_cov_24.324359",
-                       "ELSC_Mariner_M17_NODE_20378_length_5513_cov_309.771259",
-                       "ELSC_Bowl_M1_NODE_4552_length_5513_cov_398.155589",
-                       "Cayman_Shallow_k95_556392_flag_3_multi_763.1417_len_5481",
-                       "ELSC_Tui_Malila_T10_NODE_9861_length_5513_cov_130.186966",
-                       "ELSC_Abe_A1_NODE_14649_length_5513_cov_85.977163",
-                       "ELSC_Tui_Malila_T11_NODE_11702_length_5513_cov_423.693093",
-                       "ELSC_Mariner_M10_NODE_9821_length_5513_cov_36.731526",
-                       "Lau_Basin_Mariner_k95_379953_flag_3_multi_286.0000_len_5481",
-                       "Lau_Basin_Abe_k95_1566522_flag_3_multi_441.0000_len_5481",
-                       "ELSC_Tui_Malila_T2_NODE_29080_length_5513_cov_220.766803",
-                       "Lau_Basin_Tui_Malila_k95_411308_flag_3_multi_152.0000_len_5481",
-                       "Lau_Basin_Kilo_Moana_k95_205532_flag_3_multi_561.0000_len_5481"), collapse = '|')
-
-coverm_rc_long <- coverm_rc_long %>%
-  filter(!str_detect(Genome, remove.list))
 
 ######################## change read names to site names for intra vent comparison ################################################
 
@@ -116,85 +106,114 @@ abun_names$V1 <- gsub("*_[0-9][0-9][0-9]-[0-9][0-9][0-9]","",abun_names$V1)
 abun_names$V1 <- gsub("*-380","",abun_names$V1)
 abun_names$V1 <- gsub("*-384","",abun_names$V1)
 
-write_delim(abun_names, file = "Output/read_name_mapping.tsv", delim = "\t")
+#write_delim(abun_names, file = "Output/read_name_mapping.tsv", delim = "\t")
 
-#rename site names on coverm file
-coverm_rc_long$Reads_Site <- gsub(".Read.Count","", coverm_rc_long$Reads_Site)
-coverm_rc_long <- abun_names %>%
-  dplyr::select("V1", "V2") %>%
-  right_join(coverm_rc_long, by = c("V2" = "Reads_Site")) %>%
-  rename("Reads_Site" = "V1") %>%
-  rename("Reads" = "V2")
+######################## Make symmetrical matrix input ################################################
+########### the following code was written by Spencer R. Keyser (skeyser@wisc.edu)
 
-######################## make genome site column ################################################
+coverm <- coverm_rc
+read.map <- abun_names
+colnames(read.map) <- c("Site", "UID")
 
-coverm_rc_long$Genome_Site <- coverm_rc_long$Genome 
-coverm_rc_long <- coverm_rc_long %>% 
-  separate(Genome_Site, c("Genome_Site", NA), sep = "_NODE|_scaffold|_vRhyme|_k95") %>%
-  select(c("Reads_Site", "Reads", "Genome_Site", "Genome", "Reads_count"))
+## filter any column with the string "Covered.Fraction" >= 0.7
+## filter any column with the read count greater than 5
+for(i in 1:length(colnames(coverm))){
+  name.tmp <- colnames(coverm)[i]
+  if(str_detect(name.tmp, "Genome|Genome_Site|Covered.Fraction")){ next } else {
+    colnames(coverm)[i] <- paste0(name.tmp, ".ReadCount")
+  }
+}
+colnames(coverm)
 
-#faster replace all the naming patterns
-#test <- coverm_rc_long
-coverm_rc_long$Genome_Site <- stri_replace_all_regex(coverm_rc_long$Genome_Site,
-                                  pattern=c("_A[0-9]",
-                                            "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
-                                            "_S1[0-9][0-9]", "_[0-9][0-9][0-9]-[0-9][0-9][0-9]",
-                                            "-38[0-9]"),
-                                  replacement='',
-                                  vectorize=FALSE)
+## Make the dataframe long format
+coverm.long <- coverm %>%
+  pivot_longer(
+    cols = -1:-2
+  ) %>%
+  mutate(Id.var = case_when(str_detect(name, ".Covered.Fraction") ~ "CF",
+                            str_detect(name, ".ReadCount") ~ "RC")) %>%
+  mutate(RC_Ind = if_else(Id.var == "RC" & value >= 5, T, F)) %>%
+  mutate(CF_Ind = if_else(Id.var == "CF" & value >= 0.7, T, F))
 
-coverm_rc_long$Genome_Site <- gsub("*_M1[0-9]","",coverm_rc_long$Genome_Site)
-coverm_rc_long$Genome_Site <- gsub("*_M[0-9]","",coverm_rc_long$Genome_Site)
+## Pull the read count part out
+coverm.reads <- coverm.long %>%
+  filter(Id.var == "RC") %>%
+  select(Genome_Site, Genome, name, Reads = value) %>%
+  mutate(name = gsub(".ReadCount", "", name))
 
-#remove self to self matches
-coverm_rc_long <- coverm_rc_long %>%
-  filter(Reads_Site != Genome_Site)
+## Pull the cover fraction part out
+coverm.cf <- coverm.long %>%
+  filter(Id.var == "CF") %>%
+  select(Genome_Site, Genome, name, CoverFrac = value) %>%
+  mutate(name = gsub(".Covered.Fraction", "", name))
 
-######################## generate the matrix ################################################
+## Join these two back
+cover.full <- left_join(coverm.cf, coverm.reads)
 
-#Spencer
-m.connect <- matrix(ncol = length(unique(coverm_rc_long$Reads_Site)),
-                    nrow = length(unique(coverm_rc_long$Reads_Site)),
-                    data = 0)
-rownames(m.connect) <- unique(coverm_rc_long$Reads_Site)
-colnames(m.connect) <- unique(coverm_rc_long$Reads_Site)
+## filter by the criteria
+coverm.filter <- cover.full %>%
+  filter(CoverFrac >= 0.7 & Reads >= 5)
 
-for(i in 1:length(unique(coverm_rc_long$Reads_Site))){
-  site.tmp <- unique(coverm_rc_long$Reads_Site)[i]
-  tmp.df <- coverm_rc_long %>%
-    filter(Reads_Site == site.tmp)
-  for(j in 1:length(unique(tmp.df$Genome_Site))){
-    site.tmp2 <- unique(tmp.df$Genome_Site)[j]
-    tmp.df2 <- tmp.df %>%
-      filter(Genome_Site == site.tmp2)
-    con.ct <- nrow(tmp.df2)
-    m.connect[rownames(m.connect) == site.tmp, colnames(m.connect) == site.tmp2] <- con.ct
-  } #j
-} #i
+##Read Mapping
+coverm.map <- coverm.filter %>%
+  left_join(read.map, by = c("name" = "UID")) %>%
+  rename(Read_Site = Site) %>%
+  filter(Genome_Site != Read_Site)
 
-test.spencer <- coverm_rc_long %>% 
-  filter(Reads_Site %in% c("Brothers_Diffuse", "Brothers_LC")) %>%
-  filter(Genome_Site %in% c("Brothers_Diffuse", "Brothers_LC"))
+## Reduce to just the genome_site and read_site
+coverm.simple <- coverm.map %>%
+  select(Genome_Site, Read_Site) %>%
+  group_by(Genome_Site, Read_Site) %>%
+  count()
+
+## Make the Genome_Site x Read_Site Matrix with # of connections
+######################### the following code was written by Spencer R. Keyser (skeyser@wisc.edu)
+## make a zero-filled matrix
+t.mat <- matrix(nrow = length(unique(coverm.simple$Genome_Site)), ncol = length(unique(coverm.simple$Read_Site)), data = 0)
+colnames(t.mat) <- unique(coverm.simple$Genome_Site)
+rownames(t.mat) <- unique(coverm.simple$Genome_Site)
+
+## Holder dataframe
+for(i in 1:nrow(t.mat)){
+  g.site.tmp <- rownames(t.mat)[i]
+  for(j in 1:ncol(t.mat)){
+    r.site.tmp <- colnames(t.mat)[j]
+    val.tmp <- coverm.simple %>%
+      filter(Genome_Site == g.site.tmp & Read_Site == r.site.tmp) %>%
+      pull(n)
+    if(is.integer(val.tmp) && length(val.tmp) == 0L){
+      print("No connections")
+    } else {
+      t.mat[i,j] <- val.tmp
+    }
+  }
+}
+
+## Make the matrix symmetric by adding the transverse of the asymmetric mat
+t.sym <- t.mat + t(t.mat)
+
 
 ######################## plot it in circlize ################################################
 
-nm = unique(unlist(dimnames(m.connect)))
-group = structure(gsub("\\d", "", nm), names = nm)
+nm = unique(unlist(dimnames(t.sym)))
+#group = structure(gsub("\\d", "", nm), names = nm)
 #df for messing with names
-group <- as.data.frame(group, row.names = NULL)
+group <- as.data.frame(nm, row.names = NULL) %>%
+  rename("vent" = "nm")
+group$group = group$vent
 #adjust group names
 group$group <- gsub(".*Lau_Basin.*","Lau Basin Plume", group$group)
 group$group <- gsub(".*ELSC.*","Lau Basin Deposit", group$group)
 group$group <- gsub(".*Brothers.*","Brothers Volcano", group$group)
-group$group <- gsub("Guaymas_-","Guaymas Basin Deposit", group$group)
+group$group <- gsub("Guaymas_[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9]","Guaymas Basin Deposit", group$group)
 group$group <- gsub("Guaymas_Basin","Guaymas Basin Plume", group$group)
-group$group <- gsub("Guaymas_","Guaymas Basin Deposit", group$group)
+group$group <- gsub("Guaymas_[0-9][0-9][0-9][0-9]","Guaymas Basin Deposit", group$group)
 group$group <- gsub(".*Cayman.*","Mid-Cayman Rise", group$group)
 group$group <- gsub(".*Axial.*","Axial Seamount", group$group)
 group$group <- gsub(".*EPR.*","East Pacific Rise", group$group)
 group$group <- gsub(".*MAR.*","Mid-Atlantic Ridge", group$group)
 #adjust vent names
-group <- tibble::rownames_to_column(group, "vent")
+#group <- tibble::rownames_to_column(group, "vent")
 group$vent <- gsub("Lau_Basin_","P_", group$vent)
 group$vent <- gsub("ELSC_","D_", group$vent)
 group$vent <- gsub("Brothers_","", group$vent)
@@ -206,7 +225,7 @@ group$vent <- gsub("EPR_","", group$vent)
 group$vent <- gsub("MAR_","", group$vent)
 group$vent <- gsub("_"," ", group$vent)
 
-m.connect_test <- m.connect
+m.connect_test <- t.sym
 rownames(m.connect_test) <- paste(group$vent)
 colnames(m.connect_test) <- paste(group$vent)
 
@@ -217,7 +236,7 @@ group2 <- setNames(as.character(group$group), group$vent)
 
 #set colors
 grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
-             "Guaymas Basin Deposit" = "#499e97", "Guaymas Basin Plume" = "#28827A",
+             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#499e97",
              "Lau Basin Plume" = "#3F78C1", "Lau Basin Deposit" = "#72a0db",
              "Mid-Atlantic Ridge" = "#8c510a", "Mid-Cayman Rise" = "#000000",
              #distinct vent locations above
@@ -241,7 +260,7 @@ grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East
              #Axial Seamount
              "PIR-30" = "#CE9A28", 
              #EPR
-             "P Guaymas" = "#28827A" 
+             "P Guaymas" = "#499e97" 
              #Guaymas plume
 ) #specify colors of sites/outer ring
 
@@ -294,13 +313,16 @@ highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
                                   "D Vai Lili V2"), track.index = 1, col = "#72a0db", 
                  text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("NWCA", "NWCB",
+highlight.sector(sector.index = c("NWCA", "NWCB", "LC",
                                   "UC", "Diffuse"), track.index = 1, col = "#B56478", 
                  text = "Brothers Volcano", cex = 0.6, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 highlight.sector(sector.index = c("4561", "4571-419",
                                   "4559-240"), track.index = 1, col = "#28827A", 
-                 text = "Guaymas Basin", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 text = "Guaymas Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("P Guaymas"), track.index = 1, col = "#499e97", 
+                 text = "Guaymas Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 highlight.sector(sector.index = c("Deep", "Shallow"), track.index = 1, col = "#000000", 
                  text = "Mid-Cayman Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
@@ -310,6 +332,9 @@ highlight.sector(sector.index = c("Plume", "Seawater"), track.index = 1, col = "
                  facing = "bending")
 highlight.sector(sector.index = c("4281-140", "PIR-30"), track.index = 1, col = "#CE9A28", 
                  text = "East Pacific Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("Lucky", "Rainbow"), track.index = 1, col = "#8c510a", 
+                 text = "Mid-Atlantic Ridge", cex = 0.5, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 
 dev.off()
@@ -322,8 +347,76 @@ dev.off()
 
 
 
+###### unused
 
+# #convert from wide to long
+# coverm_rc_long <- melt(coverm_rc, id = c("Genome"), na.rm = TRUE)
+# #remove 0s
+# coverm_rc_long <- coverm_rc_long %>%  
+#   filter(value > 0) %>%
+#   rename("Reads_Site" = "variable") %>%
+#   rename("Reads_count" = "value")
+# 
+# coverm_rc_long <- coverm_rc_long %>%
+#   filter(!str_detect(Genome, remove.list))
 
+# #rename site names on coverm file
+# coverm_rc_long$Reads_Site <- gsub(".Read.Count","", coverm_rc_long$Reads_Site)
+# coverm_rc_long <- abun_names %>%
+#   dplyr::select("V1", "V2") %>%
+#   right_join(coverm_rc_long, by = c("V2" = "Reads_Site")) %>%
+#   rename("Reads_Site" = "V1") %>%
+#   rename("Reads" = "V2")
+# 
+# ######################## make genome site column ################################################
+# 
+# coverm_rc_long$Genome_Site <- coverm_rc_long$Genome 
+# coverm_rc_long <- coverm_rc_long %>% 
+#   separate(Genome_Site, c("Genome_Site", NA), sep = "_NODE|_scaffold|_vRhyme|_k95") %>%
+#   select(c("Reads_Site", "Reads", "Genome_Site", "Genome", "Reads_count"))
+# 
+# #faster replace all the naming patterns
+# #test <- coverm_rc_long
+# coverm_rc_long$Genome_Site <- stri_replace_all_regex(coverm_rc_long$Genome_Site,
+#                                                      pattern=c("_A[0-9]",
+#                                                                "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
+#                                                                "_S1[0-9][0-9]", "_[0-9][0-9][0-9]-[0-9][0-9][0-9]",
+#                                                                "-38[0-9]"),
+#                                                      replacement='',
+#                                                      vectorize=FALSE)
+# 
+# coverm_rc_long$Genome_Site <- gsub("*_M1[0-9]","",coverm_rc_long$Genome_Site)
+# coverm_rc_long$Genome_Site <- gsub("*_M[0-9]","",coverm_rc_long$Genome_Site)
+# 
+# #remove self to self matches
+# coverm_rc_long <- coverm_rc_long %>%
+#   filter(Reads_Site != Genome_Site)
+# 
+# ######################## generate the matrix ################################################
+# 
+# #Spencer
+# m.connect <- matrix(ncol = length(unique(coverm_rc_long$Reads_Site)),
+#                     nrow = length(unique(coverm_rc_long$Reads_Site)),
+#                     data = 0)
+# rownames(m.connect) <- unique(coverm_rc_long$Reads_Site)
+# colnames(m.connect) <- unique(coverm_rc_long$Reads_Site)
+# 
+# for(i in 1:length(unique(coverm_rc_long$Reads_Site))){
+#   site.tmp <- unique(coverm_rc_long$Reads_Site)[i]
+#   tmp.df <- coverm_rc_long %>%
+#     filter(Reads_Site == site.tmp)
+#   for(j in 1:length(unique(tmp.df$Genome_Site))){
+#     site.tmp2 <- unique(tmp.df$Genome_Site)[j]
+#     tmp.df2 <- tmp.df %>%
+#       filter(Genome_Site == site.tmp2)
+#     con.ct <- nrow(tmp.df2)
+#     m.connect[rownames(m.connect) == site.tmp, colnames(m.connect) == site.tmp2] <- con.ct
+#   } #j
+# } #i
+# 
+# test.spencer <- coverm_rc_long %>% 
+#   filter(Reads_Site %in% c("Brothers_Diffuse", "Brothers_LC")) %>%
+#   filter(Genome_Site %in% c("Brothers_Diffuse", "Brothers_LC"))
 
 
 # ######################### old chaotic way ######################### 
