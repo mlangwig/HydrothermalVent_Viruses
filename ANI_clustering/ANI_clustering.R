@@ -622,8 +622,9 @@ vUnbinned <- vUnbinned_VP_master %>% select(c('vMAG', 'type', 'contig_length',
                                               'checkv_quality', 'provirus',
                                               'completeness', 'contamination'))
 #bind/concatenate
-allVirus_master <- allVirus_master %>% rbind(vMAG, vUnbinned) %>%
+allVirus_master <- rbind(vMAG, vUnbinned) %>%
   unique()
+#allVirus_master %>%
 
 #melt the ani map file so can do vlookups
 ani_map_long <- ani_perClust_filter_map %>% select(c('id', 'ANI_mean', 'Ref', 'Query'))

@@ -125,7 +125,7 @@ for(i in 1:length(colnames(coverm))){
 }
 colnames(coverm)
 
-## Make the dataframe long format
+## Make the dataframe long format and filter for >= 5 reads, >=70% covered fraction
 coverm.long <- coverm %>%
   pivot_longer(
     cols = -1:-2
@@ -158,7 +158,8 @@ coverm.filter <- cover.full %>%
 coverm.map <- coverm.filter %>%
   left_join(read.map, by = c("name" = "UID")) %>%
   rename(Read_Site = Site) %>%
-  filter(Genome_Site != Read_Site)
+  filter(Genome_Site != Read_Site) %>%
+  select(c("Genome_Site", "Read_Site", "Genome", "name", "CoverFrac", "Reads"))
 
 ## Reduce to just the genome_site and read_site
 coverm.simple <- coverm.map %>%
@@ -269,7 +270,7 @@ col_fun = "grey" #specify color of links between them
 #reset before running
 dev.off()
 circos.clear()
-#svg("Output/Circos_coverm_gd_iv.svg")
+svg("Output/Circos_coverm_gd_iv_1kb_70mincov.svg")
 #set font size
 par(cex = 1, mar = c(0, 0, 0, 0))
 #set gaps between blocks
@@ -340,10 +341,35 @@ highlight.sector(sector.index = c("Lucky", "Rainbow"), track.index = 1, col = "#
 dev.off()
 
 
+######################## understanding the coverm filtered output ################################################
 
+#make same file to manipulate
+coverm.anno <- coverm.map
+#creat PV mapping
+pv_map <- as.data.frame(unique(sort(coverm.anno$Read_Site))) %>%
+  rename("sites" = "unique(sort(coverm.anno$Read_Site))")
+pv_map$PV <- c("Plume", "Plume", "Vent", "Vent",
+               "Vent", "Vent", "Vent", "Plume",
+               "Plume", "Vent", "Vent", "Vent",
+               "Vent", "Vent", "Vent", "Vent",
+               "Vent", "Vent", "Vent", "Plume",
+               "Plume", "Plume", "Plume", "Plume",
+               "Plume", "Vent", "Vent") 
+#add this info to the large file of filtered read mapping
+coverm.anno <- pv_map %>%
+  dplyr::select('sites', 'PV') %>%
+  right_join(coverm.anno, by = c("sites" = "Genome_Site"))
+coverm.anno <- coverm.anno %>%
+  rename("Genome_Site" = "sites")
 
+coverm.anno <- pv_map %>%
+  dplyr::select('sites', 'PV') %>%
+  right_join(coverm.anno, by = c("sites" = "Read_Site"))
+coverm.anno <- coverm.anno %>%
+  rename("Read_Site" = "sites")
 
-
+coverm.anno.pv <- coverm.anno %>%
+  filter(PV.x != PV.y)
 
 
 
