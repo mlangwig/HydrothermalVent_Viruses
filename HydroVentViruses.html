@@ -1150,6 +1150,20 @@ paste vMAG_stats_parsed_calc.tsv result.txt &gt; vMAG_GenSizeMB.tsv</code></pre>
 <pre class="bash"><code>cut -f1,2 quality_summary_vUnbinned_Vents.tsv &gt; vUnbinned_GenSize_KB.tsv
 
 cat Vent_vMAG_GenSize_KB.tsv vUnbinned_GenSize_KB.tsv &gt; Vent_vUnbinned_vMAG_GenSize_KB.tsv</code></pre>
+<p>Rerun Seqkit genome size on all viruses vent and plume, vMAG and vUnbinned, all at once. (Reminder CheckV contig length is going to be off since that was run on vMAGs that were N-linked). Doing this on Virserver, 12/12/23. Seqkit Version 2.6.1</p>
+<pre class="bash"><code>mamba activate
+
+mkdir seqkit
+
+nohup sh -c &#39;for i in *.fasta ; do seqkit stats $i &gt;&gt; Seqkit/vMAG_Seqkit_stats.tsv ; done&#39; &amp;
+
+cat VentPlume_seqkit_stats.tsv | sort | uniq &gt; VentPlume_seqkit_stats_uniq.tsv
+
+less VentPlume_seqkit_stats.tsv  | sort | uniq | &#39;s+../Virus_Genomes/fna/all_fna_vMAG_vUnbinned/++g&#39; | sed &#39;s/.fasta//g&#39; &gt; VentPlume_seqkit_stats_renamed.tsv
+
+less VentPlume_seqkit_stats_renamed.txt | tr -s &#39; &#39; &gt; VentPlume_seqkit_stats_renamed_space.txt
+
+sed -i &#39;s/\,//g&#39; VentPlume_seqkit_stats_renamed_space.txt</code></pre>
 </div>
 <div id="run-gtdbtk-v1.5.0-on-vent-mags" class="section level1">
 <h1>Run GTDBtk v1.5.0 on Vent MAGs</h1>
@@ -1551,9 +1565,9 @@ nohup mmseqs search /storage1/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_d
 <ol start="2" style="list-style-type: decimal">
 <li>Filter the PHROGs output for lowest e value. Then subset the PHROGs results for the proteins identified as GD and PV to see what they are</li>
 </ol>
-<pre class="bash"><code>
+<pre class="bash"><code>Rscript parse_evalue.R
 
-for i in `cat vir_prots_mmseqClusts_GD_PD.tsv`; do grep $i results.tsv &gt;&gt; results_GD_PD_viruses.txt; done</code></pre>
+for i in `cat vir_prots_mmseqClusts_GD_PD.tsv`; do grep $i results_evalparsed.tsv &gt;&gt; results_GD_PD_viruses.txt; done</code></pre>
 </div>
 <div id="run-dramv-to-get-viral-protein-annotations" class="section level1">
 <h1>Run dramv to get viral protein annotations</h1>
@@ -1567,6 +1581,16 @@ for i in `cat vir_prots_mmseqClusts_GD_PD.tsv`; do grep $i results.tsv &gt;&gt; 
 <pre class="bash"><code>DRAM-setup.py import_config --config_loc /storage2/databases/dram-latest/CONFIG 
 
 nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-affi-contigs-for-dramv_renamed.tab -o annotation --threads 50 &amp;</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Rename it for parsing</li>
+</ol>
+<pre class="bash"><code>sed &#39;s/__full-cat_[0-9]//g&#39; annotations.tsv &gt; annotations_renamed.tsv</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Grab the GD and PV protein annotations</li>
+</ol>
+<pre class="bash"><code>sed &#39;s/__full-cat_[0-9]//g&#39; annotations.tsv &gt; annotations_renamed.tsv
+
+Rscript subset_GDpd_prots.R</code></pre>
 </div>
 <div id="get-total-read-count-for-all-fastq-reads" class="section level1">
 <h1>Get total read count for all fastq reads</h1>

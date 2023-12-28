@@ -135,6 +135,9 @@ coverm.long <- coverm %>%
   mutate(RC_Ind = if_else(Id.var == "RC" & value >= 5, T, F)) %>%
   mutate(CF_Ind = if_else(Id.var == "CF" & value >= 0.7, T, F))
 
+#add genome size info to coverm long to filter out <3kb
+
+
 ## Pull the read count part out
 coverm.reads <- coverm.long %>%
   filter(Id.var == "RC") %>%
@@ -161,11 +164,23 @@ coverm.map <- coverm.filter %>%
   filter(Genome_Site != Read_Site) %>%
   select(c("Genome_Site", "Read_Site", "Genome", "name", "CoverFrac", "Reads"))
 
+## Add the genome sizes and remove >3kb
+coverm.map <- gensize %>%
+  dplyr::select(file, sum_len) %>%
+  right_join(coverm.map, by = c("file" = "Genome"))
+coverm.map <- rename(coverm.map, "Genome" = "file")
+
+#filter out <3kb
+coverm.map <- coverm.map %>%
+  filter(sum_len >= 3000)
+
 ## Reduce to just the genome_site and read_site
+# REDO THIS PART HERE AND SKIP GD PART BELOW TO HAVE ALL IN ONE PLOT 
 coverm.simple <- coverm.map %>%
   select(Genome_Site, Read_Site) %>%
   group_by(Genome_Site, Read_Site) %>%
   count()
+
 
 ## Make the Genome_Site x Read_Site Matrix with # of connections
 ######################### the following code was written by Spencer R. Keyser (skeyser@wisc.edu)
@@ -230,6 +245,10 @@ m.connect_test <- t.sym
 rownames(m.connect_test) <- paste(group$vent)
 colnames(m.connect_test) <- paste(group$vent)
 
+library(data.table)
+m <- data.table(as.vector(m.connect_test), as.vector(col(m.connect_test)), as.vector(row(m.connect_test)))
+m <- m[ order(m[,1]), ]
+
 #vector again
 #group <- dplyr::pull(group)
 group2 <- setNames(as.character(group$group), group$vent)
@@ -270,9 +289,9 @@ col_fun = "grey" #specify color of links between them
 #reset before running
 dev.off()
 circos.clear()
-svg("Output/Circos_coverm_gd_iv_1kb_70mincov.svg")
+#svg("Output/Circos_coverm_gd_iv_1kb_70mincov.svg")
 #set font size
-par(cex = 1, mar = c(0, 0, 0, 0))
+par(cex = 1.8, mar = c(0, 0, 0, 0))
 #set gaps between blocks
 #circos.par(gap.after = c(rep(.5, length(unique(colnames(t.mat_test)))))) #this is crucial to plot
 
@@ -281,14 +300,15 @@ chordDiagram(m.connect_test,
              group = group2, 
              grid.col = grid.col,
              annotationTrack = c("grid"),
+             annotationTrackHeight = c(.06, .06),
              link.border = "black",
              transparency = 0.3,
              symmetric = TRUE,
-             big.gap = 5,
+             big.gap = 8,
              col = col_fun,
              preAllocateTracks = list(
-               track.height = mm_h(4),
-               track.margin = c(mm_h(2), 0)
+               track.height = mm_h(6),
+               track.margin = c(mm_h(1), 0)
              ))
 circos.track(track.index = 2, panel.fun = function(x, y) {
   sector.index = get.cell.meta.data("sector.index")
@@ -316,7 +336,7 @@ highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
                  facing = "bending")
 highlight.sector(sector.index = c("NWCA", "NWCB", "LC",
                                   "UC", "Diffuse"), track.index = 1, col = "#B56478", 
-                 text = "Brothers Volcano", cex = 0.6, text.col = "white", niceFacing = TRUE,
+                 text = "Brothers Volcano", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 highlight.sector(sector.index = c("4561", "4571-419",
                                   "4559-240"), track.index = 1, col = "#28827A", 
@@ -339,6 +359,228 @@ highlight.sector(sector.index = c("Lucky", "Rainbow"), track.index = 1, col = "#
                  facing = "bending")
 
 dev.off()
+
+
+
+
+######################## make circos plot of geo distinct ##################
+
+
+#create a version of just geo distinct to plot
+coverm.simple_gd <- coverm.simple %>%
+  mutate(gen_gd = Genome_Site) %>%
+  mutate(read_gd = Read_Site) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*Lau_Basin.*", "Lau_Basin")) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*Brothers.*", "Brothers")) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*ELSC.*", "ELSC")) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*Axial.*", "Axial")) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*Cayman.*", "Cayman")) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*EPR.*", "EPR")) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*Guaymas_[0-9].*", "Guaymas_D")) %>%
+  mutate_at(vars(gen_gd, read_gd), ~ str_replace(., ".*MAR.*", "MAR"))
+
+#filter it
+coverm.simple_gd <- coverm.simple_gd %>%
+  filter(gen_gd != read_gd)
+
+#drop the other columns to plot (broad names will be incorporated as group)
+coverm.simple_gd <- coverm.simple_gd %>%
+  select(c('Genome_Site', 'Read_Site', 'n')) %>%
+  ungroup()
+#add the missing site to Genome_Site column so name distribution is even
+#this is a dummy line and won't contribute to count
+coverm.simple_gd <- coverm.simple_gd %>%
+  add_row(Genome_Site = 'Guaymas_4559-240',
+          Read_Site = 'Lau_Basin_Abe',
+          n = as.integer(0L))
+  
+# #only plot ones that are geo distinct like Fig 2A in manuscript
+# #DON'T DO THIS IF YOU WANT TO PLOT ALL IN SAME FIGURE
+# coverm.simple <- coverm.simple_gd\
+
+#using coverm.simple_gd as input
+coverm.simple_gd_sum <- coverm.simple_gd %>%
+  ungroup() %>%
+  select(c('gen_gd', 'read_gd', 'n')) %>%
+  group_by(gen_gd, read_gd) %>%
+  summarise(n = sum(n)) %>%
+  ungroup()
+
+## Make the Genome_Site x Read_Site Matrix with # of connections
+######################### the following code was written by Spencer R. Keyser (skeyser@wisc.edu)
+## make a zero-filled matrix
+t.mat <- matrix(nrow = length(unique(coverm.simple_gd$Genome_Site)), ncol = length(unique(coverm.simple_gd$Read_Site)), data = 0)
+colnames(t.mat) <- unique(coverm.simple_gd$Genome_Site)
+rownames(t.mat) <- unique(coverm.simple_gd$Genome_Site)
+
+## Holder dataframe
+for(i in 1:nrow(t.mat)){
+  g.site.tmp <- rownames(t.mat)[i]
+  for(j in 1:ncol(t.mat)){
+    r.site.tmp <- colnames(t.mat)[j]
+    val.tmp <- coverm.simple_gd %>%
+      filter(Genome_Site == g.site.tmp & Read_Site == r.site.tmp) %>%
+      pull(n)
+    if(is.integer(val.tmp) && length(val.tmp) == 0L){ #| is.numeric(val.tmp)
+      print("No connections")
+    } else {
+      t.mat[i,j] <- val.tmp
+    }
+  }
+}
+
+## Make the matrix symmetric by adding the transverse of the asymmetric mat
+t.sym <- t.mat + t(t.mat)
+
+
+######################## plot it in circlize ################################################
+
+nm = unique(unlist(dimnames(t.sym)))
+group = structure(gsub("\\d", "", nm), names = nm)
+#df for messing with names
+group <- as.data.frame(nm, row.names = NULL) %>%
+  rename("vent" = "nm")
+group$group = group$vent
+#adjust group names
+group$group <- gsub(".*Lau_Basin.*","Lau Basin Plume", group$group)
+group$group <- gsub(".*ELSC.*","Lau Basin Deposit", group$group)
+group$group <- gsub(".*Brothers.*","Brothers Volcano", group$group)
+group$group <- gsub("Guaymas_[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9]","Guaymas Basin Deposit", group$group)
+group$group <- gsub("Guaymas_Basin","Guaymas Basin Plume", group$group)
+group$group <- gsub("Guaymas_[0-9][0-9][0-9][0-9]","Guaymas Basin Deposit", group$group)
+group$group <- gsub(".*Cayman.*","Mid-Cayman Rise", group$group)
+group$group <- gsub(".*Axial.*","Axial Seamount", group$group)
+group$group <- gsub(".*EPR.*","East Pacific Rise", group$group)
+group$group <- gsub(".*MAR.*","Mid-Atlantic Ridge", group$group)
+#adjust vent names
+#group <- tibble::rownames_to_column(group, "vent")
+group$vent <- gsub("Lau_Basin_","P_", group$vent)
+group$vent <- gsub("ELSC_","D_", group$vent)
+group$vent <- gsub("Brothers_","", group$vent)
+group$vent <- gsub("Guaymas_Basin","P_Guaymas", group$vent)
+group$vent <- gsub("Guaymas_","", group$vent)
+group$vent <- gsub("Cayman_","", group$vent)
+group$vent <- gsub("Axial_","", group$vent)
+group$vent <- gsub("EPR_","", group$vent)
+group$vent <- gsub("MAR_","", group$vent)
+group$vent <- gsub("_"," ", group$vent)
+
+m.connect_test <- t.sym
+rownames(m.connect_test) <- paste(group$vent)
+colnames(m.connect_test) <- paste(group$vent)
+
+#vector again
+group <- dplyr::pull(group)
+group2 <- setNames(as.character(group$group), group$vent)
+
+
+#set colors
+grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
+             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#499e97",
+             "Lau Basin Plume" = "#3F78C1", "Lau Basin Deposit" = "#72a0db",
+             "Mid-Atlantic Ridge" = "#8c510a", "Mid-Cayman Rise" = "#000000",
+             #distinct vent locations above
+             "4281-140" = "#CE9A28", "4559-240" = "#28827A",
+             "4561" = "#28827A", "4571-419" = "#28827A", 
+             #Guaymas deposit
+             "D Mariner" = "#72a0db", "D Abe" = "#72a0db", "D Vai Lili V2" = "#72a0db", 
+             "D Tui Malila" = "#72a0db", "D Bowl" = "#72a0db",
+             #Lau deposit
+             "Deep" = "#000000", "Shallow" = "#000000", 
+             #MCR
+             "Diffuse" = "#B56478", "NWCA" = "#B56478", "LC" = "#B56478", 
+             "NWCB" = "#B56478", "UC" = "#B56478", 
+             #Brothers Volcano
+             "Lucky" = "#8c510a", "Rainbow" = "#8c510a",
+             #MAR
+             "P Abe" = "#3F78C1", "P Kilo Moana" = "#3F78C1", "P Mariner" = "#3F78C1",
+             "P Tahi Moana" = "#3F78C1", "P Tui Malila" = "#3F78C1", 
+             #Lau plume
+             "Seawater" = "#4F508C", "Plume" = "#4F508C", 
+             #Axial Seamount
+             "PIR-30" = "#CE9A28", 
+             #EPR
+             "P Guaymas" = "#499e97" 
+             #Guaymas plume
+) #specify colors of sites/outer ring
+
+col_fun = "grey" #specify color of links between them
+
+#reset before running
+dev.off()
+circos.clear()
+svg("../Read_Mapping/Output/Circos_coverm_gd_3kb_70mincov_largeFont.svg")
+#set font size
+par(cex = 1.8, mar = c(0, 0, 0, 0))
+#set gaps between blocks
+#circos.par(gap.after = c(rep(.5, length(unique(colnames(t.mat_test)))))) #this is crucial to plot
+
+#chordDiagram
+chordDiagram(m.connect_test, 
+             group = group2, 
+             grid.col = grid.col,
+             annotationTrack = c("grid"),
+             annotationTrackHeight = c(.06, .06), #change height of inner group track
+             link.border = "black",
+             transparency = 0.3,
+             symmetric = TRUE,
+             big.gap = 8,
+             col = col_fun, #turn this off to get colors of groups for bands
+             preAllocateTracks = list(
+               track.height = mm_h(6),
+               track.margin = c(mm_h(1), 0)
+             ))
+circos.track(track.index = 2, panel.fun = function(x, y) {
+  sector.index = get.cell.meta.data("sector.index")
+  xlim = get.cell.meta.data("xlim")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  # circos.text(CELL_META$xcenter,
+  #             ylim[1] + cm_h(3), 
+  #             labels = gsub("\\..*","", sector.name),
+  #             col = "black", cex = 0.5, facing = "bending", 
+  #             adj = c(0.5, 0.5), niceFacing = TRUE, font = 0.5)
+  circos.text(mean(xlim), mean(ylim), sector.index, cex = 0.5, niceFacing = TRUE,
+              col = "white")
+}, bg.border = NA)
+
+highlight.sector(sector.index = c("P Abe", "P Kilo Moana",
+                                  "P Mariner", "P Tahi Moana",
+                                  "P Tui Malila"), track.index = 1, col = "#3F78C1", 
+                 text = "Lau Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
+                                  "D Bowl", "D Abe",
+                                  "D Vai Lili V2"), track.index = 1, col = "#72a0db", 
+                 text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("NWCA", "NWCB", "LC",
+                                  "UC", "Diffuse"), track.index = 1, col = "#B56478", 
+                 text = "Brothers Volcano", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("4561", "4571-419",
+                                  "4559-240"), track.index = 1, col = "#28827A", 
+                 text = "Guaymas Basin Deposit", cex = 0.6, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("P Guaymas"), track.index = 1, col = "#499e97", 
+                 text = "Guaymas Basin Plume", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("Deep", "Shallow"), track.index = 1, col = "#000000", 
+                 text = "Mid-Cayman Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("Plume", "Seawater"), track.index = 1, col = "#4F508C", 
+                 text = "Axial Seamount", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("4281-140", "PIR-30"), track.index = 1, col = "#CE9A28", 
+                 text = "East Pacific Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("Lucky", "Rainbow"), track.index = 1, col = "#8c510a", 
+                 text = "Mid-Atlantic Ridge", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+
+dev.off()
+
+
 
 
 ######################## understanding the coverm filtered output ################################################
@@ -368,10 +610,20 @@ coverm.anno <- pv_map %>%
 coverm.anno <- coverm.anno %>%
   rename("Read_Site" = "sites")
 
+#add genome size
+#read in gen size calculated with seqkit for accurate values
+gensize <- read.table(file = "../../Seqkit_GenSize/VentPlume_seqkit_stats_renamed_space.txt",
+                      header = TRUE)
+coverm.anno <- gensize %>%
+  dplyr::select('file', 'sum_len') %>%
+  right_join(coverm.anno, by = c("file" = "Genome"))
+
 coverm.anno.pv <- coverm.anno %>%
-  filter(PV.x != PV.y)
+  filter(PV.x != PV.y) %>%
+  filter(sum_len >= 3000)
 
-
+coverm.anno.pv <- coverm.anno.pv %>%
+  mutate(Read_Genome = paste(coverm.anno.pv$Read_Site, "_", coverm.anno.pv$Genome_Site))
 
 ###### unused
 

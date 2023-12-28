@@ -1132,6 +1132,24 @@ cut -f1,2 quality_summary_vUnbinned_Vents.tsv > vUnbinned_GenSize_KB.tsv
 cat Vent_vMAG_GenSize_KB.tsv vUnbinned_GenSize_KB.tsv > Vent_vUnbinned_vMAG_GenSize_KB.tsv
 ```
 
+Rerun Seqkit genome size on all viruses vent and plume, vMAG and vUnbinned, all at once. (Reminder CheckV contig length is going to be off since that was run on vMAGs that were N-linked). Doing this on Virserver, 12/12/23. Seqkit Version 2.6.1
+```{bash, eval = FALSE}
+mamba activate
+
+mkdir seqkit
+
+nohup sh -c 'for i in *.fasta ; do seqkit stats $i >> Seqkit/vMAG_Seqkit_stats.tsv ; done' &
+
+cat VentPlume_seqkit_stats.tsv | sort | uniq > VentPlume_seqkit_stats_uniq.tsv
+
+less VentPlume_seqkit_stats.tsv  | sort | uniq | 's+../Virus_Genomes/fna/all_fna_vMAG_vUnbinned/++g' | sed 's/.fasta//g' > VentPlume_seqkit_stats_renamed.tsv
+
+less VentPlume_seqkit_stats_renamed.txt | tr -s ' ' > VentPlume_seqkit_stats_renamed_space.txt
+
+sed -i 's/\,//g' VentPlume_seqkit_stats_renamed_space.txt
+```
+
+
 # Run GTDBtk v1.5.0 on Vent MAGs
 
 ```{bash, eval = FALSE}
@@ -1609,6 +1627,13 @@ nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-a
 3. Rename it for parsing
 ```{bash, eval = FALSE}
 sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
+```
+
+4. Grab the GD and PV protein annotations
+```{bash, eval = FALSE}
+sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
+
+Rscript subset_GDpd_prots.R
 ```
 
 # Get total read count for all fastq reads
