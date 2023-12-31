@@ -399,15 +399,16 @@ abund_long_norm_iphop_p <- abund_long_norm_iphop %>%
 
 ############################ Set order of sites for plotting #############################
 
-# abun_iphop_p_Camp <- abun_long_iphop_p %>%
-#   filter(grepl("p__Campylobacterota", Taxa)) %>%
-#   group_by(Taxa) %>% 
-#   arrange(desc(value))
-# 
-# abun_iphop_p_Gam <- abun_long_iphop_p %>%
-#   filter(!grepl("p__Campylobacterota", Taxa)) %>%
-#   group_by(Taxa) %>% 
-#   arrange(value)
+test_Camp <- abund_long_norm_iphop_p %>%
+  filter(grepl("p__Campylobacterota", Taxa)) %>%
+  group_by(Taxa) %>%
+  arrange((value))
+#cat(dQuote(test_Camp$Site, FALSE), '\n', sep = ",") #to print strings 
+
+test_Gam <- abund_long_norm_iphop_p %>%
+  filter(!grepl("p__Campylobacterota", Taxa)) %>%
+  group_by(Taxa) %>%
+  arrange(desc(value))
 #   
 # #put the data frames back together
 # abun_long_iphop_p <- rbind(abun_iphop_p_Camp, abun_iphop_p_Gam)
@@ -416,51 +417,69 @@ abund_long_norm_iphop_p <- abund_long_norm_iphop %>%
 # #abun_long_iphop_p$value <- factor(abun_long_iphop_p$value, levels = abun_long_iphop_p$value)
 # abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site, levels = unique(abun_long_iphop_p$Site))
 
+############ Change names #############################
+
+sulfur_VentVirus_AMGs$KO <- gsub("K23144","UAP", sulfur_VentVirus_AMGs$KO)
+
+abund_long_norm_iphop_p$Taxa <- gsub("c__|p__","",abund_long_norm_iphop_p$Taxa)
+abund_long_norm_iphop_p$Site <- gsub("_"," ",abund_long_norm_iphop_p$Site)
+abund_long_norm_iphop_p$Locat <- gsub("Vent","Deposit",abund_long_norm_iphop_p$Locat)
+
+
 #set order of x axis 
 abund_long_norm_iphop_p$Site <- factor(abund_long_norm_iphop_p$Site, 
-                                 levels=c("Lau_Basin_Kilo_Moana_Plume_4", "Lau_Basin_Tahi_Moana_Plume_2", 
-                                          "Brothers_NWCB_S139", "Brothers_NWCB_S012",
-                                          "Lau_Basin_Abe_Plume_2", "Lau_Basin_Abe_Plume_3", 
-                                          "Cayman_Shallow_Plume_2", "MAR_Rainbow_354-166",
-                                          "Brothers_NWCB_S140", "MAR_Rainbow_355-202", "Cayman_Deep_Plume_3", 
-                                          "Brothers_NWCB_S141", "EPR_4281-140", "Lau_Basin_Kilo_Moana_Plume_2", 
-                                          "Cayman_Shallow_Plume_1", "Lau_Basin_Tahi_Moana_Plume_1",
-                                          "Brothers_NWCB_S146", "Cayman_Deep_Plume_2", "Lau_Basin_Kilo_Moana_Plume_3",
-                                          "ELSC_Tui_Malila_134-614", "ELSC_Tui_Malila_T2", "Lau_Basin_Mariner_Plume_2",
-                                          "Lau_Basin_Mariner_Plume_1", "Lau_Basin_Kilo_Moana_Plume_1",
-                                          "Lau_Basin_Abe_Plume_1", "Cayman_Shallow_Plume_3", "MAR_Lucky_356-308", "ELSC_Abe_128-326",
-                                          "ELSC_Abe_A3", "ELSC_Vai_Lili_V2", "MAR_Lucky_356-284", "Lau_Basin_Tui_Malila_Plume",
-                                          "Cayman_Deep_Plume_1", "Axial_Plume", "Guaymas_Basin_Plume",
-                                          "Brothers_Diffuse_S009", "Axial_Seawater", "EPR_PIR-30", #end Gamma highest to lowest
-                                          "Brothers_Diffuse_S015", "ELSC_Abe_A1", "Brothers_NWCA_S143", "Brothers_LC_S014",
-                                          "ELSC_Tui_Malila_T11", "ELSC_Tui_Malila_T10", "Brothers_NWCA_S144",
-                                          "Guaymas_4571-419", "Guaymas_4559-240", "Brothers_LC_S016",
-                                          "Guaymas_4561-380", "ELSC_Mariner_131-447", "Brothers_NWCA_S013",
-                                          "ELSC_Mariner_M17", "ELSC_Bowl_M2", "ELSC_Tui_Malila_132-544",
-                                          "Brothers_UC_S147", "ELSC_Bowl_M1", "Brothers_UC_S010", "Brothers_NWCA_S017",
-                                          "Brothers_UC_S011", "ELSC_Mariner_M10", "Guaymas_4561-384",
-                                          "Brothers_NWCA_S145", "Brothers_NWCA_S142")) # start Camp lowest to highest 
+                                 levels=c("Lau Basin Kilo Moana Plume 3","Lau Basin Abe Plume 1",
+                                          "Lau Basin Tahi Moana Plume 1","Lau Basin Kilo Moana Plume 2",
+                                          "Brothers NWCB S139","Brothers NWCB S012",
+                                          "ELSC Mariner M17", "Axial Plume",
+                                          "MAR Rainbow 355-202","Brothers NWCB S140",
+                                          "Cayman Shallow Plume 1","MAR Rainbow 354-166",
+                                          "Cayman Shallow Plume 2","Lau Basin Abe Plume 2",
+                                          "Brothers NWCB S141","Cayman Deep Plume 2","Brothers NWCA S144",
+                                          "Lau Basin Abe Plume 3","ELSC Tui Malila 134-614",
+                                          "Cayman Shallow Plume 3","EPR 4281-140","ELSC Tui Malila T2",
+                                          "Brothers NWCB S146","Cayman Deep Plume 3",
+                                          "Brothers NWCA S143","MAR Lucky 356-308",
+                                          "Cayman Deep Plume 1","MAR Lucky 356-284","ELSC Abe 128-326",
+                                          "Lau Basin Mariner Plume 2","ELSC Abe A3",
+                                          "Lau Basin Kilo Moana Plume 1","Lau Basin Mariner Plume 1",
+                                          "ELSC Vai Lili V2","Guaymas Basin Plume","Axial Seawater",
+                                          "EPR PIR-30","Brothers Diffuse S009","Lau Basin Kilo Moana Plume 4",
+                                          "Brothers Diffuse S015","Lau Basin Tui Malila Plume",
+                                          "Lau Basin Tahi Moana Plume 2", #end Gamma
+                                          "ELSC Abe A1","ELSC Tui Malila T11",
+                                          "ELSC Tui Malila T10","Brothers LC S014","Brothers LC S016",
+                                          "Guaymas 4559-240","ELSC Bowl M2",
+                                          "ELSC Tui Malila 132-544","Brothers NWCA S013",
+                                          "ELSC Mariner 131-447","Guaymas 4571-419","ELSC Mariner M10",
+                                          "Guaymas 4561-380","Brothers UC S010","Brothers NWCA S017",
+                                          "Brothers UC S147","Brothers NWCA S145","ELSC Bowl M1",
+                                          "Brothers UC S011","Guaymas 4561-384","Brothers NWCA S142")) # start Camp lowest to highest 
 
 
 ############################ Plot  #############################
 
-#distinct colors
-library(RColorBrewer)
-n <- 39
-qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
-col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-#pie(rep(1,n), col=sample(col_vector, n))
+# #distinct colors
+# library(RColorBrewer)
+# n <- 39
+# qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+# col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+# #pie(rep(1,n), col=sample(col_vector, n))
+
+#factor
+level_order <- c('Gammaproteobacteria', 'Campylobacterota') 
 
 ####The following produces Figure X, which was modified in Biorender
 dev.off()
 plot <- abund_long_norm_iphop_p %>%
-  ggplot(aes(x = as.numeric(value), y = Site, fill = Taxa)) + #y = reorder(Site, value, sum)
+  ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
   geom_bar(stat = "identity") +
-  # scale_fill_viridis_d(begin = .5,
-  #                      end = 0) +
-  scale_fill_manual(values = col_vector) +
-  labs(x = "Percent Relative Abundance", y = "Site") +
-  guides(fill=guide_legend(override.aes = list(size=3))) +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Virus Abundance", y = "Site",
+       fill = "Predicted microbial host") +
+  guides(fill=guide_legend(override.aes = list(size=12))) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
         legend.background = element_rect(color = "white"),
@@ -468,16 +487,25 @@ plot <- abund_long_norm_iphop_p %>%
         panel.background = element_rect(fill = "transparent"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
+        axis.title=element_text(size=16),
+        axis.text=element_text(size=14),
+        strip.text.x = element_text(size = 14),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=14),
         plot.background = element_rect(fill = "transparent", color = NA)) +
   #panel.border = element_blank()) + #turn this off to get the outline back)
   scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
-  #geom_hline(yintercept = 16.5) +
-  ggtitle("Viral Abundance") + #Change for top X grabbed
+  #geom_hline(yintercept = 21.5) +
+  # annotate(geom="text", x=6, y=30, label="Plume",
+  #          color="black") +
+  #ggtitle("Viral Abundance") + #Change for top X grabbed
   facet_wrap(.~Locat) +
   scale_y_discrete(limits=rev)
 #coord_flip()
 plot
 
+ggsave("output/coverm_CampGamma_normAbun.png", plot, width = 17, height = 12, dpi = 1000,
+       bg = "transparent")
 # ggsave("Output/coverm_abun_CampGamma.png", plot, width = 10, height = 8, dpi = 500,
 #        bg = "transparent")
 # 
@@ -550,7 +578,28 @@ abund_long_count %>%
 
 
 
-
-
-
-
+########################## unused ############################
+#non norm order
+# "Lau_Basin_Kilo_Moana_Plume_4", "Lau_Basin_Tahi_Moana_Plume_2", 
+# "Brothers_NWCB_S139", "Brothers_NWCB_S012",
+# "Lau_Basin_Abe_Plume_2", "Lau_Basin_Abe_Plume_3", 
+# "Cayman_Shallow_Plume_2", "MAR_Rainbow_354-166",
+# "Brothers_NWCB_S140", "MAR_Rainbow_355-202", "Cayman_Deep_Plume_3", 
+# "Brothers_NWCB_S141", "EPR_4281-140", "Lau_Basin_Kilo_Moana_Plume_2", 
+# "Cayman_Shallow_Plume_1", "Lau_Basin_Tahi_Moana_Plume_1",
+# "Brothers_NWCB_S146", "Cayman_Deep_Plume_2", "Lau_Basin_Kilo_Moana_Plume_3",
+# "ELSC_Tui_Malila_134-614", "ELSC_Tui_Malila_T2", "Lau_Basin_Mariner_Plume_2",
+# "Lau_Basin_Mariner_Plume_1", "Lau_Basin_Kilo_Moana_Plume_1",
+# "Lau_Basin_Abe_Plume_1", "Cayman_Shallow_Plume_3", "MAR_Lucky_356-308", "ELSC_Abe_128-326",
+# "ELSC_Abe_A3", "ELSC_Vai_Lili_V2", "MAR_Lucky_356-284", "Lau_Basin_Tui_Malila_Plume",
+# "Cayman_Deep_Plume_1", "Axial_Plume", "Guaymas_Basin_Plume",
+# "Brothers_Diffuse_S009", "Axial_Seawater", "EPR_PIR-30", #end Gamma highest to lowest
+# "Brothers_Diffuse_S015", "ELSC_Abe_A1", "Brothers_NWCA_S143", "Brothers_LC_S014",
+# "ELSC_Tui_Malila_T11", "ELSC_Tui_Malila_T10", "Brothers_NWCA_S144",
+# "Guaymas_4571-419", "Guaymas_4559-240", "Brothers_LC_S016",
+# "Guaymas_4561-380", "ELSC_Mariner_131-447", "Brothers_NWCA_S013",
+# "ELSC_Mariner_M17", "ELSC_Bowl_M2", "ELSC_Tui_Malila_132-544",
+# "Brothers_UC_S147", "ELSC_Bowl_M1", "Brothers_UC_S010", "Brothers_NWCA_S017",
+# "Brothers_UC_S011", "ELSC_Mariner_M10", "Guaymas_4561-384",
+# "Brothers_NWCA_S145", "Brothers_NWCA_S142"
+# 

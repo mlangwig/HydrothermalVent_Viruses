@@ -169,8 +169,13 @@ PV_master_geodistinct <- proteins_geodistinct %>%
 dramv <- read.delim2(file = "../../DRAMv/annotations_renamed.tsv", header = TRUE, sep = "\t")
 
 #filter input for prots GD and PV
+dramv_pdgd <- dramv %>% filter(dramv$protein %in% prots_GD_PV$genome)
 
-
+#zoom in on KEGG annotations
+dramv_pdgd_kegg <- dramv_pdgd
+dramv_pdgd_kegg[dramv_pdgd_kegg == ''] <- NA
+dramv_pdgd_kegg <- dramv_pdgd_kegg %>% 
+  drop_na(ko_id)
 
 ################################# write tables  ####################################
 write.table(PV_master, file = "Output/mmseqs_proteinsVentPlume.tsv", col.names = TRUE,

@@ -1,0 +1,10 @@
+my_id	Axial_Plume	Axial_Seawater	Brothers_Diffuse	Brothers_LC	Brothers_NWCA	Brothers_NWCB	Brothers_UC	Cayman_Deep	Cayman_Shallow
+Axial_Plume	0	89	0	0	0	0	0	12	2
+Axial_Seawater	89	0	0	0	0	0	0	12	10
+Brothers_Diffuse	0	0	0	27	36	11	261	0	1
+Brothers_LC	0	0	27	0	194	10	56	0	0
+Brothers_NWCA	0	0	36	194	0	831	199	0	0
+Brothers_NWCB	0	0	11	10	831	0	15	0	1
+Brothers_UC	0	0	261	56	199	15	0	0	0
+Cayman_Deep	12	12	0	0	0	0	0	0	290
+Cayman_Shallow	2	10	1	0	0	1	0	290	0

@@ -157,7 +157,7 @@ cover.full <- left_join(coverm.cf, coverm.reads)
 coverm.filter <- cover.full %>%
   filter(CoverFrac >= 0.7 & Reads >= 5)
 
-##Read Mapping
+##Read Mapping AND REMOVES WHEN GEN SITE=READ SITE
 coverm.map <- coverm.filter %>%
   left_join(read.map, by = c("name" = "UID")) %>%
   rename(Read_Site = Site) %>%
@@ -208,6 +208,26 @@ for(i in 1:nrow(t.mat)){
 ## Make the matrix symmetric by adding the transverse of the asymmetric mat
 t.sym <- t.mat + t(t.mat)
 
+######### create matrix for color mapping border ##########
+#The following loop was written by ChatGPT:
+result_matrix <- matrix("black", nrow = nrow(t.sym), ncol = ncol(t.sym), dimnames = dimnames(t.sym))
+
+# Iterate through the matrix and update the new matrix
+for (i in seq_len(nrow(t.sym))) {
+  for (j in seq_len(ncol(t.sym))) {
+    # Extract the first part of the row and column names before "_"
+    row_prefix <- sub("_.*", "", rownames(t.sym)[i])
+    col_prefix <- sub("_.*", "", colnames(t.sym)[j])
+    
+    # Check if the prefixes are not identical and the value is greater than 0
+    if (row_prefix != col_prefix && t.sym[i, j] > 0) {
+      result_matrix[i, j] <- "red"
+    }
+  }
+}
+
+# Print the result
+print(result_matrix)
 
 ######################## plot it in circlize ################################################
 
@@ -245,14 +265,18 @@ m.connect_test <- t.sym
 rownames(m.connect_test) <- paste(group$vent)
 colnames(m.connect_test) <- paste(group$vent)
 
-library(data.table)
-m <- data.table(as.vector(m.connect_test), as.vector(col(m.connect_test)), as.vector(row(m.connect_test)))
-m <- m[ order(m[,1]), ]
+#also change col names on mapping matrix
+rownames(result_matrix) <- paste(group$vent)
+colnames(result_matrix) <- paste(group$vent)
+
+
+# library(data.table)
+# m <- data.table(as.vector(m.connect_test), as.vector(col(m.connect_test)), as.vector(row(m.connect_test)))
+# m <- m[ order(m[,1]), ]
 
 #vector again
 #group <- dplyr::pull(group)
 group2 <- setNames(as.character(group$group), group$vent)
-
 
 #set colors
 grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
@@ -289,7 +313,7 @@ col_fun = "grey" #specify color of links between them
 #reset before running
 dev.off()
 circos.clear()
-#svg("Output/Circos_coverm_gd_iv_1kb_70mincov.svg")
+svg("Output/Circos_coverm_gd_iv_3kb_70mincov.svg")
 #set font size
 par(cex = 1.8, mar = c(0, 0, 0, 0))
 #set gaps between blocks
@@ -301,7 +325,9 @@ chordDiagram(m.connect_test,
              grid.col = grid.col,
              annotationTrack = c("grid"),
              annotationTrackHeight = c(.06, .06),
-             link.border = "black",
+             #link.border = "black",
+             link.border = result_matrix,
+             link.sort = FALSE,
              transparency = 0.3,
              symmetric = TRUE,
              big.gap = 8,
@@ -581,6 +607,187 @@ highlight.sector(sector.index = c("Lucky", "Rainbow"), track.index = 1, col = "#
 dev.off()
 
 
+################### make circos plot of intra vents ##########################################
+
+#remove coverm.simple_gd from coverm.simple and make new iv
+
+coverm.simple_iv <- coverm.simple %>%
+  anti_join(coverm.simple_gd)
+
+## Make the Genome_Site x Read_Site Matrix with # of connections
+######################### the following code was written by Spencer R. Keyser (skeyser@wisc.edu)
+## make a zero-filled matrix
+t.mat <- matrix(nrow = length(unique(coverm.simple_iv$Genome_Site)), ncol = length(unique(coverm.simple_iv$Read_Site)), data = 0)
+colnames(t.mat) <- unique(coverm.simple_iv$Genome_Site)
+rownames(t.mat) <- unique(coverm.simple_iv$Genome_Site)
+
+## Holder dataframe
+for(i in 1:nrow(t.mat)){
+  g.site.tmp <- rownames(t.mat)[i]
+  for(j in 1:ncol(t.mat)){
+    r.site.tmp <- colnames(t.mat)[j]
+    val.tmp <- coverm.simple_iv %>% #change here
+      filter(Genome_Site == g.site.tmp & Read_Site == r.site.tmp) %>%
+      pull(n)
+    if(is.integer(val.tmp) && length(val.tmp) == 0L){ #| is.numeric(val.tmp)
+      print("No connections")
+    } else {
+      t.mat[i,j] <- val.tmp
+    }
+  }
+}
+
+## Make the matrix symmetric by adding the transverse of the asymmetric mat
+t.sym <- t.mat + t(t.mat)
+
+
+######################## plot IV in circlize ################################################
+
+nm = unique(unlist(dimnames(t.sym)))
+group = structure(gsub("\\d", "", nm), names = nm)
+#df for messing with names
+group <- as.data.frame(nm, row.names = NULL) %>%
+  rename("vent" = "nm")
+group$group = group$vent
+#adjust group names
+group$group <- gsub(".*Lau_Basin.*","Lau Basin Plume", group$group)
+group$group <- gsub(".*ELSC.*","Lau Basin Deposit", group$group)
+group$group <- gsub(".*Brothers.*","Brothers Volcano", group$group)
+group$group <- gsub("Guaymas_[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9]","Guaymas Basin Deposit", group$group)
+group$group <- gsub("Guaymas_Basin","Guaymas Basin Plume", group$group)
+group$group <- gsub("Guaymas_[0-9][0-9][0-9][0-9]","Guaymas Basin Deposit", group$group)
+group$group <- gsub(".*Cayman.*","Mid-Cayman Rise", group$group)
+group$group <- gsub(".*Axial.*","Axial Seamount", group$group)
+group$group <- gsub(".*EPR.*","East Pacific Rise", group$group)
+group$group <- gsub(".*MAR.*","Mid-Atlantic Ridge", group$group)
+#adjust vent names
+#group <- tibble::rownames_to_column(group, "vent")
+group$vent <- gsub("Lau_Basin_","P_", group$vent)
+group$vent <- gsub("ELSC_","D_", group$vent)
+group$vent <- gsub("Brothers_","", group$vent)
+group$vent <- gsub("Guaymas_Basin","P_Guaymas", group$vent)
+group$vent <- gsub("Guaymas_","", group$vent)
+group$vent <- gsub("Cayman_","", group$vent)
+group$vent <- gsub("Axial_","", group$vent)
+group$vent <- gsub("EPR_","", group$vent)
+group$vent <- gsub("MAR_","", group$vent)
+group$vent <- gsub("_"," ", group$vent)
+
+m.connect_test <- t.sym
+rownames(m.connect_test) <- paste(group$vent)
+colnames(m.connect_test) <- paste(group$vent)
+
+#vector again
+group <- dplyr::pull(group)
+group2 <- setNames(as.character(group$group), group$vent)
+
+
+#set colors
+grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
+             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#499e97",
+             "Lau Basin Plume" = "#3F78C1", "Lau Basin Deposit" = "#72a0db",
+             "Mid-Atlantic Ridge" = "#8c510a", "Mid-Cayman Rise" = "#000000",
+             #distinct vent locations above
+             "4281-140" = "#CE9A28", "4559-240" = "#28827A",
+             "4561" = "#28827A", "4571-419" = "#28827A", 
+             #Guaymas deposit
+             "D Mariner" = "#72a0db", "D Abe" = "#72a0db", "D Vai Lili V2" = "#72a0db", 
+             "D Tui Malila" = "#72a0db", "D Bowl" = "#72a0db",
+             #Lau deposit
+             "Deep" = "#000000", "Shallow" = "#000000", 
+             #MCR
+             "Diffuse" = "#B56478", "NWCA" = "#B56478", "LC" = "#B56478", 
+             "NWCB" = "#B56478", "UC" = "#B56478", 
+             #Brothers Volcano
+             "Lucky" = "#8c510a", "Rainbow" = "#8c510a",
+             #MAR
+             "P Abe" = "#3F78C1", "P Kilo Moana" = "#3F78C1", "P Mariner" = "#3F78C1",
+             "P Tahi Moana" = "#3F78C1", "P Tui Malila" = "#3F78C1", 
+             #Lau plume
+             "Seawater" = "#4F508C", "Plume" = "#4F508C", 
+             #Axial Seamount
+             "PIR-30" = "#CE9A28", 
+             #EPR
+             "P Guaymas" = "#499e97" 
+             #Guaymas plume
+) #specify colors of sites/outer ring
+
+col_fun = "grey" #specify color of links between them
+
+#reset before running
+dev.off()
+circos.clear()
+svg("../Read_Mapping/Output/Circos_coverm_iv_3kb_70mincov_largeFont.svg")
+#set font size
+par(cex = 1.8, mar = c(0, 0, 0, 0))
+#set gaps between blocks
+#circos.par(gap.after = c(rep(.5, length(unique(colnames(t.mat_test)))))) #this is crucial to plot
+
+#chordDiagram
+chordDiagram(m.connect_test, 
+             group = group2, 
+             grid.col = grid.col,
+             annotationTrack = c("grid"),
+             annotationTrackHeight = c(.06, .06), #change height of inner group track
+             link.border = "black",
+             transparency = 0.3,
+             symmetric = TRUE,
+             big.gap = 8,
+             col = col_fun, #turn this off to get colors of groups for bands
+             preAllocateTracks = list(
+               track.height = mm_h(6),
+               track.margin = c(mm_h(1), 0)
+             ))
+circos.track(track.index = 2, panel.fun = function(x, y) {
+  sector.index = get.cell.meta.data("sector.index")
+  xlim = get.cell.meta.data("xlim")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  # circos.text(CELL_META$xcenter,
+  #             ylim[1] + cm_h(3), 
+  #             labels = gsub("\\..*","", sector.name),
+  #             col = "black", cex = 0.5, facing = "bending", 
+  #             adj = c(0.5, 0.5), niceFacing = TRUE, font = 0.5)
+  circos.text(mean(xlim), mean(ylim), sector.index, cex = 0.5, niceFacing = TRUE,
+              col = "white")
+}, bg.border = NA)
+
+highlight.sector(sector.index = c("P Abe", "P Kilo Moana",
+                                  "P Mariner", "P Tahi Moana",
+                                  "P Tui Malila"), track.index = 1, col = "#3F78C1", 
+                 text = "Lau Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
+                                  "D Bowl", "D Abe",
+                                  "D Vai Lili V2"), track.index = 1, col = "#72a0db", 
+                 text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("NWCA", "NWCB", "LC",
+                                  "UC", "Diffuse"), track.index = 1, col = "#B56478", 
+                 text = "Brothers Volcano", cex = 0.8, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("4561", "4571-419",
+                                  "4559-240"), track.index = 1, col = "#28827A", 
+                 text = "Guaymas Basin Deposit", cex = 0.6, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("P Guaymas"), track.index = 1, col = "#499e97", 
+                 text = "Guaymas Basin Plume", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("Deep", "Shallow"), track.index = 1, col = "#000000", 
+                 text = "Mid-Cayman Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("Plume", "Seawater"), track.index = 1, col = "#4F508C", 
+                 text = "Axial Seamount", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("4281-140", "PIR-30"), track.index = 1, col = "#CE9A28", 
+                 text = "East Pacific Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+highlight.sector(sector.index = c("Lucky", "Rainbow"), track.index = 1, col = "#8c510a", 
+                 text = "Mid-Atlantic Ridge", cex = 0.5, text.col = "white", niceFacing = TRUE,
+                 facing = "bending")
+
+dev.off()
+
 
 
 ######################## understanding the coverm filtered output ################################################
@@ -625,7 +832,14 @@ coverm.anno.pv <- coverm.anno %>%
 coverm.anno.pv <- coverm.anno.pv %>%
   mutate(Read_Genome = paste(coverm.anno.pv$Read_Site, "_", coverm.anno.pv$Genome_Site))
 
-###### unused
+
+############# plot all read mapping in circlize, red outline for GD ################################################
+
+
+
+
+
+############################# unused #############################
 
 # #convert from wide to long
 # coverm_rc_long <- melt(coverm_rc, id = c("Genome"), na.rm = TRUE)

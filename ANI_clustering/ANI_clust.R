@@ -225,7 +225,7 @@ ani_long_metadata <- rbind(ani_long_metadata, temp_plume)
 #   select(-n)
 
 #number of viruses from Plume and Vent:
-table(ani_long_metadata$Site)
+#table(ani_long_metadata$Site)
 #406 plume and 1042 vent with skani parameters, 3kb, and 50AF
 
 #group by cluster, count occurrences of Site
@@ -247,7 +247,7 @@ ani_long_metadata$Site <- gsub(".*EPR.*","EPR",ani_long_metadata$Site)
 ani_long_metadata$Site <- gsub(".*Axial.*","Axial_Seamount",ani_long_metadata$Site) 
 
 #number of clusters with 1+ rep from all sites:
-table(ani_long_metadata$Site)
+#table(ani_long_metadata$Site)
 
 #count occurrences of Site
 temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
@@ -260,8 +260,8 @@ ani_long_meta_gd <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 
 #remove undetermined from ani_long_meta_gd
 #test <- ani_long_meta_gd %>% filter(checkv_quality != "Not-determined")
-ani_long_meta_gd <- ani_long_meta_gd %>% filter(taxonomy != "NA") %>% 
-  filter(taxonomy != "Unclassified")
+# ani_long_meta_gd <- ani_long_meta_gd %>% filter(taxonomy != "NA") %>% 
+#   filter(taxonomy != "Unclassified")
 
 write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
             col.names = TRUE, sep = "\t")
@@ -317,28 +317,36 @@ ani_long_metadata$Site <- gsub("*_[0-9][0-9][0-9]-[0-9][0-9][0-9]","",ani_long_m
 ani_long_metadata$Site <- gsub("*-380","",ani_long_metadata$Site)
 ani_long_metadata$Site <- gsub("*-384","",ani_long_metadata$Site)
 
-#count occurrences of Site
-temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
-#see if any cluster now occurs twice
-temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
-
 #see these clusters from ani_long_metadata
-ids <- as.integer(unique(temp_count$id))
-ani_long_meta_iv <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
+#ids <- as.integer(unique(temp_count$id))
 
 #remove clusters that are geo distinct
 id_rem <- unique(ani_long_meta_gd$id)
 "%ni%" <- Negate("%in%")
-ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %ni% id_rem)
+ani_long_meta_iv <- ani_long_metadata %>% filter(ani_long_metadata$id %ni% id_rem)
 
-#remove viruses that are Unclassified or NA
-ani_long_meta_iv_filt <- ani_long_meta_iv %>% 
-  filter(taxonomy != "NA") %>%
-  filter(taxonomy != "Unclassified") %>%
-  # filter(checkv_quality != "Low-quality") %>%
-  # filter(checkv_quality != "Not-determined") %>%
-  filter(grepl("Lau", Site)) #%>%
-  #filter(ANI_mean > 0.95)
+## Remove clusters that only have ANI within a site e.g. clust 8 all NWCB
+#count occurrences of Site
+temp_count <- ani_long_meta_iv %>% group_by(id) %>% count(Site)
+#see if any cluster now occurs twice
+temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
+iv_ids <- unique(temp_count$id)
+
+#create iv file of just the ones of interest (actually IV)
+#THIS IF FINAL IV FILE
+#note will have issues if you reordered it in CircosPlot.R
+ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %in% iv_ids)
+
+
+#HERE FOR FILT VERSION
+# #remove viruses that are Unclassified or NA
+# ani_long_meta_iv_filt <- ani_long_meta_iv %>% 
+#   filter(taxonomy != "NA") %>%
+#   filter(taxonomy != "Unclassified") %>%
+#   # filter(checkv_quality != "Low-quality") %>%
+#   # filter(checkv_quality != "Not-determined") %>%
+#   filter(grepl("Lau", Site)) #%>%
+#   #filter(ANI_mean > 0.95)
 
 #write the table
 write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
