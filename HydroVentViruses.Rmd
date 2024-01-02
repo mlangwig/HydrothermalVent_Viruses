@@ -1103,6 +1103,58 @@ mcxload -abc skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv -o skani_process
 nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_virus.clusters &
 ```
 
+### skani v0.2.0 3kb
+
+Rerunning skani v0.2.0 with new set of 3kb viruses - old set was off for some reason.
+
+1. Make folder and file of 3kb viruses:
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/Virus_Genomes/fna/all_fna_vMAG_vUnbinned
+
+find . -type f -name "*.fasta" -exec cat {} + > Final_All_PlumeVent_Viruses_unbinned.fna
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/skani/PlumeVent_skani_v0.2.0_3kb
+
+perl /storage2/scratch/langwig/scripts/screen_list_new.pl 3kb_list.txt ../../Virus_Genomes/Final_All_PlumeVent_Viruses_unbinned.fna keep > unbinned_PlumeVentViruses_3kb.fna 
+```
+
+2. Run skani
+```{bash, eval = FALSE}
+mamba activate vskani
+mamba remove skani
+source ~/.bashrc
+
+nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani2_ANI_VentPlume_200m30cm_3kb_12_31.tsv -m 200 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
+
+awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani2_ANI_VentPlume_200m30cm_3kb_12_31.tsv > skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF.tsv
+```
+
+3. Download file to remove self matches in ANI_clust.R. This is so you can get a list of viruses to cluster - some of them will only be in the table bc they have a self to self hit. (Don't do this part, all you have to do is cluster the file, skip to step 4):
+```{bash, eval = FALSE}
+cut -f1,2 skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF_preprocessed.tsv | sed 's/\t/\n/g' | sort | uniq | grep -v "unbinned_PlumeVentViruses_3kb.fna" > 3kb_50AF_vMAG_list.txt
+
+cut -f3,4 skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF_preprocessed.tsv | sed 's/\t/\n/g' | sort | uniq | grep -v "vRhyme" > 3kb_50AF_unbinned_list.txt
+
+for i in `cat 3kb_50AF_vMAG_list.txt`; do cp ../PlumeVent_500m30cm_3kb/3kb_vMAGs/$i 3kb_vMAGs_50AF/; done
+
+perl /scratch/langwig/scripts/screen_list_new.pl 3kb_50AF_unbinned_list.txt unbinned_PlumeVentViruses_3kb.fna keep > unbinned_PlumeVentViruses_3kb_50AF.fna
+```
+
+4. Run mcl clustering on the preprocessed file you output from R (ignore what I did in step 3, not necessary). MAKE SURE WHEN REPEATING THIS THE PREPROCESSED INPUT FILE IS JUST THE 3 COLUMNS.
+```{bash, eval = FALSE}
+mamba activate vskani
+
+mcxload -abc skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF_preprocessed.tsv -o skani_processed.mci -write-tab skani_processed.mcxload
+
+nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_virus.clusters &
+
+sed 's/\t/\,/g' dereplicated_virus.clusters | grep "," | wc
+```
+
+Download dereplicated clusters file and process in ANI_clust.R.
+
 # Using Seqkit to get genome size of vMAGs
 
 1. I have to run this because the CheckV contig length is going to be off since that was run on vMAGs that were N-linked.

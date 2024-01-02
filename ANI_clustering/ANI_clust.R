@@ -13,7 +13,7 @@ library(magrittr)
 
 ######################################### major inputs ################################################
 
-skani_ani<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb.tsv")
+skani_ani<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF.tsv")
 mcl_clusters <- read.delim2(file = "Input/skani_v2/dereplicated_virus.clusters", sep = "\t", header = FALSE)
 genomad <- read.delim2(file = "../../genomad/vUnbinned_vMAGs_1500Ns_PlumeVent_virus_summary.tsv")
 iphop <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genus_m90.csv")
@@ -40,7 +40,7 @@ skani_ani$Ref_file <- gsub("3kb_vMAGs/","",skani_ani$Ref_file)
 skani_ani$Query_file <- gsub("3kb_vMAGs/","",skani_ani$Query_file)
 
 ###################### create file for mcl clustering ######################
-ani <- skani_ani %>% 
+ani <- skani_ani %>%
   select(-Ref_file, -Query_file)
 
 #only keep lowest AF
@@ -57,10 +57,11 @@ ani <- ani %>%
 # remove  ANI below 70
 ani<-filter(ani, ANI_norm >= 0.70)
 
+
 # File "ani" and the following table output are what was used as input for 
 #mcl clustering - these are the viruses that are clustered
 
-# write.table(ani, file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv",
+# write.table(ani, file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF_preprocessed.tsv",
 #             quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
 
 
@@ -201,6 +202,24 @@ ani_long_metadata <- iphop %>%
   dplyr::select('Virus', 'Host.genus', 'List.of.methods') %>%
   right_join(ani_long_metadata, by = c("Virus" = "vMAG")) %>%
   rename("vMAG" = "Virus")
+
+#add site column for ani_long_metadata
+ani_long_metadata$Site <- ani_long_metadata$vMAG 
+ani_long_metadata <- ani_long_metadata %>%
+  separate(Site, c("Site", NA), sep= "_NODE|_scaffold|_vRhyme|_k95")
+#clean up site names
+#faster replace all the naming patterns
+#test <- coverm_rc_long
+ani_long_metadata$Site <- stri_replace_all_regex(ani_long_metadata$Site,
+                                                pattern=c("_A[0-9]",
+                                                          "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
+                                                          "_S1[0-9][0-9]", "_[0-9][0-9][0-9]-[0-9][0-9][0-9]",
+                                                          "-38[0-9]"),
+                                                replacement='',
+                                                vectorize=FALSE)
+ani_long_metadata$Site <- gsub("*_M1[0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("*_M[0-9]","",ani_long_metadata$Site)
+
 
 
 ################################ see clusters that have vent and plume ##########################################

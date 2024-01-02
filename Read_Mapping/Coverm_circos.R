@@ -229,7 +229,18 @@ for (i in seq_len(nrow(t.sym))) {
 # Print the result
 print(result_matrix)
 
+#Note they loop misses one connection that totals 4 
+#between Guaymas deposit and plume
+#Fix here:
+
+#Guaymas
+result_matrix[c("Guaymas_4561", "Guaymas_Basin"), c("Guaymas_Basin", "Guaymas_4561")] <- "red"
+
+
 ######################## plot it in circlize ################################################
+
+#HERE PLOTTING ALL READ MAPPING RESULT TOGETHER AS ONE, 
+#RED OUTLINE FOR GEO DISTINCT
 
 nm = unique(unlist(dimnames(t.sym)))
 #group = structure(gsub("\\d", "", nm), names = nm)
@@ -313,7 +324,7 @@ col_fun = "grey" #specify color of links between them
 #reset before running
 dev.off()
 circos.clear()
-svg("Output/Circos_coverm_gd_iv_3kb_70mincov.svg")
+#svg("Output/Circos_coverm_gd_iv_3kb_70mincov.svg")
 #set font size
 par(cex = 1.8, mar = c(0, 0, 0, 0))
 #set gaps between blocks
@@ -831,13 +842,6 @@ coverm.anno.pv <- coverm.anno %>%
 
 coverm.anno.pv <- coverm.anno.pv %>%
   mutate(Read_Genome = paste(coverm.anno.pv$Read_Site, "_", coverm.anno.pv$Genome_Site))
-
-
-############# plot all read mapping in circlize, red outline for GD ################################################
-
-
-
-
 
 ############################# unused #############################
 

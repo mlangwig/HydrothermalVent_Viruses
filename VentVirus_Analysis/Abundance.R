@@ -479,7 +479,7 @@ plot <- abund_long_norm_iphop_p %>%
   #scale_fill_manual(values = col_vector) +
   labs(x = "Virus Abundance", y = "Site",
        fill = "Predicted microbial host") +
-  guides(fill=guide_legend(override.aes = list(size=12))) +
+  guides(fill=guide_legend(override.aes = list(size=8))) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
         legend.background = element_rect(color = "white"),
@@ -487,11 +487,11 @@ plot <- abund_long_norm_iphop_p %>%
         panel.background = element_rect(fill = "transparent"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        axis.title=element_text(size=16),
-        axis.text=element_text(size=14),
-        strip.text.x = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.title=element_text(size=14),
+        axis.title=element_text(size=14),
+        axis.text=element_text(size=12),
+        strip.text.x = element_text(size = 12),
+        legend.text=element_text(size=10),
+        legend.title=element_text(size=12),
         plot.background = element_rect(fill = "transparent", color = NA)) +
   #panel.border = element_blank()) + #turn this off to get the outline back)
   scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
@@ -504,8 +504,9 @@ plot <- abund_long_norm_iphop_p %>%
 #coord_flip()
 plot
 
-ggsave("output/coverm_CampGamma_normAbun.png", plot, width = 17, height = 12, dpi = 1000,
-       bg = "transparent")
+ggsave("output/coverm_CampGamma_normAbun.png", plot, 
+       height = 10, width = 13,
+       bg = "transparent") #, width = 17, height = 12, dpi = 1000,
 # ggsave("Output/coverm_abun_CampGamma.png", plot, width = 10, height = 8, dpi = 500,
 #        bg = "transparent")
 # 
