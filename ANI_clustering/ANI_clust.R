@@ -220,8 +220,6 @@ ani_long_metadata$Site <- stri_replace_all_regex(ani_long_metadata$Site,
 ani_long_metadata$Site <- gsub("*_M1[0-9]","",ani_long_metadata$Site)
 ani_long_metadata$Site <- gsub("*_M[0-9]","",ani_long_metadata$Site)
 
-
-
 ################################ see clusters that have vent and plume ##########################################
 
 #replace strings with Vent or Plume
@@ -357,15 +355,17 @@ iv_ids <- unique(temp_count$id)
 ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %in% iv_ids)
 
 
-#HERE FOR FILT VERSION
+#HERE FOR FILT VERSION to do counts
 # #remove viruses that are Unclassified or NA
-# ani_long_meta_iv_filt <- ani_long_meta_iv %>% 
-#   filter(taxonomy != "NA") %>%
-#   filter(taxonomy != "Unclassified") %>%
-#   # filter(checkv_quality != "Low-quality") %>%
-#   # filter(checkv_quality != "Not-determined") %>%
-#   filter(grepl("Lau", Site)) #%>%
-#   #filter(ANI_mean > 0.95)
+ani_long_meta_iv_filt <- ani_long_meta_iv %>%
+  #filter(taxonomy != "NA") %>%
+  #filter(taxonomy != "Unclassified") %>%
+  # filter(checkv_quality != "Low-quality") %>%
+  # filter(checkv_quality != "Not-determined") %>%
+  filter(grepl("Lau", Site)) #%>%
+  filter(grepl("Lau_Basin_Kilo_Moana", Site)) %>%
+  filter(grepl("Lau_Basin_Abe", Site))
+  #filter(ANI_mean > 0.95)
 
 #write the table
 write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
@@ -537,6 +537,25 @@ ani_long_metadata_all <- allVirus_master %>%
                 'checkv_quality', 'provirus',
                 'completeness', 'contamination') %>%
   right_join(ani_long, by = c("vMAG" = "Virus"))
+
+##################### remove e coli contam viruses from allVirus_master ###########################
+#remove names from the list
+allVirus_master <- allVirus_master %>%
+  filter(!str_detect(vMAG, remove.list))
+#replace equals sign with underscore to get complete removal
+allVirus_master_nu <- allVirus_master
+allVirus_master_nu$vMAG <- gsub('=','_',allVirus_master_nu$vMAG)
+
+#now replace again and should work for all 
+allVirus_master_nu <- allVirus_master_nu %>%
+  filter(!str_detect(vMAG, remove.list))
+
+#only med-quality better virus master
+allVirus_master_nu_hq <- allVirus_master_nu %>%
+  filter(!grepl("Low-quality|Not-determined", checkv_quality))
+
+##################################################
+
 
 #drop NAs to see if that fixes plotting probs
 ani_long_metadata_all <- ani_long_metadata_all %>%

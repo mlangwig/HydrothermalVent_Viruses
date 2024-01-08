@@ -1382,6 +1382,20 @@ python -c 'import sys; print(sys.path)'
 nohup virsorter run -i Virus_Genomes/fna/unbinned_vMAGs_1500Ns_PlumeVentViruses.fna -w Virsorter/output -d /storage2/databases/VirSorter2/db/ -j 30 --keep-original-seq  --prep-for-dramv --viral-gene-enrich-off --rm-tmpdir &
 ```
 
+## Virsorter run again
+Rerunning with the loose parameters plus N-linked vMAGs.
+
+1. Remove e coli viruses from the input file
+```{bash, eval = FALSE}
+perl /storage1/data12/scripts/screen_list_new.pl ecoli_fna_list_toRemove.txt unbinned_vMAGs_1500Ns_PlumeVentViruses.fna > unbinned_vMAGs_1500Ns_PlumeVentViruses_noEcoli.fna
+```
+
+2. Run it
+```{bash, eval = FALSE}
+mamba activate virsorter
+
+nohup virsorter run -i Virus_Genomes/unbinned_vMAGs_1500Ns_PlumeVentViruses_noEcoli.fna -w Virsorter/Nlinked_vMAGs -j 100 --keep-original-seq --prep-for-dramv --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off &
+```
 
 # Comparing regions of overlap of viruses in ANI clusters
 

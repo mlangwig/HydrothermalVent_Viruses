@@ -193,7 +193,10 @@
             <li><a href="#annotations-of-blast-based-iphop-matches">Annotations of blast-based iphop matches</a></li>
             <li><a href="#comparison-of-sulfur-viruses-to-gov">Comparison of sulfur viruses to GOV</a></li>
             </ul></li>
-            <li><a href="#run-virsorter-on-viruses">Run Virsorter on viruses</a></li>
+            <li><a href="#run-virsorter-on-viruses">Run Virsorter on viruses</a>
+            <ul>
+            <li><a href="#virsorter-run-again">Virsorter run again</a></li>
+            </ul></li>
             <li><a href="#comparing-regions-of-overlap-of-viruses-in-ani-clusters">Comparing regions of overlap of viruses in ANI clusters</a></li>
             <li><a href="#running-coverm-to-obtain-virus-abundance">Running coverm to obtain virus abundance</a></li>
             <li><a href="#translate-viruses-to-protein-yourself-using-prodigal">Translate viruses to protein yourself using prodigal</a></li>
@@ -1354,6 +1357,18 @@ nohup virsorter run -i test.fa --min-length 1500 -j 4 all -d /storage2/databases
 <p>You can use this command <strong>inside the activated conda env</strong> to see what python versions the env is actually using and reading.</p>
 <pre class="bash"><code>python -c &#39;import sys; print(sys.path)&#39;</code></pre>
 <pre class="bash"><code>nohup virsorter run -i Virus_Genomes/fna/unbinned_vMAGs_1500Ns_PlumeVentViruses.fna -w Virsorter/output -d /storage2/databases/VirSorter2/db/ -j 30 --keep-original-seq  --prep-for-dramv --viral-gene-enrich-off --rm-tmpdir &amp;</code></pre>
+<div id="virsorter-run-again" class="section level2">
+<h2>Virsorter run again</h2>
+<p>Rerunning with the loose parameters plus N-linked vMAGs.</p>
+<ol style="list-style-type: decimal">
+<li>Remove e coli viruses from the input file</li>
+</ol>
+<pre class="bash"><code>perl /storage1/data12/scripts/screen_list_new.pl ecoli_fna_list_toRemove.txt unbinned_vMAGs_1500Ns_PlumeVentViruses.fna &gt; unbinned_vMAGs_1500Ns_PlumeVentViruses_noEcoli.fna</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Run it</li>
+</ol>
+<pre class="bash"><code></code></pre>
+</div>
 </div>
 <div id="comparing-regions-of-overlap-of-viruses-in-ani-clusters" class="section level1">
 <h1>Comparing regions of overlap of viruses in ANI clusters</h1>
