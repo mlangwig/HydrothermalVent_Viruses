@@ -1277,6 +1277,14 @@ conda install -c conda-forge polars
 python /storage1/data14/for_maggie/genomad/fix_genomad_taxonomy.py -i vUnbinned_vMAGs_1500Ns_PlumeVent_taxonomy.tsv -o vUnbinned_vMAGs_1500Ns_PlumeVent_genomad_tax_parsed.txt
 ```
 
+## genomad rerun?
+**Haven't run this 01/09/24**
+Rerunning genomad to see if I can get tax for all viruses
+```{bash, eval = FALSE}
+mamba activate genomad
+
+nohup genomad annotate Virus_Genomes/vUnbinned_vMAGs_1500Ns_PlumeVent.fna genomad_output/genomad_output_anno genomad_db &
+```
 
 # Focus on viruses that infect sulfur cycling microbes
 
@@ -1394,8 +1402,14 @@ perl /storage1/data12/scripts/screen_list_new.pl ecoli_fna_list_toRemove.txt unb
 ```{bash, eval = FALSE}
 mamba activate virsorter
 
-nohup virsorter run -i Virus_Genomes/unbinned_vMAGs_1500Ns_PlumeVentViruses_noEcoli.fna -w Virsorter/Nlinked_vMAGs -j 100 --keep-original-seq --prep-for-dramv --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off &
+nohup virsorter run -i Virus_Genomes/unbinned_vMAGs_1500Ns_PlumeVentViruses_noEcoli.fna -w Virsorter/Nlinked_vMAGs_noMinScore -j 90 --keep-original-seq --prep-for-dramv --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off --min-score 0.0 &
 ```
+
+3. See how many viruses encode a hallmark
+```{bash, eval = FALSE}
+awk -F"\t" '$10 > 0' final-viral-score.tsv
+```
+hallmark = col 10
 
 # Comparing regions of overlap of viruses in ANI clusters
 
@@ -1675,6 +1689,19 @@ Rscript parse_evalue.R
 for i in `cat vir_prots_mmseqClusts_GD_PD.tsv`; do grep $i results_evalparsed.tsv >> results_GD_PD_viruses.txt; done
 ```
 
+3. Try and get descriptive header
+```{bash, eval = FALSE}
+mamba activate mmseqs2
+
+mmseqs createtsv /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs results_fh.tsv --full-header
+```
+**This is not working properly**
+
+4. Write an R script to get the real names of PHROGs ids mapped onto result
+```{bash, eval = FALSE}
+Rscript map_phrogs.R
+```
+**R isn't working well on the server anymore, not sure what is happening but downloading files to do on my comp**
 
 # Run dramv to get viral protein annotations
 
@@ -1702,6 +1729,11 @@ sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
 Rscript subset_GDpd_prots.R
 ```
 
+5. Try distilling
+```{bash, eval = FALSE}
+DRAM-v.py distill -i annotation/ -o distilled
+```
+
 # Get total read count for all fastq reads
 
 1. Read count using seqkit
@@ -1709,6 +1741,48 @@ Rscript subset_GDpd_prots.R
 nohup seqkit stats -To stats.tsv *.fastq.gz &
 ```
 
+# Use bitscore to choose PHROGs or KEGG annotation
+
+To annotate the general category of proteins that were clustered with mmseqs, using PHROGs and KEGG annotations, choosing best based on bitscore.
+
+1. Prepare the PHROGs output
+```{bash, eval = FALSE}
+cut -f1,2,3 results_evalparsed.tsv > phrogs_evalparsed_VentViruses.tsv
+
+sed 's/vRhyme_[0-9]__//g' phrogs_evalparsed_VentViruses.tsv > phrogs_evalparsed_VentViruses_novRhyme.tsv
+sed -i 's/vRhyme_[0-9][0-9]__//g' phrogs_evalparsed_VentViruses_novRhyme.tsv
+sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' phrogs_evalparsed_VentViruses_novRhyme.tsv
+```
+
+2. Prepare the KEGG output
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/KEGG_VIBRANT_output
+
+mkdir KEGG_VIBRANT_output
+
+./copy_files.sh
+
+awk 'FNR > 1 || NR == 1' *.tsv > 52samples_KEGG_hmmtbl_parse.tsv
+
+awk -F'\t' 'BEGIN{OFS="\t"} {print $2, $1, $4}' 52samples_KEGG_hmmtbl_parse.tsv > 52samples_KEGG_hmmtbl_parse2.tsv
+```
+
+3. Put the phrogs with no vRhyme and KEGG together
+```{bash, eval = FALSE}
+tail -n +2 phrogs_evalparsed_VentViruses_novRhyme.tsv | cat 52samples_KEGG_hmmtbl_parse2.tsv - > merged_KEGG_phrogs_viruses.txt
+
+cut -f3 mmseqs_long.tsv| tail -n +2 > ../../../mmseqs/mmseq_prot_names_novRhyme.txt
+
+for i in `cat mmseq_prot_names_novRhyme.txt`; do grep -w $i merged_KEGG_phrogs_viruses.txt >> mmseqs_KEGG_phrogs_annos.txt; done
+```
+
+For loop was slow so doing it this faster way:
+```{bash, eval = FALSE}
+grep -Fwf mmseq_prot_names_novRhyme.txt merged_KEGG_phrogs_viruses.txt > output.txt
+
+mv output.txt mmseqs_KEGG_phrogs_annos.txt
+```
 
 
 

@@ -163,6 +163,10 @@ PV_master_geodistinct <- proteins_geodistinct %>%
   dplyr::select("cluster.representative", "cluster.member") %>%
   left_join(PV_master, by = c("cluster.member" = "protein"))
 
+#use prots_PV to get list of Plume Vent proteins and subset from PV_master
+PV_prot_list <- unique(prots_PV$genome)
+PV_annos <- PV_master %>% filter(PV_master$protein %in% PV_prot_list)
+
 ################################# protein annotations with DRAMv  ####################################
 
 #input
@@ -177,8 +181,114 @@ dramv_pdgd_kegg[dramv_pdgd_kegg == ''] <- NA
 dramv_pdgd_kegg <- dramv_pdgd_kegg %>% 
   drop_na(ko_id)
 
+#dramv annos for PV proteins
+PV_prot_list_ne <- gsub("=","_",PV_prot_list)
+PV_annos_dram <- dramv %>% filter(dramv$protein %in% PV_prot_list_ne)
+
+################################# protein annotations with PHROGs  ####################################
+
+#PHROGs annos for PV proteins
+#phrogs results
+phrogs <- read.delim2(file = "../../PHROGs/results_evalparsed.tsv", header = TRUE, sep = "\t")
+#mapping file
+phrogs_map <- read.delim2(file = "../../PHROGs/phrog_annot_v4.tsv", header = TRUE, sep = "\t")
+
+#remove phrogs string
+phrogs$V1 <- gsub("phrog_", "", phrogs$V1)
+phrogs$V1 <- as.integer(phrogs$V1)
+#vlookup
+phrogs_map <- phrogs_map %>%
+  dplyr::select("phrog", "color", "annot", "category") %>%
+  right_join(phrogs, by = c("phrog" = "V1"))
+
+#drop excess cols
+phrogs_map <- phrogs_map %>%
+  select(c("phrog","color","annot","category","V2", "V5"))
+
+#get only PV proteins
+phrogs_map_PV <- phrogs_map %>%
+  filter(phrogs_map$V2 %in% PV_prot_list)
+
 ################################# write tables  ####################################
 write.table(PV_master, file = "Output/mmseqs_proteinsVentPlume.tsv", col.names = TRUE,
             row.names = FALSE, sep = "\t")
 write.table(PV_master_geodistinct, file = "Output/mmseqs_proteinsGeoDistinct.tsv", col.names = TRUE,
             row.names = FALSE, sep = "\t")
+
+########################## adjust mmseqs file so have version of protein name without vRhyme ####################################
+#the KEGG annotations have no vRhyme names because annotations were done before vRhyme so creating column
+#without vRhyme name to map to that
+
+#create new mmseqs file
+mmseqs_dif_long_names <- mmseqs_dif_long
+#new col
+mmseqs_dif_long_names$genome_vRhyme <- mmseqs_dif_long_names$genome
+#separate col
+mmseqs_dif_long_names <- mmseqs_dif_long_names %>% separate(genome_vRhyme, c(NA, "genome_vRhyme"), sep = "__")
+#put non vRhyme names back in the column
+mmseqs_dif_long_names <- mmseqs_dif_long_names %>%
+  mutate(genome_vRhyme = if_else(is.na(genome_vRhyme), genome, genome_vRhyme))
+
+#write the output to get list of protein names without vRhyme...and just to have the file
+write.table(mmseqs_dif_long_names, file = "Output/mmseqs_long.tsv", col.names = TRUE,
+            row.names = FALSE, sep = "\t", quote = FALSE)
+
+########### use the file of mmseqs KEGG and phrogs annotations you made on the server to ##################
+#157665 have annotations compared to 210191 in list...but I guess phrogs annotations could be unknown
+
+#input of mmseqs proteins that have kegg and/or phrogs annotation - kegg done with VIBRANT
+mmseqs_kegg_phrog <- read.delim2(file = "../../mmseqs/mmseqs_KEGG_phrogs_annos.txt",
+                                 header = FALSE)
+#input kegg mapping file
+kegg_map <- read.delim2(file = "~/Google Drive/My Drive/databases/kegg_mappingfile.txt")
+
+
+#filter for better hit based on bitscore
+mmseqs_kegg_phrog_filt <- mmseqs_kegg_phrog %>%
+  group_by(V2) %>%
+  filter(V3 == max(V3))
+#confirm now no duplicate names
+length(unique(mmseqs_kegg_phrog_filt$V2))
+
+#map on the mmseqs clusters
+mmseqs_kegg_phrog_filt <- mmseqs_dif_long_names %>%
+  dplyr::select(id, genome_vRhyme) %>%
+  right_join(mmseqs_kegg_phrog_filt, by = c("genome_vRhyme" = "V2"))
+##add annotation description
+#kegg
+kegg <- dramv %>%
+  select(c("ko_id","kegg_hit")) %>%
+  unique() %>%
+  filter_all(all_vars(. != "")) %>%
+  rename("db_id" = "ko_id") %>%
+  rename("desc" = "kegg_hit")
+#phrogs
+phrog <- phrogs_map %>%
+  select(c("phrog", "category")) %>%
+  unique() %>%
+  rename("db_id" = "phrog") %>%
+  rename("desc" = "category")
+#concatenate
+kegg_phrog<-rbind(kegg,phrog)
+
+#map more descriptive annos onto table
+mmseqs_kegg_phrog_filt$V1 <- gsub("phrog_","",mmseqs_kegg_phrog_filt$V1)
+mmseqs_kegg_phrog_filt <- kegg_phrog %>%
+  dplyr::select(db_id, desc) %>%
+  right_join(mmseqs_kegg_phrog_filt, by = c("db_id" = "V1"))
+
+#choose best rep of the cluster based on bitscore
+mmseqs_kegg_phrog_filt <- mmseqs_kegg_phrog_filt %>%
+  group_by(id) %>%
+  filter(V3 == max(V3))
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+

@@ -23,6 +23,9 @@ vib_type <- read.delim2(file = "input/All_GenQuality_Vents.tsv", header = TRUE)
 
 gensize_kb<-read.delim2(file = "input/GenSize_KB.tsv", header = TRUE)
 
+seqkit <- read.delim2(file = "../../Seqkit_GenSize/VentPlume_seqkit_stats_renamed_space.txt",
+                      header = TRUE,sep = " ")
+
 plume_master_vUnbinned<-read.delim2(file = "~/Google Drive/My Drive/Faith/PlumeViruses/PlumeVirus_Analysis/output/master_table_vUnbinned.tsv",
                                     header = TRUE)
 
@@ -372,3 +375,36 @@ p
 
 ggsave("output/GenomeSizeKB_SiteTotals.png", p, width = 12, height = 6, dpi = 500)
 ggsave("output/GenomeSizeKB_SiteTotals.pdf", p, width = 12, dpi = 500)
+
+##################### Create the plume master table #####################
+
+#add vMAG column with nothing in it
+plume_master_vUnbinned <- plume_master_vUnbinned %>%
+  mutate(vMAG = NA)
+
+#replace the vMAG genome size with Seqkits done on non-1500N-linked vMAGs
+
+
+plume_master <- rbind(plume_master_vUnbinned, plume_master_vMAGs)
+
+##################### Create the vent master table again #####################
+
+vent_master_vUnbinned <- master_table_unbinned %>%
+  mutate(vMAG = NA)
+
+vent_master <- rbind(vent_master_vUnbinned, master_table_vMAGs)
+
+##################### Create the plume and vent master table #####################
+
+All_master <- rbind(vent_master, plume_master)
+
+#remove e coli contam viruses
+All_master <- All_master %>%
+  filter(!str_detect(scaffold, remove.list))
+
+#write the output
+write.table(All_master, file = "output/master_table_VentPlumeViruses_protein.tsv", quote = FALSE, sep = "\t",
+            col.names = TRUE, row.names = FALSE)
+
+
+
