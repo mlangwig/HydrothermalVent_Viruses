@@ -383,7 +383,14 @@ plume_master_vUnbinned <- plume_master_vUnbinned %>%
   mutate(vMAG = NA)
 
 #replace the vMAG genome size with Seqkits done on non-1500N-linked vMAGs
-
+plume_master_vMAGs <- seqkit %>%
+  dplyr::select(file, sum_len) %>%
+  right_join(plume_master_vMAGs, by = c("file" = "vMAG"))
+#rename cols and replace contig_length with sum_len
+plume_master_vMAGs <- plume_master_vMAGs %>%
+  rename("vMAG" = "file") %>%
+  select(-contig_length) %>%
+  rename("contig_length" = "sum_len")
 
 plume_master <- rbind(plume_master_vUnbinned, plume_master_vMAGs)
 
@@ -391,6 +398,16 @@ plume_master <- rbind(plume_master_vUnbinned, plume_master_vMAGs)
 
 vent_master_vUnbinned <- master_table_unbinned %>%
   mutate(vMAG = NA)
+
+#replace the vMAG genome size with Seqkits done on non-1500N-linked vMAGs
+master_table_vMAGs <- seqkit %>%
+  dplyr::select(file, sum_len) %>%
+  right_join(master_table_vMAGs, by = c("file" = "vMAG"))
+#rename cols and replace contig_length with sum_len
+master_table_vMAGs <- master_table_vMAGs %>%
+  rename("vMAG" = "file") %>%
+  select(-contig_length) %>%
+  rename("contig_length" = "sum_len")
 
 vent_master <- rbind(vent_master_vUnbinned, master_table_vMAGs)
 

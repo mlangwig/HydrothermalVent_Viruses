@@ -1675,7 +1675,7 @@ nohup mmseqs search /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_d
 mmseqs createtsv /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs results.tsv
 ```
 
-alternative command for increased sensitivity:
+alternative command for increased sensitivity (did not end up using these):
 ```{bash, eval = FALSE}
 nohup mmseqs search /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs ./tmp -s 7 --threads 20 &
 
@@ -1702,6 +1702,25 @@ mmseqs createtsv /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db P
 Rscript map_phrogs.R
 ```
 **R isn't working well on the server anymore, not sure what is happening but downloading files to do on my comp**
+
+5. Cody fixed a prob where we were missing a PHROGs file to say which database was which to run convertalis. Got it working now like this:
+```{bash, eval = FALSE}
+mmseqs convertalis /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs alis_test.tsv
+
+mmseqs convertalis /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs convert_alis.tsv --format-output "query,target,evalue,pident,bits,qcov,tcov,alnlen,qlen,tlen"
+```
+I ended up using the second command to get custom output so I could filter by params like pident and qcov and tcov.
+
+6. Filter output for ≥80% cov (col 6 & 7), ≥75% seq id (col 4).
+```{bash, eval = FALSE}
+awk '{ if ($6 >= .8 && $7 >= .8) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10}' convert_alis.tsv > convert_alis_80cov.tsv
+
+awk '{ if ($4 >= 75) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10}' convert_alis_80cov.tsv > convert_alis_80cov_75pi.tsv
+
+sed  -i '1i query target  evalue  pident  bits  qcov  tcov  alnlen  qlen  tlen' convert_alis_80cov_75pi.tsv
+```
+Import 80 cov and 75 pi file into R, filter for best e value hit when multiple hits per sequence.
+
 
 # Run dramv to get viral protein annotations
 
@@ -1752,14 +1771,19 @@ cut -f1,2,3 results_evalparsed.tsv > phrogs_evalparsed_VentViruses.tsv
 sed 's/vRhyme_[0-9]__//g' phrogs_evalparsed_VentViruses.tsv > phrogs_evalparsed_VentViruses_novRhyme.tsv
 sed -i 's/vRhyme_[0-9][0-9]__//g' phrogs_evalparsed_VentViruses_novRhyme.tsv
 sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' phrogs_evalparsed_VentViruses_novRhyme.tsv
+
+
+cut -f1,2,5 ../PHROGs/convert_alis_evalparsed.tsv > convert_alis_80cov_75pi_eval_parse.tsv
+
+sed 's/vRhyme_[0-9]__//g' convert_alis_80cov_75pi_eval_parse.tsv > convert_alis_80cov_75pi_eval_novRhyme.tsv
+sed -i 's/vRhyme_[0-9][0-9]__//g' convert_alis_80cov_75pi_eval_novRhyme.tsv
+sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' convert_alis_80cov_75pi_eval_novRhyme.tsv
 ```
 
 2. Prepare the KEGG output
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/KEGG_VIBRANT_output
-
-mkdir KEGG_VIBRANT_output
 
 ./copy_files.sh
 
@@ -1772,18 +1796,20 @@ awk -F'\t' 'BEGIN{OFS="\t"} {print $2, $1, $4}' 52samples_KEGG_hmmtbl_parse.tsv 
 ```{bash, eval = FALSE}
 tail -n +2 phrogs_evalparsed_VentViruses_novRhyme.tsv | cat 52samples_KEGG_hmmtbl_parse2.tsv - > merged_KEGG_phrogs_viruses.txt
 
+tail -n +2 convert_alis_80cov_75pi_eval_novRhyme.tsv | cat 52samples_KEGG_hmmtbl_parse2.tsv - > merged_KEGG_phrogs_viruses.txt
+
 cut -f3 mmseqs_long.tsv| tail -n +2 > ../../../mmseqs/mmseq_prot_names_novRhyme.txt
 
-for i in `cat mmseq_prot_names_novRhyme.txt`; do grep -w $i merged_KEGG_phrogs_viruses.txt >> mmseqs_KEGG_phrogs_annos.txt; done
-```
-
-For loop was slow so doing it this faster way:
-```{bash, eval = FALSE}
 grep -Fwf mmseq_prot_names_novRhyme.txt merged_KEGG_phrogs_viruses.txt > output.txt
 
 mv output.txt mmseqs_KEGG_phrogs_annos.txt
 ```
 
+# Check mmseqs cluster with different annos
 
-
+Using cluster 74952 as an example - 3 seqs, 2 are tail annotation, 1 is DmsA. 3 sequences put into the file clust_74952_test.faa. Now for alignment:
+```{bash, eval = FALSE}
+mafft --auto clust_74952_test.faa > clust_74952_test_mafftAuto.faa
+```
+Uniprot thinks they are all DNA-directed RNA polymerase, which doesn't match the annotations I have...great. This is probably fine according to this "Many bacterial and eukaryotic viruses with double-stranded DNA genomes in the realms Duplodnaviria and Varidnaviria encode homologs of cellular RNAPs (collectively denoted “two-barrel RNAPs”)" [Chaban et al., 2024](https://www.nature.com/articles/s41467-023-44630-z)
 

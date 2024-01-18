@@ -189,25 +189,30 @@ PV_annos_dram <- dramv %>% filter(dramv$protein %in% PV_prot_list_ne)
 
 #PHROGs annos for PV proteins
 #phrogs results
-phrogs <- read.delim2(file = "../../PHROGs/results_evalparsed.tsv", header = TRUE, sep = "\t")
+phrogs <- read.delim2(file = "../../PHROGs/convert_alis_80cov_75pi.tsv", header = TRUE, sep = "\t")
 #mapping file
 phrogs_map <- read.delim2(file = "../../PHROGs/phrog_annot_v4.tsv", header = TRUE, sep = "\t")
 
 #remove phrogs string
-phrogs$V1 <- gsub("phrog_", "", phrogs$V1)
-phrogs$V1 <- as.integer(phrogs$V1)
+phrogs$query <- gsub("phrog_", "", phrogs$query)
+phrogs$query <- as.integer(phrogs$query)
+phrogs$evalue <- as.numeric(phrogs$evalue)
+#choose best phrogs annotation based on e value so 1 anno per scaffold
+phrogs <- phrogs %>%
+  group_by(target) %>%
+  filter(evalue == min(evalue))
 #vlookup
 phrogs_map <- phrogs_map %>%
   dplyr::select("phrog", "color", "annot", "category") %>%
-  right_join(phrogs, by = c("phrog" = "V1"))
+  right_join(phrogs, by = c("phrog" = "query"))
 
 #drop excess cols
 phrogs_map <- phrogs_map %>%
-  select(c("phrog","color","annot","category","V2", "V5"))
+  select(c("phrog","color","annot","category","target", "evalue"))
 
 #get only PV proteins
 phrogs_map_PV <- phrogs_map %>%
-  filter(phrogs_map$V2 %in% PV_prot_list)
+  filter(phrogs_map$target %in% PV_prot_list)
 
 ################################# write tables  ####################################
 write.table(PV_master, file = "Output/mmseqs_proteinsVentPlume.tsv", col.names = TRUE,
@@ -234,21 +239,23 @@ write.table(mmseqs_dif_long_names, file = "Output/mmseqs_long.tsv", col.names = 
             row.names = FALSE, sep = "\t", quote = FALSE)
 
 ########### use the file of mmseqs KEGG and phrogs annotations you made on the server to ##################
-#157665 have annotations compared to 210191 in list...but I guess phrogs annotations could be unknown
+#134,975 have annotations compared to 210,191 in list...but I guess phrogs annotations could be unknown
 
 #input of mmseqs proteins that have kegg and/or phrogs annotation - kegg done with VIBRANT
 mmseqs_kegg_phrog <- read.delim2(file = "../../mmseqs/mmseqs_KEGG_phrogs_annos.txt",
                                  header = FALSE)
 #input kegg mapping file
-kegg_map <- read.delim2(file = "~/Google Drive/My Drive/databases/kegg_mappingfile.txt")
+kegg <- read.delim2(file = "~/Google Drive/My Drive/databases/kegg_mappingfile.txt")
 
 
 #filter for better hit based on bitscore
+mmseqs_kegg_phrog$V3 <- as.numeric(mmseqs_kegg_phrog$V3)
+#make filtered file
 mmseqs_kegg_phrog_filt <- mmseqs_kegg_phrog %>%
   group_by(V2) %>%
   filter(V3 == max(V3))
 #confirm now no duplicate names
-length(unique(mmseqs_kegg_phrog_filt$V2))
+length(unique(mmseqs_kegg_phrog_filt$V2)) #134,975 unique proteins, 61,768 clusters with kegg/phrog anno
 
 #map on the mmseqs clusters
 mmseqs_kegg_phrog_filt <- mmseqs_dif_long_names %>%
@@ -256,39 +263,151 @@ mmseqs_kegg_phrog_filt <- mmseqs_dif_long_names %>%
   right_join(mmseqs_kegg_phrog_filt, by = c("genome_vRhyme" = "V2"))
 ##add annotation description
 #kegg
-kegg <- dramv %>%
-  select(c("ko_id","kegg_hit")) %>%
+kegg <- kegg %>%
+  select(c("KO","Description", "pathway")) %>%
   unique() %>%
-  filter_all(all_vars(. != "")) %>%
-  rename("db_id" = "ko_id") %>%
-  rename("desc" = "kegg_hit")
-#phrogs
+  #filter_all(all_vars(. != "")) %>%
+  rename("db_id" = "KO") %>%
+  mutate(pathway = ifelse(db_id == "K11180", "Sulfur metabolism", pathway)) %>%
+  mutate(pathway = ifelse(db_id == "K11181", "Sulfur metabolism", pathway)) %>%
+  mutate(pathway = ifelse(db_id == "K23077", "Sulfur relay system", pathway))
+
+#phrog
 phrog <- phrogs_map %>%
-  select(c("phrog", "category")) %>%
+  select(c("phrog", "annot", "category")) %>%
   unique() %>%
   rename("db_id" = "phrog") %>%
-  rename("desc" = "category")
+  rename("Description" = "annot") %>%
+  rename("pathway" = "category")
+
 #concatenate
 kegg_phrog<-rbind(kegg,phrog)
 
 #map more descriptive annos onto table
 mmseqs_kegg_phrog_filt$V1 <- gsub("phrog_","",mmseqs_kegg_phrog_filt$V1)
+#vlookup to join - dropping some here
 mmseqs_kegg_phrog_filt <- kegg_phrog %>%
-  dplyr::select(db_id, desc) %>%
+  dplyr::select(db_id, Description, pathway) %>%
   right_join(mmseqs_kegg_phrog_filt, by = c("db_id" = "V1"))
 
-#choose best rep of the cluster based on bitscore
+#create a Site column
 mmseqs_kegg_phrog_filt <- mmseqs_kegg_phrog_filt %>%
+  mutate(Site = genome_vRhyme) %>%
+  separate(Site, c("Site", NA), sep = "_scaffold|_k95|_NODE|-38[0-9]|_S[0-9][0-9][0-9]|_M1[0-9]|_35[0-9]-[0-9][0-9][0-9]|_1[0-9][0-9]-[0-9][0-9][0-9]")
+
+write.table(mmseqs_kegg_phrog_filt, file = "Output/mmseqs_kegg_phrog_filtered.tsv", col.names = TRUE,
+            row.names = FALSE, sep = "\t", quote = FALSE)
+
+#subset kegg and phrog file to determine how many clusters have examples where the annotations do not match
+mmseqs_prot_mismatches <- mmseqs_kegg_phrog_filt %>%
   group_by(id) %>%
-  filter(V3 == max(V3))
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  filter(!all(pathway == first(pathway)))
+length(unique(mmseqs_prot_mismatches$id))
+#27,282 clusters of 61,768 have annotations that are different - a lot of them are something annotated and 
+#then "unknown" so maybe the unknowns are being assigned a function? 0:-)
 
+#grab just proteins that are shared between deposit and plume and between distinct vent fields
+mmseqs_kegg_phrog_filt <- mmseqs_kegg_phrog_filt[mmseqs_kegg_phrog_filt$id %in% prots_GD_PV$id,] #subset table using list of names
+length(unique(prots_GD_PV$genome)) #84,261 proteins GD and PV
+length(unique(mmseqs_kegg_phrog_filt$genome_vRhyme)) #55,777 proteins annotated
 
+#get potential aux annots
+mmseqs_kegg_phrog_aux <- mmseqs_kegg_phrog_filt %>%
+  filter(pathway == "moron, auxiliary metabolic gene and host takeover")
+  
+#choose best rep of the cluster based on bitscore
+mmseqs_kegg_phrog_filt2 <- mmseqs_kegg_phrog_filt %>%
+  group_by(id) %>%
+  filter(all(pathway == first(pathway)) | V3 == max(V3))
+  ungroup()
+  
+###################################### plot the cluster annos #####################################################
+
+#Plotting with all annos, even if multiple per cluster
+
+plot <- mmseqs_kegg_phrog_filt 
+
+#more general site name
+plot$Site <- gsub("_Plume|_Seawater"," Seamount", plot$Site)
+plot$Site <- gsub("_Diffuse|_LC|_NWCA|_NWCB|_UC"," Volcano", plot$Site)
+plot$Site <- gsub("Cayman_Deep|Cayman_Shallow","Mid-Cayman Rise", plot$Site)
+plot$Site <- gsub(".*EPR.*","East Pacific Rise", plot$Site)
+plot$Site <- gsub(".*ELSC.*","Lau Basin Deposit", plot$Site)
+plot$Site <- gsub("Guaymas_Basin","Guaymas Basin Plume", plot$Site)
+plot$Site <- gsub(".*Guaymas_[0-9].*","Guaymas Basin Deposit", plot$Site)
+plot$Site <- gsub(".*MAR.*","Mid-Atlantic Ridge", plot$Site)
+plot$Site <- gsub(".*Lau_Basin.*","Lau Basin Plume", plot$Site)  
+  
+plot <- plot %>%
+  select(pathway, Site) %>%
+  group_by(pathway, Site) %>%
+  count(pathway) %>%
+  ungroup()
+
+#add percentage column so can plot where all sum to 100%
+plot <- plot %>%
+  group_by(Site) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+#only grabbing top portion of data because so many low count categories
+plot <- plot %>%
+  group_by(Site) %>% #now group by site
+  arrange(desc(n)) %>%
+  mutate(rank=row_number()) %>% #make a new variable called rank where rank values
+  filter(rank <= 10) #top 13 rank is also acceptable - 15 unique pathways
+
+############ Plotting with all annos, even if multiple per cluster ####################
+  
+#distinct colors
+library(RColorBrewer)
+n <- 15
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+#pie(rep(1,n), col=sample(col_vector, n))
+
+#wrap text for ggplot titles
+# Helper function for string wrapping. 
+# Default 20 character target width.
+swr = function(string, nwrap=14) {
+  paste(strwrap(string, width=nwrap), collapse="\n")
+}
+swr = Vectorize(swr)
+
+# Create line breaks in Year
+plot$Site = swr(plot$Site)
+  
+####The following produces Figure X, which was modified in Biorender
+dev.off()
+p <- plot %>%
+  ggplot(aes(x = Site, y = as.numeric(percentage), fill = pathway)) + #y = reorder(Site, value, sum)
+  geom_bar(stat = "identity") +
+  # scale_fill_viridis_d(begin = .5,
+  #                      end = 0) +
+  scale_fill_manual(values = col_vector) +
+  labs(y = "KEGG or PHROG Annotation", x = "") +
+  guides(fill=guide_legend(override.aes = list(size=3))) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(), #element_text(angle = 90, hjust = 1, vjust = .5)
+        axis.ticks.x = element_blank(),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_rect(fill = "transparent"),
+        #legend.position = "none",
+        panel.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_x_discrete(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
+  #geom_hline(yintercept = 16.5) +
+  ggtitle("Top 10% Annotations of Proteins Shared Between Geographically Separated Vents") + #Change for top X grabbed
+  facet_grid(.~Site, scales = "free") 
+  #scale_y_discrete(limits=rev)
+  #coord_flip()
+p
+  
+ggsave("Output/barplot_GD_PV_protein_annos.png", p, width = 13, dpi = 500,
+       bg = "transparent")
+  
+  
+  
