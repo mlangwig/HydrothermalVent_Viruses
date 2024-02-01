@@ -1760,6 +1760,14 @@ DRAM-v.py distill -i annotation/ -o distilled
 nohup seqkit stats -To stats.tsv *.fastq.gz &
 ```
 
+# Get size of assemblies
+
+```{bash, eval = FALSE}
+/storage2/published_projects/VentViruses/Assemblies
+
+nohup seqkit stats -To stats.tsv *.fasta &
+```
+
 # Use bitscore to choose PHROGs or KEGG annotation
 
 To annotate the general category of proteins that were clustered with mmseqs, using PHROGs and KEGG annotations, choosing best based on bitscore.
@@ -1773,11 +1781,11 @@ sed -i 's/vRhyme_[0-9][0-9]__//g' phrogs_evalparsed_VentViruses_novRhyme.tsv
 sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' phrogs_evalparsed_VentViruses_novRhyme.tsv
 
 
-cut -f1,2,5 ../PHROGs/convert_alis_evalparsed.tsv > convert_alis_80cov_75pi_eval_parse.tsv
+cut -f1,2,5 ../PHROGs/convert_alis_eval_bit_parsed.tsv > convert_alis_80cov_75pi_eval_bit_parse.tsv
 
-sed 's/vRhyme_[0-9]__//g' convert_alis_80cov_75pi_eval_parse.tsv > convert_alis_80cov_75pi_eval_novRhyme.tsv
-sed -i 's/vRhyme_[0-9][0-9]__//g' convert_alis_80cov_75pi_eval_novRhyme.tsv
-sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' convert_alis_80cov_75pi_eval_novRhyme.tsv
+sed 's/vRhyme_[0-9]__//g' convert_alis_80cov_75pi_eval_bit_parse.tsv > convert_alis_80cov_75pi_eval_bit_novRhyme.tsv
+sed -i 's/vRhyme_[0-9][0-9]__//g' convert_alis_80cov_75pi_eval_bit_novRhyme.tsv
+sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' convert_alis_80cov_75pi_eval_bit_novRhyme.tsv
 ```
 
 2. Prepare the KEGG output
@@ -1796,7 +1804,7 @@ awk -F'\t' 'BEGIN{OFS="\t"} {print $2, $1, $4}' 52samples_KEGG_hmmtbl_parse.tsv 
 ```{bash, eval = FALSE}
 tail -n +2 phrogs_evalparsed_VentViruses_novRhyme.tsv | cat 52samples_KEGG_hmmtbl_parse2.tsv - > merged_KEGG_phrogs_viruses.txt
 
-tail -n +2 convert_alis_80cov_75pi_eval_novRhyme.tsv | cat 52samples_KEGG_hmmtbl_parse2.tsv - > merged_KEGG_phrogs_viruses.txt
+tail -n +2 convert_alis_80cov_75pi_eval_bit_novRhyme.tsv | cat 52samples_KEGG_hmmtbl_parse2.tsv - > merged_KEGG_phrogs_viruses.txt
 
 cut -f3 mmseqs_long.tsv| tail -n +2 > ../../../mmseqs/mmseq_prot_names_novRhyme.txt
 
@@ -1805,11 +1813,38 @@ grep -Fwf mmseq_prot_names_novRhyme.txt merged_KEGG_phrogs_viruses.txt > output.
 mv output.txt mmseqs_KEGG_phrogs_annos.txt
 ```
 
-# Check mmseqs cluster with different annos
+# Use bitscore to choose best VIBRANT annotation
+I noticed the PHROGs annotations were really inconsistent within a cluster and had poor agreement, so I'm trying VIBRANT annotations because I think it will perform better.
+
+1. Copy the VIBRANT annotation files to one location
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/VIBRANT_Annos
+
+./copy_files.sh
+```
+
+2. Combine as one without all headers
+```{bash, eval = FALSE}
+awk 'FNR > 1 || NR == 1' *.tsv > 52samples_VIBRANT_annos.tsv
+```
+
+3. Choose the best annotation per scaffold based on bit score and then e value for tie breaker. I completed this in R.
+
+# Check mmseqs cluster with different annos using alignment
 
 Using cluster 74952 as an example - 3 seqs, 2 are tail annotation, 1 is DmsA. 3 sequences put into the file clust_74952_test.faa. Now for alignment:
 ```{bash, eval = FALSE}
 mafft --auto clust_74952_test.faa > clust_74952_test_mafftAuto.faa
 ```
 Uniprot thinks they are all DNA-directed RNA polymerase, which doesn't match the annotations I have...great. This is probably fine according to this "Many bacterial and eukaryotic viruses with double-stranded DNA genomes in the realms Duplodnaviria and Varidnaviria encode homologs of cellular RNAPs (collectively denoted “two-barrel RNAPs”)" [Chaban et al., 2024](https://www.nature.com/articles/s41467-023-44630-z)
+
+# Get scores of vMAGs
+```{bash, eval = FALSE}
+generate_bin_scores.py -p *faa -o output_scores.txt
+
+generate_bin_scores.py -p ELSC_Bowl_M2_vRhyme_bin_1 
+```
+Need -i and -n, tab-separated bin membership file (e.g., scaffold \t bin) and number of original scaffolds before binning (binned + unbinned). The redundancy score seems to already be reported in best bins summary file in each VIBRANT folder?
+
 

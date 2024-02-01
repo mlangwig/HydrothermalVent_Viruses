@@ -1,3 +1,14 @@
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(pals)
+library(ggraph)
+library(tidygraph)
+library(reshape2)
+library(textshape)
+library(magrittr)
+library(readr)
+
 ######################################### Read Input ################################################
 mmseqs <- read.csv2(file = "../../mmseqs/PlumeVent_mmseqs_clusters.tsv", sep = "\t")
 #595,465 proteins clustered
@@ -214,6 +225,54 @@ phrogs_map <- phrogs_map %>%
 phrogs_map_PV <- phrogs_map %>%
   filter(phrogs_map$target %in% PV_prot_list)
 
+################################### protein annotations with VIBRANT  #####################################################
+
+#read in the input
+#vibrant <- read.delim2(file = "../../VIBRANT_annos/52samples_VIBRANT_annos.tsv", header = TRUE, na.strings=c("","NA"))
+vibrant <- read_tsv(file = "../../VIBRANT_annos/52_VIBRANT_annos.txt")
+#change several columns to numeric
+# vibrant %>% mutate_at(c('KO.evalue', 'KO.score', 'Pfam.evalue', 'Pfam.score',
+#                         'VOG.evalue', 'VOG.score'), as.numeric) %>% str()
+
+#remove proteins that have no annotation
+# vibrant <- vibrant %>%
+#   group_by(protein) %>%
+#   filter(!(all(is.na(KO) & is.na(Pfam) & is.na(VOG))))
+#192,991 of the original 595,578 proteins have an annotation
+
+#add col of best bit score between KEGG, Pfam, and VOG
+# vibrant_filt <- vibrant %>% 
+#   mutate(highest_score = pmax(`Pfam score`, `VOG score`, `KO score`, na.rm = T))
+
+library(data.table)
+
+vibrant <- data.table(vibrant)
+
+vibrant_filter <- vibrant[order(-score, evalue), .SD[1], by = protein]
+#filter
+# vibrant_filt <- vibrant %>%
+#   group_by(protein) %>%
+#   arrange(desc(score), evalue) %>%
+#   slice(1) %>%
+#   ungroup()
+
+tst <- vibrant_filter[grepl("Axial_Plume", protein), ]
+
+#read in Spencer-created file
+vibrant <- read.csv(file = "../../VIBRANT_annos/Maggie_Proteins.csv")
+
+#fixing the one that was dropped - tie breaker was higher viral score
+vibrant <- vibrant %>%
+  mutate(
+    best = ifelse(dat.protein == "Lau_Basin_Abe_k95_1492896_flag=1_multi=24.9933_len=5352_6", "Pfam score", best),
+    best_name = ifelse(dat.protein == "Lau_Basin_Abe_k95_1492896_flag=1_multi=24.9933_len=5352_6", "Phage Tail Collar Domain", best_name)
+  )
+
+#check how many of each
+table(vibrant$best)
+#KOs  31,382 | 30,192 Pfams | 131,417 VOGs
+#192,991 proteins annotated with these 3 databases compared to starting 595,578 proteins
+
 ################################# write tables  ####################################
 write.table(PV_master, file = "Output/mmseqs_proteinsVentPlume.tsv", col.names = TRUE,
             row.names = FALSE, sep = "\t")
@@ -237,6 +296,15 @@ mmseqs_dif_long_names <- mmseqs_dif_long_names %>%
 #write the output to get list of protein names without vRhyme...and just to have the file
 write.table(mmseqs_dif_long_names, file = "Output/mmseqs_long.tsv", col.names = TRUE,
             row.names = FALSE, sep = "\t", quote = FALSE)
+
+########### map VIBRANT output onto mmseqs clusters ##################
+
+mmseqs_vibrant <- vibrant %>%
+  dplyr::select(c(dat.protein, best_name)) %>%
+  right_join(mmseqs_dif_long_names, by = c("dat.protein" = "genome_vRhyme")) %>%
+  rename("protein_noVrhyme" = "dat.protein",
+         "prot_name" = "best_name")
+
 
 ########### use the file of mmseqs KEGG and phrogs annotations you made on the server to ##################
 #134,975 have annotations compared to 210,191 in list...but I guess phrogs annotations could be unknown
@@ -285,7 +353,7 @@ kegg_phrog<-rbind(kegg,phrog)
 
 #map more descriptive annos onto table
 mmseqs_kegg_phrog_filt$V1 <- gsub("phrog_","",mmseqs_kegg_phrog_filt$V1)
-#vlookup to join - dropping some here
+#vlookup to join
 mmseqs_kegg_phrog_filt <- kegg_phrog %>%
   dplyr::select(db_id, Description, pathway) %>%
   right_join(mmseqs_kegg_phrog_filt, by = c("db_id" = "V1"))
@@ -303,13 +371,14 @@ mmseqs_prot_mismatches <- mmseqs_kegg_phrog_filt %>%
   group_by(id) %>%
   filter(!all(pathway == first(pathway)))
 length(unique(mmseqs_prot_mismatches$id))
-#27,282 clusters of 61,768 have annotations that are different - a lot of them are something annotated and 
+#27,164 clusters of 61,768 clusters have annotations that are different - a lot of them are something annotated and 
 #then "unknown" so maybe the unknowns are being assigned a function? 0:-)
 
 #grab just proteins that are shared between deposit and plume and between distinct vent fields
 mmseqs_kegg_phrog_filt <- mmseqs_kegg_phrog_filt[mmseqs_kegg_phrog_filt$id %in% prots_GD_PV$id,] #subset table using list of names
 length(unique(prots_GD_PV$genome)) #84,261 proteins GD and PV
 length(unique(mmseqs_kegg_phrog_filt$genome_vRhyme)) #55,777 proteins annotated
+tail(names(sort(table(mmseqs_dif_long_names$id))), 1) #to view largest protein cluster
 
 #get potential aux annots
 mmseqs_kegg_phrog_aux <- mmseqs_kegg_phrog_filt %>%
