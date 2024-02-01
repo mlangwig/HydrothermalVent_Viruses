@@ -299,12 +299,32 @@ write.table(mmseqs_dif_long_names, file = "Output/mmseqs_long.tsv", col.names = 
 
 ########### map VIBRANT output onto mmseqs clusters ##################
 
+#map vibrant to mmseqs clusters with vlookup right_join
 mmseqs_vibrant <- vibrant %>%
   dplyr::select(c(dat.protein, best_name)) %>%
   right_join(mmseqs_dif_long_names, by = c("dat.protein" = "genome_vRhyme")) %>%
   rename("protein_noVrhyme" = "dat.protein",
-         "prot_name" = "best_name")
+         "prot_name" = "best_name") %>%
+  filter(!is.na(prot_name))
+#81,994 mmseqs proteins with vibrant annotation
 
+#create a Site column
+mmseqs_vibrant <- mmseqs_vibrant %>%
+  mutate(Site = protein_noVrhyme) %>%
+  separate(Site, c("Site", NA), sep = "_scaffold|_k95|_NODE|-38[0-9]|_S[0-9][0-9][0-9]|_M1[0-9]|_35[0-9]-[0-9][0-9][0-9]|_1[0-9][0-9]-[0-9][0-9][0-9]")
+
+#filter that file for just the geo distinct proteins
+#grab just proteins that are shared between deposit and plume and between distinct vent fields
+mmseqs_vibrant <- mmseqs_vibrant[mmseqs_vibrant$id %in% prots_GD_PV$id,] #subset table using list of names
+length(unique(mmseqs_vibrant$genome)) #40,261 proteins GD and PV have annotation of 84,261 GD and PV proteins
+tail(names(sort(table(mmseqs_vibrant$id))), 1) #to view largest protein cluster
+
+#see proteins that only occur 1-2 times
+# Group by the values in the specified column
+mmseqs_vibrant_rare <- mmseqs_vibrant %>%
+  group_by(prot_name) %>%
+  mutate(count = n()) %>%
+  filter(count >= 1 & count <= 2)
 
 ########### use the file of mmseqs KEGG and phrogs annotations you made on the server to ##################
 #134,975 have annotations compared to 210,191 in list...but I guess phrogs annotations could be unknown
@@ -394,7 +414,7 @@ mmseqs_kegg_phrog_filt2 <- mmseqs_kegg_phrog_filt %>%
 
 #Plotting with all annos, even if multiple per cluster
 
-plot <- mmseqs_kegg_phrog_filt 
+plot <- mmseqs_vibrant 
 
 #more general site name
 plot$Site <- gsub("_Plume|_Seawater"," Seamount", plot$Site)
@@ -408,9 +428,9 @@ plot$Site <- gsub(".*MAR.*","Mid-Atlantic Ridge", plot$Site)
 plot$Site <- gsub(".*Lau_Basin.*","Lau Basin Plume", plot$Site)  
   
 plot <- plot %>%
-  select(pathway, Site) %>%
-  group_by(pathway, Site) %>%
-  count(pathway) %>%
+  select(prot_name, Site) %>%
+  group_by(prot_name, Site) %>%
+  count(prot_name) %>%
   ungroup()
 
 #add percentage column so can plot where all sum to 100%
@@ -423,13 +443,13 @@ plot <- plot %>%
   group_by(Site) %>% #now group by site
   arrange(desc(n)) %>%
   mutate(rank=row_number()) %>% #make a new variable called rank where rank values
-  filter(rank <= 10) #top 13 rank is also acceptable - 15 unique pathways
+  filter(rank <= 5) #top 13 rank is also acceptable - 15 unique pathways
 
 ############ Plotting with all annos, even if multiple per cluster ####################
   
 #distinct colors
 library(RColorBrewer)
-n <- 15
+n <- 24
 qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
 col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
 #pie(rep(1,n), col=sample(col_vector, n))
@@ -448,12 +468,12 @@ plot$Site = swr(plot$Site)
 ####The following produces Figure X, which was modified in Biorender
 dev.off()
 p <- plot %>%
-  ggplot(aes(x = Site, y = as.numeric(percentage), fill = pathway)) + #y = reorder(Site, value, sum)
+  ggplot(aes(x = Site, y = as.numeric(percentage), fill = prot_name)) + #y = reorder(Site, value, sum)
   geom_bar(stat = "identity") +
   # scale_fill_viridis_d(begin = .5,
   #                      end = 0) +
   scale_fill_manual(values = col_vector) +
-  labs(y = "KEGG or PHROG Annotation", x = "") +
+  labs(y = "Annotation", x = "") +
   guides(fill=guide_legend(override.aes = list(size=3))) +
   theme_bw() +
   theme(axis.text.x = element_blank(), #element_text(angle = 90, hjust = 1, vjust = .5)
@@ -469,14 +489,14 @@ p <- plot %>%
   scale_x_discrete(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
   scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
   #geom_hline(yintercept = 16.5) +
-  ggtitle("Top 10% Annotations of Proteins Shared Between Geographically Separated Vents") + #Change for top X grabbed
+  ggtitle("Selected Annotations of Proteins Shared Between Geographically Separated Vents") + #Change for top X grabbed
   facet_grid(.~Site, scales = "free") 
   #scale_y_discrete(limits=rev)
   #coord_flip()
 p
   
-ggsave("Output/barplot_GD_PV_protein_annos.png", p, width = 13, dpi = 500,
-       bg = "transparent")
+#ggsave("Output/barplot_GD_PV_protein_annos.png", p, width = 13, dpi = 500,
+#       bg = "transparent")
   
   
   
