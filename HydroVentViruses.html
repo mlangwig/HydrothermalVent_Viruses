@@ -1789,6 +1789,12 @@ mv output.txt mmseqs_KEGG_phrogs_annos.txt</code></pre>
 </div>
 <div id="get-scores-of-vmags" class="section level1">
 <h1>Get scores of vMAGs</h1>
+<ol style="list-style-type: decimal">
+<li>Get all the files with protein redundancy reports of vMAGs</li>
+</ol>
+<pre class="bash"><code>./copy_files.sh
+</code></pre>
+<p>Generate scores of vMAGs?</p>
 <pre class="bash"><code>generate_bin_scores.py -p *faa -o output_scores.txt
 
 generate_bin_scores.py -p ELSC_Bowl_M2_vRhyme_bin_1 </code></pre>

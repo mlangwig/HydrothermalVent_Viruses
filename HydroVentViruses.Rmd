@@ -1840,6 +1840,19 @@ mafft --auto clust_74952_test.faa > clust_74952_test_mafftAuto.faa
 Uniprot thinks they are all DNA-directed RNA polymerase, which doesn't match the annotations I have...great. This is probably fine according to this "Many bacterial and eukaryotic viruses with double-stranded DNA genomes in the realms Duplodnaviria and Varidnaviria encode homologs of cellular RNAPs (collectively denoted “two-barrel RNAPs”)" [Chaban et al., 2024](https://www.nature.com/articles/s41467-023-44630-z)
 
 # Get scores of vMAGs
+1. Get all the files with protein redundancy reports of vMAGs
+```{bash, eval = FALSE}
+./copy_files.sh
+
+awk 'FNR > 1 || NR == 1' *.tsv > ../52_vRhyme_summary.tsv
+```
+
+2. Filter file for vMAGs with protein redundancy ≥2
+```{bash, eval = FALSE}
+awk '$4 >= 2' 52_vRhyme_summary.tsv > 52_vRhyme_summary_2plus.tsv
+```
+
+Generate scores of vMAGs?
 ```{bash, eval = FALSE}
 generate_bin_scores.py -p *faa -o output_scores.txt
 

@@ -293,6 +293,10 @@ mmseqs_dif_long_names <- mmseqs_dif_long_names %>% separate(genome_vRhyme, c(NA,
 mmseqs_dif_long_names <- mmseqs_dif_long_names %>%
   mutate(genome_vRhyme = if_else(is.na(genome_vRhyme), genome, genome_vRhyme))
 
+#get mmseqs names version of just GD PV proteins
+mmseqs_GD_PV <- mmseqs_dif_long_names[mmseqs_dif_long_names$id %in% prots_GD_PV$id,]
+  
+
 #write the output to get list of protein names without vRhyme...and just to have the file
 write.table(mmseqs_dif_long_names, file = "Output/mmseqs_long.tsv", col.names = TRUE,
             row.names = FALSE, sep = "\t", quote = FALSE)
@@ -497,6 +501,50 @@ p
   
 #ggsave("Output/barplot_GD_PV_protein_annos.png", p, width = 13, dpi = 500,
 #       bg = "transparent")
+  
+################### create donut plots showing % proteins shared between dif vents ######################
+
+#need total proteins at each site
+#then number of proteins from site shared with another --> convert into %
+
+library(stringi)
+#getting total number of proteins from each site
+#Add site column
+mmseqs <- mmseqs %>%
+  mutate(Site = cluster.member) %>%
+  separate(Site, c("Site", NA), sep = "_scaffold|_k95|_NODE|-38[0-9]|_S[0-9][0-9][0-9]|_M1[0-9]|_35[0-9]-[0-9][0-9][0-9]|_1[0-9][0-9]-[0-9][0-9][0-9]|_M[0-9]|_A[0-9]|_T[0-9]")
+mmseqs$Site <- stri_replace_all_regex(mmseqs$Site, pattern=c("vRhyme_[0-9]__", "vRhyme_[0-9][0-9]__",
+                                                       "vRhyme_[0-9][0-9][0-9]__"),
+                                                replacement='',
+                                                vectorize=FALSE)
+#group by and count
+prot_totals <- mmseqs %>%
+  group_by(Site) %>%
+  count()
+#create Site file in mmseqs GD nad PV file
+mmseqs_GD_PV <- mmseqs_GD_PV %>%
+  mutate(Site = genome_vRhyme) %>%
+  separate(Site, c("Site", NA), sep = "_scaffold|_k95|_NODE|-38[0-9]|_S[0-9][0-9][0-9]|_M1[0-9]|_35[0-9]-[0-9][0-9][0-9]|_1[0-9][0-9]-[0-9][0-9][0-9]|_M[0-9]|_A[0-9]|_T[0-9]")
+#group and count
+tst <- mmseqs_GD_PV %>%
+  group_by(id) %>%
+  count(Site)
+
+
+#put all in the same order for toString
+#sort the coverm_long_gd in alph order to avoid headaches
+mmseqs_GD_PV <- mmseqs_GD_PV %>%
+  group_by(id) %>%
+  arrange(Site, .by_group = T) %>%
+  ungroup()
+
+library(widyr)
+tst <- pairwise_count(mmseqs_GD_PV, Site, id) #pairwise_count to get counts of pairs within a group! 
+  
+  
+  
+  
+  
   
   
   
