@@ -504,47 +504,120 @@ p
   
 ################### create donut plots showing % proteins shared between dif vents ######################
 
+################### create input ######################
+
 #need total proteins at each site
 #then number of proteins from site shared with another --> convert into %
 
-library(stringi)
-#getting total number of proteins from each site
-#Add site column
-mmseqs <- mmseqs %>%
-  mutate(Site = cluster.member) %>%
-  separate(Site, c("Site", NA), sep = "_scaffold|_k95|_NODE|-38[0-9]|_S[0-9][0-9][0-9]|_M1[0-9]|_35[0-9]-[0-9][0-9][0-9]|_1[0-9][0-9]-[0-9][0-9][0-9]|_M[0-9]|_A[0-9]|_T[0-9]")
-mmseqs$Site <- stri_replace_all_regex(mmseqs$Site, pattern=c("vRhyme_[0-9]__", "vRhyme_[0-9][0-9]__",
-                                                       "vRhyme_[0-9][0-9][0-9]__"),
-                                                replacement='',
-                                                vectorize=FALSE)
-#group by and count
-prot_totals <- mmseqs %>%
-  group_by(Site) %>%
-  count()
+# library(stringi)
+# #getting total number of proteins from each site
+# #Add site column
+# mmseqs <- mmseqs %>%
+#   mutate(Site = cluster.member) %>%
+#   separate(Site, c("Site", NA), sep = "_scaffold|_k95|_NODE|-38[0-9]|_S[0-9][0-9][0-9]|_M1[0-9]|_35[0-9]-[0-9][0-9][0-9]|_1[0-9][0-9]-[0-9][0-9][0-9]|_M[0-9]|_A[0-9]|_T[0-9]")
+# mmseqs$Site <- stri_replace_all_regex(mmseqs$Site, pattern=c("vRhyme_[0-9]__", "vRhyme_[0-9][0-9]__",
+#                                                        "vRhyme_[0-9][0-9][0-9]__"),
+#                                                 replacement='',
+#                                                 vectorize=FALSE)
+
+
 #create Site file in mmseqs GD nad PV file
 mmseqs_GD_PV <- mmseqs_GD_PV %>%
   mutate(Site = genome_vRhyme) %>%
   separate(Site, c("Site", NA), sep = "_scaffold|_k95|_NODE|-38[0-9]|_S[0-9][0-9][0-9]|_M1[0-9]|_35[0-9]-[0-9][0-9][0-9]|_1[0-9][0-9]-[0-9][0-9][0-9]|_M[0-9]|_A[0-9]|_T[0-9]")
-#group and count
-tst <- mmseqs_GD_PV %>%
-  group_by(id) %>%
-  count(Site)
 
-
-#put all in the same order for toString
-#sort the coverm_long_gd in alph order to avoid headaches
+#sort to avoid headaches
 mmseqs_GD_PV <- mmseqs_GD_PV %>%
   group_by(id) %>%
   arrange(Site, .by_group = T) %>%
   ungroup()
 
+#change names to simpler ones
+mmseqs_GD_PV <- mmseqs_GD_PV %>%
+  mutate(GenSite = Site) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*Lau_Basin.*", "Lau_Basin Plume")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*Brothers.*", "Brothers Volcano")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*ELSC.*", "Lau Basin Deposit")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*Axial.*", "Axial Seamount")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*Cayman.*", "Mid-Cayman Rise")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*EPR.*", "East Pacific Rise")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., "Guaymas_Basin", "Guaymas Basin Plume")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*Guaymas_[0-9].*", "Guaymas Basin Deposit")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*MAR.*", "Mid-Atlantic Ridge"))
+
+#get total protein count
+prot_totals <- mmseqs_GD_PV %>%
+  group_by(GenSite) %>%
+  count()
+
 library(widyr)
-tst <- pairwise_count(mmseqs_GD_PV, Site, id) #pairwise_count to get counts of pairs within a group! 
+#pairwise_count to get counts of pairs within a group! 
+mmseqs_GD_PV_counts <- pairwise_count(mmseqs_GD_PV, GenSite, id, sort = TRUE) 
+
+#group by and count - for GD PV proteins, not all proteins that exist in the dataset
+
+
+# #remove reverse duplicates if needed
+# tst <- tst %>%
+#   mutate(nv1 = paste0(item1, item2),
+#          nv2 = paste0(item2, item1)) %>% 
+#   unique_pairs("nv1", "nv2") %>% 
+#   select(-nv1, -nv2)
   
+#map total proteins for that sample
+mmseqs_GD_PV_counts <- prot_totals %>%
+  dplyr::select(Site, n) %>%
+  right_join(mmseqs_GD_PV_counts, by = c("Site" = "item1"))
+mmseqs_GD_PV_counts <- mmseqs_GD_PV_counts %>%
+  rename("total" = "n.x",
+         "count" = "n.y",
+         "item1" = "Site") %>%
+  mutate(prop = count/total*100)
+
+#add general site name
+# mmseqs_GD_PV_counts <- mmseqs_GD_PV_counts %>%
+#   mutate(GenSite = item1) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*Lau_Basin.*", "Lau_Basin Plume")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*Brothers.*", "Brothers Volcano")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*ELSC.*", "Lau Basin Deposit")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*Axial.*", "Axial Seamount")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*Cayman.*", "Mid-Cayman Rise")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*EPR.*", "East Pacific Rise")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., "Guaymas_Basin", "Guaymas Basin Plume")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*Guaymas_[0-9].*", "Guaymas Basin Deposit")) %>%
+#   mutate_at(vars(GenSite), ~ str_replace(., ".*MAR.*", "Mid-Atlantic Ridge"))
   
-  
-  
-  
-  
+################### plot ######################
+
+#calculate quantiles of interest
+library(data.table)
+mm_counts <- mmseqs_GD_PV_counts; setDT(mm_counts)
+mm_counts <- mm_counts[, .N, by = .(item1, item2, prop, GenSite)]
+
+diam <- diamonds; setDT(diam)
+tabulated <- diam[, .N, by = .(cut, color, clarity)]
+
+
+
+# Make the plot
+dev.off()
+p <- ggplot(mmseqs_GD_PV_counts, aes(x=2, y=count, fill=item2)) +
+  geom_bar(position = 'fill', stat = 'identity')  +
+  facet_wrap(~GenSite) + 
+  theme_void() +
+  xlim(0.5, 2.5) +
+  coord_polar(theta = 'y') + 
+  labs(x=NULL, y=NULL) +
+  theme(legend.position = "none")
+p
+
+ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+  geom_rect() +
+  geom_label( x=3.5, aes(y=labelPosition, label=label), size=6) +
+  scale_fill_brewer(palette=4) +
+  coord_polar(theta="y") +
+  xlim(c(2, 4)) +
+  theme_void() +
+  theme(legend.position = "none")
   
   
