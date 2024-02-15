@@ -273,11 +273,11 @@ abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site,
 ################### using coverm abun for inter/intra vent relatedness ###########################
 
 #new input data including read count
-abund <- read.delim2("../../abundance/PlumeVentVirus-vs-Reads-CoverM-Count.tsv")
+abund <- read.delim2("input/PlumeVentVirus-vs-Reads-CoverM-Count_MinCov.tsv")
 
 #drop SWIR
-abund <- abund %>% select(-contains("X58P_trim_1.fastq.gz"))
-abund <- abund %>% select(-contains("SWIR_B_trim_1.fastq.gz"))
+#abund <- abund %>% select(-contains("X58P_trim_1.fastq.gz"))
+#abund <- abund %>% select(-contains("SWIR_B_trim_1.fastq.gz"))
 #remove unmapped
 abund <- abund[-1,]
 #convert 0s to NAs so they are not included in distribution assessments
@@ -319,28 +319,28 @@ abund_long_norm$value <- as.numeric(abund_long_norm$value)
 abund_long_norm <- abund_long_norm %>%
   mutate(abun_norm = (value/num_seqs*100))
 
-#remove contam viruses
-remove.list <- paste(c("ELSC_Bowl_M2_NODE_26941_length_5513_cov_204.284070",
-                       "Cayman_Deep_k95_329100_flag_3_multi_740.0000_len_5481",
-                       "ELSC_Abe_A3_NODE_22123_length_5513_cov_37.688452",
-                       "Guaymas_Basin_k95_702414_flag_3_multi_156.0000_len_5481",
-                       "Lau_Basin_Tahi_Moana_k95_522185_flag_3_multi_299.0000_len_5481",
-                       "ELSC_Vai_Lili_V2_NODE_3240_length_5513_cov_24.324359",
-                       "ELSC_Mariner_M17_NODE_20378_length_5513_cov_309.771259",
-                       "ELSC_Bowl_M1_NODE_4552_length_5513_cov_398.155589",
-                       "Cayman_Shallow_k95_556392_flag_3_multi_763.1417_len_5481",
-                       "ELSC_Tui_Malila_T10_NODE_9861_length_5513_cov_130.186966",
-                       "ELSC_Abe_A1_NODE_14649_length_5513_cov_85.977163",
-                       "ELSC_Tui_Malila_T11_NODE_11702_length_5513_cov_423.693093",
-                       "ELSC_Mariner_M10_NODE_9821_length_5513_cov_36.731526",
-                       "Lau_Basin_Mariner_k95_379953_flag_3_multi_286.0000_len_5481",
-                       "Lau_Basin_Abe_k95_1566522_flag_3_multi_441.0000_len_5481",
-                       "ELSC_Tui_Malila_T2_NODE_29080_length_5513_cov_220.766803",
-                       "Lau_Basin_Tui_Malila_k95_411308_flag_3_multi_152.0000_len_5481",
-                       "Lau_Basin_Kilo_Moana_k95_205532_flag_3_multi_561.0000_len_5481"), collapse = '|')
-
-abund_long_norm <- abund_long_norm %>%
-  filter(!str_detect(Genome, remove.list))
+# #remove contam viruses
+# remove.list <- paste(c("ELSC_Bowl_M2_NODE_26941_length_5513_cov_204.284070",
+#                        "Cayman_Deep_k95_329100_flag_3_multi_740.0000_len_5481",
+#                        "ELSC_Abe_A3_NODE_22123_length_5513_cov_37.688452",
+#                        "Guaymas_Basin_k95_702414_flag_3_multi_156.0000_len_5481",
+#                        "Lau_Basin_Tahi_Moana_k95_522185_flag_3_multi_299.0000_len_5481",
+#                        "ELSC_Vai_Lili_V2_NODE_3240_length_5513_cov_24.324359",
+#                        "ELSC_Mariner_M17_NODE_20378_length_5513_cov_309.771259",
+#                        "ELSC_Bowl_M1_NODE_4552_length_5513_cov_398.155589",
+#                        "Cayman_Shallow_k95_556392_flag_3_multi_763.1417_len_5481",
+#                        "ELSC_Tui_Malila_T10_NODE_9861_length_5513_cov_130.186966",
+#                        "ELSC_Abe_A1_NODE_14649_length_5513_cov_85.977163",
+#                        "ELSC_Tui_Malila_T11_NODE_11702_length_5513_cov_423.693093",
+#                        "ELSC_Mariner_M10_NODE_9821_length_5513_cov_36.731526",
+#                        "Lau_Basin_Mariner_k95_379953_flag_3_multi_286.0000_len_5481",
+#                        "Lau_Basin_Abe_k95_1566522_flag_3_multi_441.0000_len_5481",
+#                        "ELSC_Tui_Malila_T2_NODE_29080_length_5513_cov_220.766803",
+#                        "Lau_Basin_Tui_Malila_k95_411308_flag_3_multi_152.0000_len_5481",
+#                        "Lau_Basin_Kilo_Moana_k95_205532_flag_3_multi_561.0000_len_5481"), collapse = '|')
+# 
+# abund_long_norm <- abund_long_norm %>%
+#   filter(!str_detect(Genome, remove.list))
 
 ########################## add host metadata ############################
 
@@ -399,16 +399,16 @@ abund_long_norm_iphop_p <- abund_long_norm_iphop %>%
 
 ############################ Set order of sites for plotting #############################
 
-test_Camp <- abund_long_norm_iphop_p %>%
-  filter(grepl("p__Campylobacterota", Taxa)) %>%
-  group_by(Taxa) %>%
-  arrange((value))
-#cat(dQuote(test_Camp$Site, FALSE), '\n', sep = ",") #to print strings 
-
-test_Gam <- abund_long_norm_iphop_p %>%
-  filter(!grepl("p__Campylobacterota", Taxa)) %>%
-  group_by(Taxa) %>%
-  arrange(desc(value))
+# test_Camp <- abund_long_norm_iphop_p %>%
+#   filter(grepl("p__Campylobacterota", Taxa)) %>%
+#   group_by(Taxa) %>%
+#   arrange((value))
+# #cat(dQuote(test_Camp$Site, FALSE), '\n', sep = ",") #to print strings 
+# 
+# test_Gam <- abund_long_norm_iphop_p %>%
+#   filter(!grepl("p__Campylobacterota", Taxa)) %>%
+#   group_by(Taxa) %>%
+#   arrange(desc(value))
 #   
 # #put the data frames back together
 # abun_long_iphop_p <- rbind(abun_iphop_p_Camp, abun_iphop_p_Gam)
@@ -419,7 +419,7 @@ test_Gam <- abund_long_norm_iphop_p %>%
 
 ############ Change names #############################
 
-sulfur_VentVirus_AMGs$KO <- gsub("K23144","UAP", sulfur_VentVirus_AMGs$KO)
+#sulfur_VentVirus_AMGs$KO <- gsub("K23144","UAP", sulfur_VentVirus_AMGs$KO)
 
 abund_long_norm_iphop_p$Taxa <- gsub("c__|p__","",abund_long_norm_iphop_p$Taxa)
 abund_long_norm_iphop_p$Site <- gsub("_"," ",abund_long_norm_iphop_p$Site)

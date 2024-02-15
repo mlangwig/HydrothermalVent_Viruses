@@ -645,6 +645,75 @@ nohup iphop add_to_db --fna_dir clean_iphop_MAGs/clean_fnas/ --gtdb_dir Vent_MAG
 nohup iphop predict --fa_file Virus_Genomes/fna/vUnbinned_vMAG_1500Ns_VentViruses.fna --db_dir iPHoP_Sept_2021_w_VentMAGs/ --out_dir iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb -t 20 --no_qc &
 ```
 
+## Run iphop on vUnbinned and vMAGs 42,815 viruses
+
+1. Create conda env on virserver
+```{bash,  eval = FALSE}
+mamba create --name iphop_1.3.3
+
+mamba activate iphop_1.3.3
+
+mamba install -c bioconda iphop
+```
+
+Download database (in a screen or with nohup)
+```{bash,  eval = FALSE}
+iphop download -d /storage2/databases/iPHoP
+```
+Ran test and it completed without errors
+
+2. Make custom MAG iphop database. First clean the MAGs. Run this until it produces the clean MAGs file and then kill the run.
+```{bash,  eval = FALSE}
+nohup iphop predict --fa_file MAGs_microbial/PlumeVent_MAGs_3872.fna --out_dir clean_iphop_MAGs --db_dir /storage2/databases/iPHoP/Aug_2023_pub_rw/ --num_threads 60 &
+
+mkdir clean_fnas
+
+python3.8 split_MAGs.py
+```
+For some reason the last MAG in the list, MAR_356-308_metabat2_112, was not extracted. Fixing now:
+```{bash,  eval = FALSE}
+grep "MAR_356-308_metabat2_112" PlumeVent_MAGs_3872_clean.fna > scaffold_list.txt
+sed -i 's/>//g' scaffold_list.txt
+
+perl /scratch/langwig/scripts/screen_list_new.pl scaffold_list.txt PlumeVent_MAGs_3872_clean.fna keep > MAR_356-308_metabat2_112.fasta
+```
+Actually I'm noticing that there isn't the same number of scaffolds in the clean_fnas folder files than the original clean file. Going to retry the separation using an awk script because not sure the python script is functioning as expected.
+
+Splitting clean MAGs file into individual MAGs. First convert the MAG file into 1 liners
+```{bash,  eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/clean_iphop_MAGs
+
+perl -lne 'if(/^(>.*)/){ $head=$1 } else { $fa{$head} .= $_ } END{ foreach $s (sort(keys(%fa))){ print "$s\n$fa{$s}\n" }}' PlumeVent_MAGs_3872_clean.fna > PlumeVent_MAGs_3872_clean_1ne.fna
+```
+Then split it using a bash script (this took forever, recommend modifying in the future for speed)
+```{bash,  eval = FALSE}
+./split_MAGs.sh
+```
+
+3. Then run gtdbtk on the clean microbial MAGs.
+```{bash,  eval = FALSE}
+mamba create -n gtdbtk-2.3.2 -c conda-forge -c bioconda gtdbtk=2.3.2
+mamba activate gtdbtk-2.3.2
+conda env config vars set GTDBTK_DATA_PATH="/storage2/databases/GTDBTK_DB/release214/";
+
+gtdbtk test
+
+nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/output_MAGs/ --bacteria --outgroup_taxon p__Bdellovibrionota --out_dir iphop/cleanMAGs_gtdbtk_denovo_wf_2_3_2 --cpus 60 --force --extension fasta &
+
+nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/output_MAGs/ --archaea --outgroup_taxon p__Altiarchaeota --out_dir iphop/cleanMAGs_gtdbtk_denovo_wf_2_3_2 --cpus 60 --force --extension fasta &
+```
+
+4. Then add the MAGs to an iphop database using the GTDBtk output
+```{bash,  eval = FALSE}
+nohup iphop add_to_db --fna_dir MAGs_microbial/fna_noVirusContam/ --gtdb_dir iphop/cleanMAGs_gtdbtk_denovo_wf_2_3_2 --out_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs --db_dir /storage2/databases/iPHoP/Aug_2023_pub_rw/ -t 60 &
+```
+
+5. Finally, run iphop 
+```{bash,  eval = FALSE}
+nohup iphop predict --fa_file Virus_Genomes/final_VentViruses_42815.fna --db_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs/ --out_dir iphop/iphop_42815_VentViruses -t 60 --no_qc &
+```
+
 # Collect the VIBRANT output into single files
 ```{bash,  eval = FALSE}
 find VIBRANT* -name "*AMG_individuals*" | xargs -i cp {} AMG_VIBRANT_output/AMG_individuals/
@@ -1201,6 +1270,27 @@ less VentPlume_seqkit_stats_renamed.txt | tr -s ' ' > VentPlume_seqkit_stats_ren
 sed -i 's/\,//g' VentPlume_seqkit_stats_renamed_space.txt
 ```
 
+## Rerun seqkit on viruses 42,815
+
+1. Make Nlinked vMAGs. Using defaults which add 1500 Ns.
+```{bash, eval = FALSE}
+mamba activate vRhyme
+
+link_bin_sequences.py -i final_VentVirus_individual_fnas -o final_VentVirus_individual_fnas_Nlinked
+```
+
+2. Rerun Seqkit genome size on all viruses vent and plume, vMAG and vUnbinned, all at once. Doing this on Virserver, 02/13/24. Seqkit Version 2.6.1
+```{bash, eval = FALSE}
+mamba activate
+
+nohup sh -c 'for i in Virus_Genomes/fna/final_VentVirus_individual_fnas/*.fasta ; do seqkit stats $i >> seqkit/PlumeVent_Virus_Seqkit_stats.tsv ; done' &
+
+less PlumeVent_Virus_Seqkit_stats.tsv | sort | uniq | sed 's+Virus_Genomes/fna/final_VentVirus_individual_fnas/++g' | sed 's/.fasta//g' > PlumeVent_Virus_Seqkit_stats_renamed.tsv
+
+less PlumeVent_Virus_Seqkit_stats_renamed.tsv | tr -s ' ' > PlumeVent_Virus_Seqkit_stats_renamed_space.txt
+
+tail -n +49 PlumeVent_Virus_Seqkit_stats_renamed_space.txt > PlumeVentVirus_Seqkit_final.txt
+```
 
 # Run GTDBtk v1.5.0 on Vent MAGs
 
@@ -1631,6 +1721,20 @@ mamba activate coverm
 nohup ./run_coverm_count_MinCov.sh &
 ```
 
+## Running coverm again with 42,815 viruses
+
+Broke vMAGs with high protein redundancy into individual scaffolds again. Rerunning:
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/abundance/coverm_count_final
+
+mamba activate coverm
+
+find . -type f -name "*.fasta" -print0 | xargs -0 cat > ../final_VentViruses_42833.fna
+
+nohup ./run_coverm_count_MinCov.sh &
+```
+
 
 # Translate viruses to protein yourself using prodigal
 1. Translate to proteins because confusion with the files I have. On virserver
@@ -1839,7 +1943,8 @@ mafft --auto clust_74952_test.faa > clust_74952_test_mafftAuto.faa
 ```
 Uniprot thinks they are all DNA-directed RNA polymerase, which doesn't match the annotations I have...great. This is probably fine according to this "Many bacterial and eukaryotic viruses with double-stranded DNA genomes in the realms Duplodnaviria and Varidnaviria encode homologs of cellular RNAPs (collectively denoted “two-barrel RNAPs”)" [Chaban et al., 2024](https://www.nature.com/articles/s41467-023-44630-z)
 
-# Get scores of vMAGs
+# Redoing vMAGs with high protein redundancy
+## Get scores of vMAGs
 1. Get all the files with protein redundancy reports of vMAGs
 ```{bash, eval = FALSE}
 ./copy_files.sh
@@ -1852,6 +1957,55 @@ awk 'FNR > 1 || NR == 1' *.tsv > ../52_vRhyme_summary.tsv
 awk '$4 >= 2' 52_vRhyme_summary.tsv > 52_vRhyme_summary_2plus.tsv
 ```
 
+3. Problem with that file is that the vMAGs don't have a unique ID. I added one using a bash script here:
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/vRhyme_redundancy/summary_files
+
+./modify_files.sh
+
+cat *modified.tsv > ../52_vRhyme_summary_modified.tsv
+
+awk '$4 >= 2' 52_vRhyme_summary_modified.tsv > 52_vRhyme_summary_mod_2plus.tsv
+```
+**NOTE: did not remove top line because forgot to keep the header**
+
+4. Make the list based on this file of vMAGs to split into scaffolds:
+```{bash, eval = FALSE}
+cut -f1 52_vRhyme_summary_mod_2plus.tsv > list_vMAGs_protRed.txt
+```
+
+5. To get the vMAGs into separate files I need to replace the "=" in the names or else the file names have quotes around them.
+```{bash, eval = FALSE}
+for i in *fasta; do sed 's/=/_/g' $i >> ../$i.renamed; done
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/Virus_Genomes/fna/fna_vMAGs_separate
+
+./prot_red_vMAGs.sh
+
+for i in `cat prot_red_list_vMAGs.txt`; do mv $i prot_red_vMAGs; done
+```
+
+Then used series of seds to get rid of vRhyme in the scaffold names
+```{bash, eval = FALSE}
+rename 's/vRhyme_[0-9][0-9][0-9]__//g' *fasta
+```
+
+6. Realized all of the individual files created do not have ">", the carrot was removed. Adding it back in here:
+```{bash, eval = FALSE}
+for i in *fasta; do sed '1s/^/>/' $i >> $i.renamed; done
+
+sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' *renamed
+sed -i 's/vRhyme_[0-9][0-9]__//g' *renamed
+sed -i 's/vRhyme_[0-9]__//g' *renamed
+
+rename 's/_scaffold.fasta.renamed/.fasta.renamed/g' *renamed
+
+find . -type f -name "*.fasta" -exec cat {} + > final_VentViruses_42815.fna
+```
+
+### Unused
 Generate scores of vMAGs?
 ```{bash, eval = FALSE}
 generate_bin_scores.py -p *faa -o output_scores.txt

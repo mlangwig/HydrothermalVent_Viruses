@@ -108,6 +108,11 @@ prots_GD_PV <- prots_GD_PV %>%
   unique() %>%
   ungroup()
 
+tst2 <- prots_GD_PV %>%
+  group_by(id) %>%
+  mutate(yes_in_group = any(str_detect(genome, 'Axial'))) %>%
+  filter(yes_in_group == TRUE)
+
 write_delim(prots_GD_PV, file = "Output/virus_proteins_mmseqsClusts_GD_PV.tsv", 
             col_names = TRUE, delim = "\t")
 write_delim(prots_GD, file = "Output/virus_proteins_mmseqsClusts_GD.tsv", 
@@ -297,9 +302,9 @@ mmseqs_dif_long_names <- mmseqs_dif_long_names %>%
 mmseqs_GD_PV <- mmseqs_dif_long_names[mmseqs_dif_long_names$id %in% prots_GD_PV$id,]
   
 
-#write the output to get list of protein names without vRhyme...and just to have the file
-write.table(mmseqs_dif_long_names, file = "Output/mmseqs_long.tsv", col.names = TRUE,
-            row.names = FALSE, sep = "\t", quote = FALSE)
+# #write the output to get list of protein names without vRhyme...and just to have the file
+# write.table(mmseqs_dif_long_names, file = "Output/mmseqs_long.tsv", col.names = TRUE,
+#             row.names = FALSE, sep = "\t", quote = FALSE)
 
 ########### map VIBRANT output onto mmseqs clusters ##################
 
@@ -535,7 +540,7 @@ mmseqs_GD_PV <- mmseqs_GD_PV %>%
 #change names to simpler ones
 mmseqs_GD_PV <- mmseqs_GD_PV %>%
   mutate(GenSite = Site) %>%
-  mutate_at(vars(GenSite), ~ str_replace(., ".*Lau_Basin.*", "Lau_Basin Plume")) %>%
+  mutate_at(vars(GenSite), ~ str_replace(., ".*Lau_Basin.*", "Lau Basin Plume")) %>%
   mutate_at(vars(GenSite), ~ str_replace(., ".*Brothers.*", "Brothers Volcano")) %>%
   mutate_at(vars(GenSite), ~ str_replace(., ".*ELSC.*", "Lau Basin Deposit")) %>%
   mutate_at(vars(GenSite), ~ str_replace(., ".*Axial.*", "Axial Seamount")) %>%
@@ -555,8 +560,6 @@ library(widyr)
 mmseqs_GD_PV_counts <- pairwise_count(mmseqs_GD_PV, GenSite, id, sort = TRUE) 
 
 #group by and count - for GD PV proteins, not all proteins that exist in the dataset
-
-
 # #remove reverse duplicates if needed
 # tst <- tst %>%
 #   mutate(nv1 = paste0(item1, item2),
@@ -566,13 +569,15 @@ mmseqs_GD_PV_counts <- pairwise_count(mmseqs_GD_PV, GenSite, id, sort = TRUE)
   
 #map total proteins for that sample
 mmseqs_GD_PV_counts <- prot_totals %>%
-  dplyr::select(Site, n) %>%
-  right_join(mmseqs_GD_PV_counts, by = c("Site" = "item1"))
+  dplyr::select(GenSite, n) %>%
+  right_join(mmseqs_GD_PV_counts, by = c("GenSite" = "item1"))
 mmseqs_GD_PV_counts <- mmseqs_GD_PV_counts %>%
   rename("total" = "n.x",
          "count" = "n.y",
-         "item1" = "Site") %>%
+         "item1" = "GenSite") %>%
   mutate(prop = count/total*100)
+#proportion isn't making sense with 7 site cateogry...because protein hits within group aren't showing up?
+#i.e. Axial Seawater to Axial Plume would just come out as Axial Seamount
 
 #add general site name
 # mmseqs_GD_PV_counts <- mmseqs_GD_PV_counts %>%
@@ -589,35 +594,82 @@ mmseqs_GD_PV_counts <- mmseqs_GD_PV_counts %>%
   
 ################### plot ######################
 
-#calculate quantiles of interest
-library(data.table)
-mm_counts <- mmseqs_GD_PV_counts; setDT(mm_counts)
-mm_counts <- mm_counts[, .N, by = .(item1, item2, prop, GenSite)]
+# #calculate quantiles of interest
+# library(data.table)
+# mm_counts <- mmseqs_GD_PV_counts; setDT(mm_counts)
+# mm_counts <- mm_counts[, .N, by = .(item1, item2, prop, GenSite)]
+# 
+# diam <- diamonds; setDT(diam)
+# tabulated <- diam[, .N, by = .(cut, color, clarity)]
 
-diam <- diamonds; setDT(diam)
-tabulated <- diam[, .N, by = .(cut, color, clarity)]
-
-
+colors <- c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
+            "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#499e97", 
+            "Lau Basin Deposit" = "#72a0db","Lau Basin Plume" = "#3F78C1","Mid-Atlantic Ridge" = "#8c510a",
+            "Mid-Cayman Rise" = "#000000")
 
 # Make the plot
 dev.off()
 p <- ggplot(mmseqs_GD_PV_counts, aes(x=2, y=count, fill=item2)) +
   geom_bar(position = 'fill', stat = 'identity')  +
-  facet_wrap(~GenSite) + 
+  facet_wrap(~item1) + 
   theme_void() +
   xlim(0.5, 2.5) +
   coord_polar(theta = 'y') + 
   labs(x=NULL, y=NULL) +
-  theme(legend.position = "none")
+  scale_fill_manual(values = colors, name = "Site")
 p
 
-ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
-  geom_rect() +
-  geom_label( x=3.5, aes(y=labelPosition, label=label), size=6) +
-  scale_fill_brewer(palette=4) +
-  coord_polar(theta="y") +
-  xlim(c(2, 4)) +
+
+data <- data.frame(
+  category=c("A", "B", "C"),
+  count=c(10, 60, 30)
+)
+
+# Compute percentages
+data$fraction <- data$count / sum(data$count)
+# Compute the cumulative percentages (top of each rectangle)
+data$ymax <- cumsum(data$fraction)
+# Compute the bottom of each rectangle
+data$ymin <- c(0, head(data$ymax, n=-1))
+# Compute label position
+data$labelPosition <- (data$ymax + data$ymin) / 2
+# Compute a good label
+data$label <- paste0(data$category, "\n value: ", data$count)
+
+tst<-mmseqs_GD_PV_counts
+tst <- tst %>%
+  group_by(item1) %>%
+  mutate(fraction = count/sum(count)) %>%
+  ungroup()
+# Compute the cumulative percentages (top of each rectangle)
+tst <- tst %>%
+  group_by(item1) %>%
+  mutate(ymax = cumsum(fraction),
+         ymin = c(0, head(ymax, n=-1)),
+         labelPosition = (ymax + ymin) / 2,
+         label = paste0(item2, ": \n", count)) %>%
+  ungroup()
+  
+# Make the plot
+dev.off()
+p <- ggplot(tst, aes(x=2, y=count, fill=item2, ymax=ymax, ymin=ymin)) +
+  geom_bar(position = 'fill', stat = 'identity')  +
+  facet_wrap(~item1) + 
+  geom_text( x=2, aes(y=labelPosition, label=label), size=2.5) + 
   theme_void() +
-  theme(legend.position = "none")
+  theme(panel.spacing = unit(1.5, "lines")) +
+  xlim(0.5, 2.5) +
+  coord_polar(theta = 'y') + 
+  labs(x=NULL, y=NULL) +
+  scale_fill_manual(values = colors, name = "Site")
+p
+  
+ggsave(p, filename = "Output/protein_clust_donuts.svg", width = 11, height = 6)
+
+#and of course the text getting cut off in coord polar is not fixable with code: https://github.com/tidyverse/ggplot2/issues/2698
+  
+  
+  
+
   
   
