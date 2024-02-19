@@ -225,6 +225,13 @@ Extract the faa seqs by name:
 perl /storage1/data12/scripts/screen_list_new.pl MedHighQual_faa_list_final.txt All_Viruses.faa keep > MedHighQual_Viruses.faa
 ```
 
+## CheckV 43,995 viruses
+```{bash, eval = FALSE}
+export CHECKVDB="/storage2/databases/CheckV/checkv-db-v1.5/"
+
+nohup checkv end_to_end ../Virus_Genomes/43995_final_VentViruses_Nlinked.fna CheckV_Output -t 20 &
+```
+
 # Organizing the MAGs
 I want to associate the site names and file name of each MAG to the scaffold header. I am not being as careful about renaming for the MAGs as I was for the assemblies, meaning I am just using general site name and not specific (e.g. Brothers vs Brothers_UC).
 
@@ -645,7 +652,7 @@ nohup iphop add_to_db --fna_dir clean_iphop_MAGs/clean_fnas/ --gtdb_dir Vent_MAG
 nohup iphop predict --fa_file Virus_Genomes/fna/vUnbinned_vMAG_1500Ns_VentViruses.fna --db_dir iPHoP_Sept_2021_w_VentMAGs/ --out_dir iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb -t 20 --no_qc &
 ```
 
-## Run iphop on vUnbinned and vMAGs 42,815 viruses
+## Run iphop on vUnbinned and vMAGs 43,995 viruses
 
 1. Create conda env on virserver
 ```{bash,  eval = FALSE}
@@ -706,12 +713,12 @@ nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/output_MAGs/ --archaea --o
 
 4. Then add the MAGs to an iphop database using the GTDBtk output
 ```{bash,  eval = FALSE}
-nohup iphop add_to_db --fna_dir MAGs_microbial/fna_noVirusContam/ --gtdb_dir iphop/cleanMAGs_gtdbtk_denovo_wf_2_3_2 --out_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs --db_dir /storage2/databases/iPHoP/Aug_2023_pub_rw/ -t 60 &
+nohup iphop add_to_db --fna_dir clean_iphop_MAGs/output_MAGs/ --gtdb_dir iphop/cleanMAGs_gtdbtk_denovo_wf_2_3_2 --out_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs --db_dir /storage2/databases/iPHoP/Aug_2023_pub_rw/ -t 60 &
 ```
 
 5. Finally, run iphop 
 ```{bash,  eval = FALSE}
-nohup iphop predict --fa_file Virus_Genomes/final_VentViruses_42815.fna --db_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs/ --out_dir iphop/iphop_42815_VentViruses -t 60 --no_qc &
+nohup iphop predict --fa_file Virus_Genomes/43995_final_VentViruses_Nlinked.fna --db_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs/ --out_dir iphop/iphop_43995_VentViruses_custDB -t 60 --no_qc &
 ```
 
 # Collect the VIBRANT output into single files
@@ -1270,7 +1277,7 @@ less VentPlume_seqkit_stats_renamed.txt | tr -s ' ' > VentPlume_seqkit_stats_ren
 sed -i 's/\,//g' VentPlume_seqkit_stats_renamed_space.txt
 ```
 
-## Rerun seqkit on viruses 42,815
+## Rerun seqkit on viruses 43,995
 
 1. Make Nlinked vMAGs. Using defaults which add 1500 Ns.
 ```{bash, eval = FALSE}
@@ -1279,17 +1286,17 @@ mamba activate vRhyme
 link_bin_sequences.py -i final_VentVirus_individual_fnas -o final_VentVirus_individual_fnas_Nlinked
 ```
 
-2. Rerun Seqkit genome size on all viruses vent and plume, vMAG and vUnbinned, all at once. Doing this on Virserver, 02/13/24. Seqkit Version 2.6.1
+2. Rerun Seqkit genome size on all viruses vent and plume, vMAG and vUnbinned, all at once. Doing this on Virserver, 02/18/24. Seqkit Version 2.6.1
 ```{bash, eval = FALSE}
 mamba activate
 
-nohup sh -c 'for i in Virus_Genomes/fna/final_VentVirus_individual_fnas/*.fasta ; do seqkit stats $i >> seqkit/PlumeVent_Virus_Seqkit_stats.tsv ; done' &
+nohup sh -c 'for i in 43995_VentViruses_individual_fnas/*.fasta ; do seqkit stats $i >> ../../seqkit/PlumeVent_Virus_Seqkit_stats.tsv ; done' &
 
-less PlumeVent_Virus_Seqkit_stats.tsv | sort | uniq | sed 's+Virus_Genomes/fna/final_VentVirus_individual_fnas/++g' | sed 's/.fasta//g' > PlumeVent_Virus_Seqkit_stats_renamed.tsv
+less PlumeVent_Virus_Seqkit_stats.tsv | sort | uniq | sed 's+43995_VentViruses_individual_fnas/++g' | sed 's/.fasta//g' > PlumeVent_Virus_Seqkit_stats_renamed.tsv
 
 less PlumeVent_Virus_Seqkit_stats_renamed.tsv | tr -s ' ' > PlumeVent_Virus_Seqkit_stats_renamed_space.txt
 
-tail -n +49 PlumeVent_Virus_Seqkit_stats_renamed_space.txt > PlumeVentVirus_Seqkit_final.txt
+head -n -67 PlumeVent_Virus_Seqkit_stats_renamed_space.txt > PlumeVentVirus_Seqkit_final.txt
 ```
 
 # Run GTDBtk v1.5.0 on Vent MAGs
@@ -1367,13 +1374,35 @@ conda install -c conda-forge polars
 python /storage1/data14/for_maggie/genomad/fix_genomad_taxonomy.py -i vUnbinned_vMAGs_1500Ns_PlumeVent_taxonomy.tsv -o vUnbinned_vMAGs_1500Ns_PlumeVent_genomad_tax_parsed.txt
 ```
 
-## genomad rerun?
-**Haven't run this 01/09/24**
-Rerunning genomad to see if I can get tax for all viruses
+## Genomad 43,995 viruses
+
+1. Rerun genomad
 ```{bash, eval = FALSE}
 mamba activate genomad
 
-nohup genomad annotate Virus_Genomes/vUnbinned_vMAGs_1500Ns_PlumeVent.fna genomad_output/genomad_output_anno genomad_db &
+nohup genomad annotate ../Virus_Genomes/final_VentViruses_42815_Nlinked.fna genomad_annotate /storage2/databases/genomad_db/ -t 20 --splits 5 &
+```
+
+```{bash, eval = FALSE}
+nohup genomad end-to-end ../Virus_Genomes/43995_final_VentViruses_Nlinked.fna genomad_end /storage2/databases/genomad_db/ -t 20 --splits 5 --cleanup --min-virus-hallmarks-short-seqs 0 &
+```
+
+2. Rerun Cody's tax parsing script
+```{bash, eval = FALSE}
+mamba activate
+
+mamba install -c conda-forge polars
+
+python /scratch/langwig/scripts/fix_genomad_taxonomy.py -i 43995_final_VentViruses_Nlinked_taxonomy.tsv -o 43995_final_VentViruses_Nlinked_taxonomy_parsed.tsv
+```
+
+3. Get number of hallmarks from genomad annotate output and see how many are ≥1
+```{bash, eval = FALSE}
+cut -f1,14 43995_final_VentViruses_Nlinked_genes.tsv | sed 's/\(.*\)_/\1\t/' virus_hallmarks.tsv | cut -f1,3 > virus_hallmarks.tsv
+
+Rscript count_hallmarks.R
+
+awk '$2 >= 1' virus_hallmarks_sum.tsv | wc
 ```
 
 # Focus on viruses that infect sulfur cycling microbes
@@ -2003,6 +2032,82 @@ sed -i 's/vRhyme_[0-9]__//g' *renamed
 rename 's/_scaffold.fasta.renamed/.fasta.renamed/g' *renamed
 
 find . -type f -name "*.fasta" -exec cat {} + > final_VentViruses_42815.fna
+```
+
+# Redoing vMAGs with 2+ lysogenic members
+
+Identified vMAGs with 2+ lysogenic members using R and the VIBRANT type info. See VentVirus_Analysis2.R. There are 114 vMAGs with 2+ lysogenic members.
+
+1. Get list of contaminant vMAGs with 2+ lysogenic members
+```{bash, eval = FALSE}
+pwd
+/Users/margueritelangwig/Google Drive/My Drive/PhD_Projects/VentViruses/vRhyme
+
+cut -f1 vMAG_114_lysogenic_list.txt > vMAGs_114_lysogenic_contam.txt
+```
+
+2. Move them and split. I modified the original script to keep ">" which was a problem before.
+```{bash, eval = FALSE}
+cp prot_red_vMAGs.sh vMAGs_lysogenic_red.sh
+
+./vMAGs_lysogenic_red.sh
+```
+
+3. Move the vMAGs and count the scaffolds to make sure they match. 
+```{bash, eval = FALSE}
+for i in `cat vMAGs_114_lysogenic_contam.txt`; do mv $i vMAGs_lysogenic_contam; done
+```
+
+4. Rename the vMAGs broken into individual scaffolds
+```{bash, eval = FALSE}
+sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' *fasta
+sed -i 's/vRhyme_[0-9][0-9]__//g' *fasta
+sed -i 's/vRhyme_[0-9]__//g' *fasta
+
+rename 's/vRhyme_[0-9][0-9][0-9]__//g' *fasta
+rename 's/vRhyme_[0-9][0-9]__//g' *fasta
+rename 's/vRhyme_[0-9]__//g' *fasta
+
+rename 's/_scaffold.fasta/.fasta/g' *fasta
+```
+
+5. Make the final directory of viral genomes to work out of
+```{bash, eval = FALSE}
+mkdir 43995_VentViruses_individual_fnas
+
+find final_VentVirus_individual_fnas/ -name "*fasta" | xargs -i cp {} 43995_VentViruses_individual_fnas/
+
+rm *vRhyme*
+
+cp fna_vMAGs_separate/vMAGs_lysogen_individual_scaffolds/*fasta 43995_VentViruses_individual_fnas/
+
+cp fna_vMAGs_separate/*fasta 43995_VentViruses_individual_fnas/
+
+find . -type f -name "*.fasta" -exec cat {} + > ../../43995_final_VentViruses.fna
+```
+
+6. Make N-linked version of vMAGs file for downstream analyses
+```{bash, eval = FALSE}
+mamba activate vRhyme
+
+link_bin_sequences.py -i fna_vMAGs_separate/ -o 43995_VentViruses_individual_fnas_Nlinked
+```
+Move all other seqs into the folder with it
+```{bash, eval = FALSE}
+find . -type f ! -name '*vRhyme*' -exec cp {} ../43995_VentViruses_individual_fnas_Nlinked/ \;
+
+find . -type f -name "*.fasta" -exec cat {} + > ../../43995_final_VentViruses_Nlinked.fna
+```
+
+# vMAG mapping file for R, 6,088
+
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/Virus_Genomes/fna/fna_vMAGs_separate
+
+grep ">" *fasta > vMAG_scaffolds_6088.txt
+
+sed 's/.fasta:>/\t/g' vMAG_scaffolds_6088.txt | cut -f1,2 | sed 's/__/\t/g' | cut -f1,3 > vMAG_scaffolds_6088_final.txt
 ```
 
 ### Unused
