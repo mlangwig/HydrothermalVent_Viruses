@@ -42,10 +42,10 @@ genomad_tax <- read.table(file = "input/43995_final_VentViruses_Nlinked_taxonomy
 #remove cols
 genomad_tax <- genomad_tax %>%
   select(-c(n_genes_with_taxonomy, agreement, taxid)) %>%
-  separate(lineage, c("d", "p", "c", "o", "f", "g"), 
+  separate(lineage, c("r", "k", "p", "c", "o", "f", "g", "s"), 
            sep= ";")
-table(genomad_tax$d)
-table(genomad_tax$o)
+table(genomad_tax$r)
+table(genomad_tax$c)
   
 ####################################### Determine lytic vs lysogenic #############################################
 ################# for vMAGs that may have had dif types binned together
@@ -156,7 +156,7 @@ master_table <- genomad_tax %>%
   right_join(master_table, by = c("genome" = "vMAG")) %>%
   rename("vMAG" = "genome")
 master_table <- master_table %>%
-  select(vMAG, protein:warnings, num_seqs:sum_len, d:g)
+  select(vMAG, protein:warnings, num_seqs:sum_len, r:f) #only to family because no genus or species names
 
 #add lifestyle type
 master_table <- vib_type %>%
@@ -169,12 +169,12 @@ master_table <- vib_type %>%
 
 #make master table without proteins for accurate counting
 master_table_noProtein <- master_table %>%
-  select(vMAG, type, gene_count:g) %>%
+  select(vMAG, type, gene_count:f) %>%
   unique()
 
 #master table no proteins of med-quality and better only
 master_table_noProtein_hq <- master_table %>%
-  select(vMAG, type, gene_count:g) %>%
+  select(vMAG, type, gene_count:f) %>%
   unique() %>%
   filter(!(checkv_quality %in% c("Low-quality", "Not-determined")))
 table(master_table_noProtein_hq$type)
@@ -182,7 +182,7 @@ table(master_table_noProtein_hq$type)
 
 ############################# Generating supplementary figures #################################
 
-######### CheckV quality
+############################### Checkv Quality ##################################
 
 master_table_fig <- master_table_noProtein %>% 
   select(c("vMAG", "checkv_quality")) %>%
@@ -216,38 +216,81 @@ p <- p + theme_bw() +
 p
 
 ggsave("output/CheckV_quality.pdf", p, width = 15, height = 10, dpi = 500)
-ggsave("output/CheckV_quality.png", p, width = 15, height = 10, dpi = 500)
+ggsave("output/CheckV_quality.png", p, dpi = 500, width = 10, height = 6) #width = 15, height = 10, 
 
-######### Genome Size
+############################### Genome Size ##################################
 
 master_table_noProtein$checkv_quality <- factor(master_table_noProtein$checkv_quality, 
-                                                levels = c('Complete', 'High-quality', 'Medium-quality', 'Not-determined', 'Low-quality'))
+                                                levels = c('Complete', 'High-quality', 'Medium-quality', 'Low-quality', 'Not-determined'))
 
+library(scales) #for label_comma()
 dev.off()
 p <- ggplot(master_table_noProtein, aes(x = factor(checkv_quality), y = sum_len, fill = checkv_quality)) + 
   geom_boxplot() + 
   #facet_wrap(~Site) + 
-  xlab("Site")  +
+  xlab("CheckV Quality")  +
   ylab("Genome Size") +
   ggtitle("Viral Genome Sizes") +
-  guides(fill=guide_legend(title = "CheckV Quality")) +
+  guides(fill=guide_legend(title = element_blank())) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
   scale_x_discrete(limits = rev(levels(master_table_noProtein$checkv_quality)), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(0, 600000), breaks = seq(0, 600000, by = 100000), expand = c(0, 0)) + #, expand = c(0, 0)
-  scale_fill_viridis_d(guide = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(limits = c(0, 600000), breaks = seq(0, 600000, by = 100000), expand = c(0, 0),
+                     labels = label_comma()) + #, expand = c(0, 0)
+  scale_fill_viridis_d(guide = guide_legend(reverse = TRUE), alpha = 0.8) +
   #ylim(1000,565000) +
   coord_flip()
 p
 
-ggsave("output/GenomeSizeKB.png", p, width = 12, height = 6, dpi = 500)
-ggsave("output/GenomeSizeKB.pdf", p, width = 12, dpi = 500)
+ggsave("output/GenomeSize.png", p, dpi = 500) #, width = 12, height = 6, 
+ggsave("output/GenomeSize.pdf", p, width = 12, dpi = 500)
 
+############################### Virus taxonomy ##################################
 
+master_table_fig <- master_table_noProtein %>% 
+  select(c("vMAG", "r", "c")) %>%
+  group_by(r) %>%
+  count(c) %>%
+  ungroup() %>%
+  drop_na() %>%
+  mutate(r = gsub("\\br__\\b", "Unknown Realm", r)) %>%
+  mutate(c = gsub("\\bc__\\b", "Unknown Class", c)) %>%
+  mutate(r = gsub("r__", "", r)) %>%
+  mutate(c = gsub("c__", "", c)) %>%
+  #filter(!(c %in% c("Caudoviricetes"))) %>%
+  #filter(!(c %in% c("Unknown Class"))) %>%
+  arrange(r)
 
+#factor for plotting class in order of realm group
+master_table_fig$r <- factor(master_table_fig$r, levels = unique(master_table_fig$r))
+master_table_fig$c <- factor(master_table_fig$c, levels = unique(master_table_fig$c))
 
+#add category for Caudo to plot separately because such an outlier
+master_table_fig$caudo <- ifelse(master_table_fig$n > 1000, "Caudo", "Other")
+master_table_fig <- master_table_fig %>%
+  mutate(caudo = ifelse(c == "Unknown Class", "Unknown", caudo))
 
+###plot
+dev.off()
+p <- ggplot(master_table_fig, aes(x = n, y = c, fill = r)) + 
+  geom_bar(position = "dodge", stat = "identity", width = 0.2) + 
+  geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
+  xlab("Number of genomes")  +
+  ylab("Class") +
+  ggtitle("Virus geNomad Taxonomy") +
+  scale_fill_viridis_d(name = "Viral Realm", direction = -1) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0), limits = rev(levels(master_table_fig$c))) +  # Reverse the order of y-axis labels
+  theme_bw() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank(),
+        strip.text = element_blank(), strip.background = element_blank()) +
+  facet_wrap(~caudo, scales = "free_x")
+p
 
+ggsave("output/genomad_tax.png", p, dpi = 500, width = 10) #, width = 12, height = 6, 
+ggsave("output/genomad_tax.pdf", p, dpi = 500, width = 10)
 
 
 
