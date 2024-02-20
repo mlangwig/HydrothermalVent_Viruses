@@ -1750,16 +1750,14 @@ mamba activate coverm
 nohup ./run_coverm_count_MinCov.sh &
 ```
 
-## Running coverm again with 42,815 viruses
+## Running coverm again with 43,995 viruses
 
 Broke vMAGs with high protein redundancy into individual scaffolds again. Rerunning:
 ```{bash, eval = FALSE}
 pwd
-/scratch/langwig/Projects/VentPlumeViruses/abundance/coverm_count_final
+/scratch/langwig/Projects/VentPlumeViruses/abundance/43995_coverm_count/
 
 mamba activate coverm
-
-find . -type f -name "*.fasta" -print0 | xargs -0 cat > ../final_VentViruses_42833.fna
 
 nohup ./run_coverm_count_MinCov.sh &
 ```

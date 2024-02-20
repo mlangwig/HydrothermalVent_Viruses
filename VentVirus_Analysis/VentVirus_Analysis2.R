@@ -138,8 +138,116 @@ vib_annos <- vib_annos %>%
 length(unique(vib_annos$vMAG))
 #43,995 viruses, same as total
 
+#create master table and add CheckV output
 master_table <- vib_annos %>%
   select(vMAG, protein:VOG.v.score) %>%
   right_join(checkv, by = c("vMAG" = "contig_id"))
+
+#add seqkit genome size output
+master_table <- gensize %>%
+  select(file, num_seqs, min_len, avg_len, max_len, sum_len) %>%
+  right_join(master_table, by = c("file" = "vMAG")) %>%
+  rename("vMAG" = "file")
+
+#add genomad taxonomy
+master_table <- master_table %>%
+  select(vMAG, protein:warnings, num_seqs:sum_len)
+master_table <- genomad_tax %>%
+  right_join(master_table, by = c("genome" = "vMAG")) %>%
+  rename("vMAG" = "genome")
+master_table <- master_table %>%
+  select(vMAG, protein:warnings, num_seqs:sum_len, d:g)
+
+#add lifestyle type
+master_table <- vib_type %>%
+  right_join(master_table, by = c("vMAG" = "vMAG"))
+
+#add iphop host prediction
+#master_table_iphop <- iphop %>%
+# right_join(master_table, by = c("" = ""))
+
+
+#make master table without proteins for accurate counting
+master_table_noProtein <- master_table %>%
+  select(vMAG, type, gene_count:g) %>%
+  unique()
+
+#master table no proteins of med-quality and better only
+master_table_noProtein_hq <- master_table %>%
+  select(vMAG, type, gene_count:g) %>%
+  unique() %>%
+  filter(!(checkv_quality %in% c("Low-quality", "Not-determined")))
+table(master_table_noProtein_hq$type)
+#395 lysogenic, 1686 lytic for med quality and better viruses
+
+############################# Generating supplementary figures #################################
+
+######### CheckV quality
+
+master_table_fig <- master_table_noProtein %>% 
+  select(c("vMAG", "checkv_quality")) %>%
+  #group_by(Site) %>%
+  count(checkv_quality)
+
+master_table_fig$checkv_quality <- factor(master_table_fig$checkv_quality, 
+                                          levels = c('Not-determined', 'Low-quality', 'Medium-quality', 'High-quality', 'Complete'))
+#level_order <- c('Not-determined', 'Low-quality', 'Medium-quality', 'High-quality', 'Complete') 
+
+###plot
+dev.off()
+p <- ggplot(master_table_fig, aes(x = factor(checkv_quality), #reorder bc was plotting x axis backwards/upside down, , levels = level_order
+                                  y = n, fill = checkv_quality)) + 
+  geom_bar(stat = "identity") + 
+  #facet_wrap(~Site) + 
+  xlab(element_blank())  +
+  ylab("Count") +
+  ggtitle("Virus Genome Quality") +
+  scale_fill_viridis_d(name = "CheckV Quality", 
+                       guide = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_discrete(expand = c(0, 0))
+  #scale_y_continuous(breaks = c(0, 2000, 4000, 6000, 8000, 10000, 12000))
+#geom_text(aes(label = paste0(n), y = n),
+#          hjust = -.5, size = 2.5, color = "black" )
+p <- p + theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        text = element_text(size = 16)) +
+  coord_flip()
+p
+
+ggsave("output/CheckV_quality.pdf", p, width = 15, height = 10, dpi = 500)
+ggsave("output/CheckV_quality.png", p, width = 15, height = 10, dpi = 500)
+
+######### Genome Size
+
+master_table_noProtein$checkv_quality <- factor(master_table_noProtein$checkv_quality, 
+                                                levels = c('Complete', 'High-quality', 'Medium-quality', 'Not-determined', 'Low-quality'))
+
+dev.off()
+p <- ggplot(master_table_noProtein, aes(x = factor(checkv_quality), y = sum_len, fill = checkv_quality)) + 
+  geom_boxplot() + 
+  #facet_wrap(~Site) + 
+  xlab("Site")  +
+  ylab("Genome Size") +
+  ggtitle("Viral Genome Sizes") +
+  guides(fill=guide_legend(title = "CheckV Quality")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
+  scale_x_discrete(limits = rev(levels(master_table_noProtein$checkv_quality)), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 600000), breaks = seq(0, 600000, by = 100000), expand = c(0, 0)) + #, expand = c(0, 0)
+  scale_fill_viridis_d(guide = guide_legend(reverse = TRUE)) +
+  #ylim(1000,565000) +
+  coord_flip()
+p
+
+ggsave("output/GenomeSizeKB.png", p, width = 12, height = 6, dpi = 500)
+ggsave("output/GenomeSizeKB.pdf", p, width = 12, dpi = 500)
+
+
+
+
+
+
+
 
 
