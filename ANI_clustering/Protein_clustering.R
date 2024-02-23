@@ -647,7 +647,7 @@ tst <- tst %>%
   mutate(ymax = cumsum(fraction),
          ymin = c(0, head(ymax, n=-1)),
          labelPosition = (ymax + ymin) / 2,
-         label = paste0(item2, ": \n", count)) %>%
+         label = paste0(count)) %>%
   ungroup()
   
 # Make the plot
@@ -665,6 +665,7 @@ p <- ggplot(tst, aes(x=2, y=count, fill=item2, ymax=ymax, ymin=ymin)) +
 p
   
 ggsave(p, filename = "Output/protein_clust_donuts.svg", width = 11, height = 6)
+ggsave(p, filename = "Output/protein_clust_donuts.png")
 
 #and of course the text getting cut off in coord polar is not fixable with code: https://github.com/tidyverse/ggplot2/issues/2698
   

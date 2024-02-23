@@ -270,7 +270,7 @@ abun_long_iphop_p$Site <- factor(abun_long_iphop_p$Site,
                                           "Guaymas_4561-380", "Brothers_NWCA_S013"))
 
 
-################### using coverm abun for inter/intra vent relatedness ###########################
+################### using coverm count abun for inter/intra vent relatedness ###########################
 
 #new input data including read count
 abund <- read.delim2("input/PlumeVentVirus-vs-Reads-CoverM-Count_MinCov.tsv")
@@ -291,7 +291,7 @@ abund_long <- abund_long %>%
   mutate(Percentile_Rank=rank(as.numeric(value))/length(as.numeric(value))) %>%
   ungroup()
 
-#just take counts from long format to box plot their distributions
+#just take counts from long format
 abund_long_count <- abund_long %>% filter(grepl("Read.Count", variable))
 
 #rename site names
@@ -312,6 +312,7 @@ read_length$file <- gsub("-",".",read_length$file)
 abund_long_count <- read_length %>%
   dplyr::select(c("file", "num_seqs")) %>%
   right_join(abund_long_count, by = c("file" = "V2"))
+abund_long_count$value <- as.numeric(abund_long_count$value)
 
 #divide read count by number of reads *100
 abund_long_norm <- abund_long_count

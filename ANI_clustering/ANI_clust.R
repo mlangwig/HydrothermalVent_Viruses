@@ -556,6 +556,32 @@ allVirus_master_nu_hq <- allVirus_master_nu %>%
 
 ##################################################
 
+##################### remove e coli contam viruses from gensize ###########################
+
+#remove names from the list
+gensize_ne <- gensize %>%
+  filter(!str_detect(file, remove.list))
+
+sum(gensize_ne$sum_len >= 1000 & gensize_ne$sum_len <= 5000)
+
+##################################################
+
+##################### remove e coli contam viruses from genomad ###########################
+
+#replace equals sign with underscore to get complete removal
+genomad_ne <- genomad
+genomad_ne$seq_name <- gsub('=','_',genomad_ne$seq_name)
+
+#remove names from the list
+genomad_ne <- genomad_ne %>%
+  filter(!str_detect(seq_name, remove.list))
+
+#get only Caudos
+genomad_ne_caud <- genomad_ne %>%
+  filter(grepl("Duplodnaviria", taxonomy)) #%>%
+  filter(grepl("Caudoviricetes", taxonomy)) #Caud = 17,964
+
+##################################################
 
 #drop NAs to see if that fixes plotting probs
 ani_long_metadata_all <- ani_long_metadata_all %>%

@@ -180,6 +180,11 @@ master_table_noProtein_hq <- master_table %>%
 table(master_table_noProtein_hq$type)
 #395 lysogenic, 1686 lytic for med quality and better viruses
 
+#create a master table reduced info for easier viewing
+master_table_simple <- master_table %>%
+  select(vMAG, scaffold, protein, KO, AMG, KO.name, Pfam, 
+         Pfam.name, VOG, VOG.name, type, checkv_quality, completeness, contamination, sum_len:f)
+
 ############################# Generating supplementary figures #################################
 
 ############################### Checkv Quality ##################################
@@ -215,8 +220,8 @@ p <- p + theme_bw() +
   coord_flip()
 p
 
-ggsave("output/CheckV_quality.pdf", p, width = 15, height = 10, dpi = 500)
-ggsave("output/CheckV_quality.png", p, dpi = 500, width = 10, height = 6) #width = 15, height = 10, 
+# ggsave("output/CheckV_quality.pdf", p, width = 15, height = 10, dpi = 500)
+# ggsave("output/CheckV_quality.png", p, dpi = 500, width = 10, height = 6) #width = 15, height = 10, 
 
 ############################### Genome Size ##################################
 
@@ -242,8 +247,8 @@ p <- ggplot(master_table_noProtein, aes(x = factor(checkv_quality), y = sum_len,
   coord_flip()
 p
 
-ggsave("output/GenomeSize.png", p, dpi = 500) #, width = 12, height = 6, 
-ggsave("output/GenomeSize.pdf", p, width = 12, dpi = 500)
+# ggsave("output/GenomeSize.png", p, dpi = 500) #, width = 12, height = 6, 
+# ggsave("output/GenomeSize.pdf", p, width = 12, dpi = 500)
 
 ############################### Virus taxonomy ##################################
 
@@ -257,25 +262,27 @@ master_table_fig <- master_table_noProtein %>%
   mutate(c = gsub("\\bc__\\b", "Unknown Class", c)) %>%
   mutate(r = gsub("r__", "", r)) %>%
   mutate(c = gsub("c__", "", c)) %>%
-  #filter(!(c %in% c("Caudoviricetes"))) %>%
-  #filter(!(c %in% c("Unknown Class"))) %>%
-  arrange(r)
+  #filter(!(c %in% c("Caudoviricetes"))) %>% #remove Caudos?
+  filter(!(c %in% c("Unknown Class"))) %>% #remove unknown class predictions
+  arrange(r) %>%
+  mutate(log_n = log(n) + 1)
+
+# #add category for Caudo to plot separately because such an outlier
+# master_table_fig$caudo <- ifelse(master_table_fig$n > 1000, "Caudo", "Other")
+# master_table_fig <- master_table_fig %>%
+#   mutate(caudo = ifelse(c == "Unknown Class", "Unknown", caudo))
 
 #factor for plotting class in order of realm group
 master_table_fig$r <- factor(master_table_fig$r, levels = unique(master_table_fig$r))
 master_table_fig$c <- factor(master_table_fig$c, levels = unique(master_table_fig$c))
-
-#add category for Caudo to plot separately because such an outlier
-master_table_fig$caudo <- ifelse(master_table_fig$n > 1000, "Caudo", "Other")
-master_table_fig <- master_table_fig %>%
-  mutate(caudo = ifelse(c == "Unknown Class", "Unknown", caudo))
+#aster_table_fig$caudo <- factor(master_table_fig$caudo, levels = unique(master_table_fig$caudo))
 
 ###plot
 dev.off()
-p <- ggplot(master_table_fig, aes(x = n, y = c, fill = r)) + 
+p <- ggplot(master_table_fig, aes(x = log_n, y = c, fill = r)) + 
   geom_bar(position = "dodge", stat = "identity", width = 0.2) + 
-  geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
-  xlab("Number of genomes")  +
+  #geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
+  xlab(expression(paste("Number of genomes ", (log[10]+1))))  +
   ylab("Class") +
   ggtitle("Virus geNomad Taxonomy") +
   scale_fill_viridis_d(name = "Viral Realm", direction = -1) +
@@ -285,12 +292,12 @@ p <- ggplot(master_table_fig, aes(x = n, y = c, fill = r)) +
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_line(linetype = "dashed"),
         panel.grid.minor = element_blank(),
-        strip.text = element_blank(), strip.background = element_blank()) +
-  facet_wrap(~caudo, scales = "free_x")
+        strip.text = element_blank(), strip.background = element_blank()) #+
+  #facet_wrap(~caudo, scales = "free", ncol = 1, strip.position = "left")
 p
 
-ggsave("output/genomad_tax.png", p, dpi = 500, width = 10) #, width = 12, height = 6, 
-ggsave("output/genomad_tax.pdf", p, dpi = 500, width = 10)
+#ggsave("output/genomad_tax.png", p, dpi = 500, width = 6, height = 4) #, width = 12, height = 6, 
+#ggsave("output/genomad_tax.pdf", p, dpi = 500, width = 6, height = 4)
 
 
 
