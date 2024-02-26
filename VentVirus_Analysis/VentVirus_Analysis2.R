@@ -9,36 +9,40 @@ library(ggplot2)
 library(tidyr)
 library(tibble)
 
-########################################## Read in major inputs ##########################################
+##################################### Read in major inputs ##########################################
 
-#iphop
-
+#checkV
 checkv <- read.delim(file = "input/quality_summary.tsv", header = TRUE)
 #remove cols
 checkv <- checkv %>%
   select(-c(contig_length, provirus, proviral_length, completeness_method, kmer_freq))
 table(checkv$checkv_quality)
 
+#lifestyle, VIBRANT predicted
 vib_type <- read.delim(file = "input/52samples_VIBRANT_type.tsv", header = TRUE)
 vib_type$scaffold <- gsub("=","_",vib_type$scaffold)
 
+#genome size, Seqkit
 gensize <- read.table(file = "input/PlumeVentVirus_Seqkit_final.txt", sep = " ", header = TRUE)
 #count range of 1-5kb genome sizes
 count <- sum(gensize$sum_len >= 1000 & gensize$sum_len <= 5000)
 
+#VIBRANT annotations of KEGG, Pfam, and VOGs
 vib_annos <- read.delim(file = "../../VIBRANT_annos/52samples_VIBRANT_annos.tsv", sep = "\t", fill = TRUE, 
                         header = TRUE, na.strings=c("","NA"))
 #replace = with _
 vib_annos$protein <- gsub("=","_",vib_annos$protein)
 vib_annos$scaffold <- gsub("=","_",vib_annos$scaffold)
 
-vMAG_mapping <- read.table(file = "input/vMAG_scaffolds_6088_final.txt", sep = "\t")
+#vMAG mapping vMAG name to scaffolds
+vMAG_mapping <- read.table(file = "input/vMAG_scaffolds_5708_final.txt", sep = "\t")
 #rename unnamed cols
 vMAG_mapping <- vMAG_mapping %>%
   rename("vMAG" = "V1",
          "scaffold" = "V2") #new = old
 
-genomad_tax <- read.table(file = "input/43995_final_VentViruses_Nlinked_taxonomy_parsed.tsv", header = TRUE)
+#geNomad taxonomy
+genomad_tax <- read.table(file = "input/49962_final_VentViruses_Nlinked_taxonomy_parsed.tsv", header = TRUE)
 #remove cols
 genomad_tax <- genomad_tax %>%
   select(-c(n_genes_with_taxonomy, agreement, taxid)) %>%
@@ -46,6 +50,10 @@ genomad_tax <- genomad_tax %>%
            sep= ";")
 table(genomad_tax$r)
 table(genomad_tax$c)
+
+#iPHoP host predictions
+iphop <- read.csv(file = "input/Host_prediction_to_genus_m90_49962.csv",
+                  header = TRUE)
   
 ####################################### Determine lytic vs lysogenic #############################################
 ################# for vMAGs that may have had dif types binned together
@@ -108,7 +116,7 @@ vib_type_vMAG <- vib_type_final %>%
   ungroup() %>%
   unique()
 table(vib_type_vMAG$type)
-#640 lysogenic vMAGs, 5,448 lytic
+#569 lysogenic vMAGs, 5,139 lytic
 
 #get VIBRANT types of non-vMAGs
 vib_type_vUnbinned <- vib_type %>%
@@ -116,14 +124,14 @@ vib_type_vUnbinned <- vib_type %>%
   unique()
 `%notin%` <- Negate(`%in%`)
 vib_type_vUnbinned<-vib_type_vUnbinned[vib_type_vUnbinned$scaffold %notin% vMAG_mapping$scaffold,]
-#should be 37,907 or the number of unbinned viruses
+#should be 44,254 or the number of unbinned viruses
 vib_type_vUnbinned <- vib_type_vUnbinned %>%
   select(c('type','scaffold')) %>%
   rename("vMAG" = "scaffold")
 #make final VIBRANT type
 vib_type <- rbind(vib_type_vMAG, vib_type_vUnbinned)
 table(vib_type$type)
-#2,391 lysogenic viruses, 41,604 lytic
+#2,391 lysogenic viruses, 47,571 lytic
 
 ####################################### Create the master tables #############################################
 
@@ -136,7 +144,7 @@ vib_annos$vMAG <- ifelse(is.na(vib_annos$vMAG), vib_annos$scaffold, vib_annos$vM
 vib_annos <- vib_annos %>%
   filter(!str_detect(scaffold, remove.list))
 length(unique(vib_annos$vMAG))
-#43,995 viruses, same as total
+#49,962 viruses, same as total
 
 #create master table and add CheckV output
 master_table <- vib_annos %>%
@@ -162,10 +170,8 @@ master_table <- master_table %>%
 master_table <- vib_type %>%
   right_join(master_table, by = c("vMAG" = "vMAG"))
 
-#add iphop host prediction
-#master_table_iphop <- iphop %>%
-# right_join(master_table, by = c("" = ""))
-
+# write.table(master_table, file = "output/master_table_VentPlumeViruses.tsv", col.names = TRUE,
+#             quote = FALSE, row.names = FALSE, sep = "\t")
 
 #make master table without proteins for accurate counting
 master_table_noProtein <- master_table %>%
@@ -178,16 +184,41 @@ master_table_noProtein_hq <- master_table %>%
   unique() %>%
   filter(!(checkv_quality %in% c("Low-quality", "Not-determined")))
 table(master_table_noProtein_hq$type)
-#395 lysogenic, 1686 lytic for med quality and better viruses
+#328 lysogenic, 1,505 lytic for med quality and better viruses
 
 #create a master table reduced info for easier viewing
 master_table_simple <- master_table %>%
   select(vMAG, scaffold, protein, KO, AMG, KO.name, Pfam, 
          Pfam.name, VOG, VOG.name, type, checkv_quality, completeness, contamination, sum_len:f)
 
+#add iphop host prediction
+master_table_iphop <- iphop %>%
+  right_join(master_table_noProtein, by = c("Virus" = "vMAG")) %>%
+  rename("vMAG" = "Virus")
+
+####################################### vMAGs >4 seqs #############################################
+
+# vMAG_5plus_prot <- master_table %>%
+#   filter(str_detect(vMAG, "vRhyme")) %>%
+#   filter(num_seqs > 4)
+# #1,204 vMAGs have >4 seqs
+# # write.table(vMAG_5plus_prot, file = "output/vMAGs_5plus_prots.tsv", col.names = TRUE,
+# #             row.names = FALSE, quote = FALSE, sep = "\t")
+# 
+# vMAG_5plus <- master_table_noProtein %>%
+#   filter(str_detect(vMAG, "vRhyme")) %>%
+#   filter(num_seqs > 4)
+# 
+# #getting list of vMAGs with >10 scaffolds to return to unbinned fraction
+# vMAG_11plus <- master_table_noProtein %>%
+#   filter(num_seqs > 10) %>%
+#   select(vMAG)
+# # write.table(vMAG_11plus, file = "output/vMAG_11scaffold_plus.txt", col.names = FALSE,
+# #             row.names = FALSE, sep = "\t", quote = FALSE)
+
 ############################# Generating supplementary figures #################################
 
-############################### Checkv Quality ##################################
+############################### CheckV Quality ##################################
 
 master_table_fig <- master_table_noProtein %>% 
   select(c("vMAG", "checkv_quality")) %>%
@@ -198,6 +229,7 @@ master_table_fig$checkv_quality <- factor(master_table_fig$checkv_quality,
                                           levels = c('Not-determined', 'Low-quality', 'Medium-quality', 'High-quality', 'Complete'))
 #level_order <- c('Not-determined', 'Low-quality', 'Medium-quality', 'High-quality', 'Complete') 
 
+library(scales) #for label_comma()
 ###plot
 dev.off()
 p <- ggplot(master_table_fig, aes(x = factor(checkv_quality), #reorder bc was plotting x axis backwards/upside down, , levels = level_order
@@ -209,9 +241,9 @@ p <- ggplot(master_table_fig, aes(x = factor(checkv_quality), #reorder bc was pl
   ggtitle("Virus Genome Quality") +
   scale_fill_viridis_d(name = "CheckV Quality", 
                        guide = guide_legend(reverse = TRUE)) +
-  scale_y_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 40000), 
+                     breaks = seq(0, 40000, by = 10000), labels = label_comma()) +
   scale_x_discrete(expand = c(0, 0))
-  #scale_y_continuous(breaks = c(0, 2000, 4000, 6000, 8000, 10000, 12000))
 #geom_text(aes(label = paste0(n), y = n),
 #          hjust = -.5, size = 2.5, color = "black" )
 p <- p + theme_bw() + 
@@ -220,15 +252,14 @@ p <- p + theme_bw() +
   coord_flip()
 p
 
-# ggsave("output/CheckV_quality.pdf", p, width = 15, height = 10, dpi = 500)
-# ggsave("output/CheckV_quality.png", p, dpi = 500, width = 10, height = 6) #width = 15, height = 10, 
+ggsave("output/CheckV_quality.pdf", p, width = 15, height = 10, dpi = 500)
+ggsave("output/CheckV_quality.png", p, dpi = 500, width = 10, height = 6) #width = 15, height = 10,
 
 ############################### Genome Size ##################################
 
 master_table_noProtein$checkv_quality <- factor(master_table_noProtein$checkv_quality, 
                                                 levels = c('Complete', 'High-quality', 'Medium-quality', 'Low-quality', 'Not-determined'))
 
-library(scales) #for label_comma()
 dev.off()
 p <- ggplot(master_table_noProtein, aes(x = factor(checkv_quality), y = sum_len, fill = checkv_quality)) + 
   geom_boxplot() + 
@@ -247,8 +278,8 @@ p <- ggplot(master_table_noProtein, aes(x = factor(checkv_quality), y = sum_len,
   coord_flip()
 p
 
-# ggsave("output/GenomeSize.png", p, dpi = 500) #, width = 12, height = 6, 
-# ggsave("output/GenomeSize.pdf", p, width = 12, dpi = 500)
+ggsave("output/GenomeSize.png", p, dpi = 500) #, width = 12, height = 6,
+ggsave("output/GenomeSize.pdf", p, width = 12, dpi = 500)
 
 ############################### Virus taxonomy ##################################
 
@@ -263,7 +294,7 @@ master_table_fig <- master_table_noProtein %>%
   mutate(r = gsub("r__", "", r)) %>%
   mutate(c = gsub("c__", "", c)) %>%
   #filter(!(c %in% c("Caudoviricetes"))) %>% #remove Caudos?
-  filter(!(c %in% c("Unknown Class"))) %>% #remove unknown class predictions
+  #filter(!(c %in% c("Unknown Class"))) %>% #remove unknown class predictions
   arrange(r) %>%
   mutate(log_n = log(n) + 1)
 
@@ -286,7 +317,8 @@ p <- ggplot(master_table_fig, aes(x = log_n, y = c, fill = r)) +
   ylab("Class") +
   ggtitle("Virus geNomad Taxonomy") +
   scale_fill_viridis_d(name = "Viral Realm", direction = -1) +
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 12), 
+                     breaks = seq(0, 12, by = 3)) +
   scale_y_discrete(expand = c(0, 0), limits = rev(levels(master_table_fig$c))) +  # Reverse the order of y-axis labels
   theme_bw() +
   theme(panel.grid.major.y = element_blank(),
@@ -296,8 +328,72 @@ p <- ggplot(master_table_fig, aes(x = log_n, y = c, fill = r)) +
   #facet_wrap(~caudo, scales = "free", ncol = 1, strip.position = "left")
 p
 
-#ggsave("output/genomad_tax.png", p, dpi = 500, width = 6, height = 4) #, width = 12, height = 6, 
-#ggsave("output/genomad_tax.pdf", p, dpi = 500, width = 6, height = 4)
+ggsave("output/genomad_tax.png", p, dpi = 500, width = 6, height = 4) #, width = 12, height = 6,
+ggsave("output/genomad_tax.pdf", p, dpi = 500, width = 6, height = 4)
+
+############################### Host predictions ##################################
+
+#get just Proteobacteria to highlight their breakdown
+master_table_iphop_proteos <- master_table_iphop %>%
+  select(vMAG, Host.genus) %>%
+  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";") %>%
+  select(vMAG, d, p, c) %>%
+  filter(grepl("Pseudomonadota", p)) %>%
+  group_by(d, c) %>%
+  count(c) %>%
+  ungroup() %>%
+  mutate(c = str_replace(c, "c__", "")) %>%
+  mutate(d = str_replace(d, "d__", "")) %>%
+  mutate(c = str_replace(c, "$", "*")) %>%
+  rename("p" = "c") #arbitrary rename for merging
+  
+#everything else minus Proteos
+master_table_fig <- master_table_iphop %>%
+  select(vMAG, Host.genus) %>%
+  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";") %>%
+  select(vMAG, d, p, c) %>% #, c
+  group_by(d, p) %>%
+  count(p) %>%
+  ungroup() %>%
+  drop_na() %>%
+  #mutate(c = str_replace(c, "c__", "")) %>%
+  mutate(p = str_replace(p, "p__", "")) %>%
+  mutate(d = str_replace(d, "d__", "")) %>%
+  mutate_at(vars(p), ~na_if(., "")) %>%
+  drop_na() %>%
+  filter(!grepl("Pseudomonadota", p))
+
+#bind the proteos and whole count together
+master_table_fig <- rbind(master_table_fig, master_table_iphop_proteos)
+
+#remove host predictions less than 10 for clarity of plot
+master_table_fig <- master_table_fig %>%
+  filter(n > 10)
+
+###plot
+dev.off()
+p <- ggplot(master_table_fig, aes(x = n, 
+                                  y = factor(p, levels = rev(levels(factor(p)))), 
+                                  fill = p)) + #, fill = p
+  geom_bar(position = "dodge", stat = "identity", width = 0.2) + 
+  #geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
+  xlab("Number of host predictions")  +
+  ylab("Microbial Host Phyla") +
+  ggtitle("") +
+  scale_fill_viridis_d(guide="none") + #, direction = -1, name = "Microbial Phyla"
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0)) +  # Reverse the order of y-axis labels
+  theme_bw() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank()) +
+  facet_wrap(~ d, scales = "free") #ncol = 1, strip.position = "left"
+p
+
+ggsave("output/iphop_hosts.png", p, dpi = 500, width = 10, height = 5) #, width = 12, height = 6,
+ggsave("output/iphop_hosts.pdf", p, dpi = 500, width = 6, height = 4)
+
+
 
 
 
