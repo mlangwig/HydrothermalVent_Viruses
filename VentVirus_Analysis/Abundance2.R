@@ -19,6 +19,12 @@ abund <- read.delim2("input/PlumeVentVirus-vs-Reads-CoverM-Count_MinCov.tsv")
 read_length <- read.delim2(file = "../../abundance/stats.tsv")
 read_length$file <- gsub("-",".",read_length$file) #replace symbol
 
+#metadata to map site names to reads
+abun_names <- read.delim2(file = "input/AssembliesToReads_Mapping.txt", header = FALSE)
+abun_names <- abun_names %>%
+  rename("Site" = "V1") %>%
+  rename("Reads" = "V2")
+
 ######################################### parse ##############################################
 
 #remove unmapped
@@ -34,46 +40,51 @@ abund_long <- separate(abund_long,
                        variable, into = c("variable", "Type"), sep = "(?<=\\.fastq\\.gz\\.)")
 abund_long$variable <- gsub(".fastq.gz.",".fastq.gz",abund_long$variable)
 
+#map the site names to the reads
+abund_long <- abun_names %>%
+  dplyr::select("Site", "Reads") %>%
+  right_join(abund_long, by = c("Reads" = "variable"))
+
 #now group by genome and variable and keep rows where covered fraction is >=.7
 abund_long_cov <- abund_long %>%
-  group_by(Genome, variable) %>%
+  group_by(Genome, Reads) %>%
   filter(any(Type == "Covered.Fraction" & value >= 0.7) | !any(Type == "Covered.Fraction")) %>%
   ungroup() %>%
-  group_by(variable, Type) %>%
+  group_by(Reads, Type) %>%
   mutate(Percentile_Rank=rank(as.numeric(value))/length(as.numeric(value))) %>% #add col with percentile rank per category
   ungroup()
 
 #map number of reads
 abund_long_cov <- read_length %>%
   dplyr::select(c("file", "num_seqs")) %>%
-  right_join(abund_long_cov, by = c("file" = "variable")) %>%
+  right_join(abund_long_cov, by = c("file" = "Reads")) %>%
   rename("Reads" = "file")
 abund_long_cov$value <- as.numeric(abund_long_cov$value)
 
 #divide read count by number of reads *100
 abund_long_norm <- abund_long_cov
 abund_long_norm <- abund_long_norm %>%
-  mutate(abun_norm = (value/num_seqs*100))
-
-#WHEN YOU COME BACK DROP EVERYTHING BUT READ COUNT ON ABUND LONG NORM
+  mutate(abun_norm = (value/num_seqs*100)) %>%
+  #filter(Type == "Read.Count")
+  filter(Type == "Relative.Abundance....")
 
 ##################################### host metadata ##############################################
 
 abund_long_norm_iphop <- iphop %>%
-  dplyr::select(Virus, "Host genus") %>%
+  dplyr::select(Virus, "Host.genus") %>%
   right_join(abund_long_norm, by = c("Virus" = "Genome"))   
 #only keep phylum and class of the tax string
-abund_long_norm_iphop <- abund_long_norm_iphop %>% separate("Host genus", c("d", "p", "c", "o", "f", "g"), 
+abund_long_norm_iphop <- abund_long_norm_iphop %>% separate("Host.genus", c("d", "p", "c", "o", "f", "g"), 
                                                             sep= ";")
 #select only phylum and class taxonomy
-abund_long_norm_iphop <- abund_long_norm_iphop %>% select(c("Virus","p", "c", "o", "f", "g","V1","abun_norm"))
+abund_long_norm_iphop <- abund_long_norm_iphop %>% select(c("Virus", "Site", "Reads", "p", "c", "o", "f", "g","abun_norm"))
 abund_long_norm_iphop <- abund_long_norm_iphop %>% 
   filter(str_detect(c, "c__Gammaproteobacteria") | str_detect(p, "p__Campylobacterota"))
 
 #abund_long_norm_iphop <- abund_long_norm_iphop %>% 
 #  filter(str_detect(c, "c__Gammaproteobacteria"))
 
-abund_long_norm_iphop$Site <- gsub("min1000","Plume", abund_long_norm_iphop$V1) 
+abund_long_norm_iphop$Site <- gsub("min1000","Plume", abund_long_norm_iphop$Site) 
 abund_long_norm_iphop$Site <- gsub("_scaffolds_Plume","", abund_long_norm_iphop$Site) 
 #abun_long_iphop_p$Site <- gsub("Seawater_scaffolds_Plume","Seawater", abun_long_iphop_p$Site) 
 
@@ -92,12 +103,12 @@ abund_long_norm_iphop$Locat <- gsub(".*MAR.*","Vent", abund_long_norm_iphop$Loca
 # filter(str_detect(o, "o__PS1"))
 
 # #for Proteobacteria keep class, everything else, keep phylum
-abund_long_proteo <- abund_long_norm_iphop %>% filter(grepl("p__Proteobacteria", p))
+abund_long_proteo <- abund_long_norm_iphop %>% filter(grepl("p__Pseudomonadota", p))
 abund_long_proteo <- abund_long_proteo %>% select(-c("p"))
 abund_long_proteo <- abund_long_proteo %>% rename("Taxa" = "c")
 abund_long_proteo <- abund_long_proteo %>% select(c("Virus","Taxa","Site","abun_norm", "Locat"))
 
-abund_long_norm_iphop <- abund_long_norm_iphop %>% filter(!grepl("p__Proteobacteria", p))
+abund_long_norm_iphop <- abund_long_norm_iphop %>% filter(!grepl("p__Pseudomonadota", p))
 abund_long_norm_iphop <- abund_long_norm_iphop %>% select(-c("c"))
 abund_long_norm_iphop <- abund_long_norm_iphop %>% rename("Taxa" = "p")
 abund_long_norm_iphop <- abund_long_norm_iphop %>% select(c("Virus","Taxa","Site","abun_norm", "Locat"))
@@ -219,6 +230,6 @@ plot <- abund_long_norm_iphop_p %>%
 #coord_flip()
 plot
 
-ggsave("output/coverm_CampGamma_normAbun.png", plot, 
-       height = 10, width = 13,
-       bg = "transparent")
+# ggsave("output/coverm_CampGamma_normAbun.png", plot, 
+#        height = 10, width = 13,
+#        bg = "transparent")

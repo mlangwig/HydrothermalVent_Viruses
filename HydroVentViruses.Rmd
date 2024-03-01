@@ -1354,6 +1354,19 @@ cov-mode 0 means alignment covers [at least 0.8 of query and of target](https://
 
 [See here](https://github.com/soedinglab/mmseqs2/wiki#cluster-tsv-format) for explanation of tsv output format.
 
+## mmseqs clustering using 49962 viruses
+
+1. Run mmseqs. 595,416 proteins between Plume and Vent binned and unbinned viruses.
+```{bash, eval = FALSE}
+mamba activate mmseqs2
+
+mmseqs createdb 49962_VentViruses_renamed.faa PlumeVent_Viruses_49962_DB
+
+nohup mmseqs cluster PlumeVent_Viruses_49962_DB PlumeVent_Viruses_49962_DB_clu /scratch/langwig/tmp/ --cov-mode 0 --min-seq-id 0.75 --threads 60 &
+
+mmseqs createtsv PlumeVent_Viruses_49962_DB PlumeVent_Viruses_49962_DB PlumeVent_Viruses_49962_DB_clu PlumeVent_mmseqs_clusters_49962viruses.tsv --threads 60
+```
+
 # Genomad for virus taxonomy
 
 1. Add this to your .bashrc first
@@ -2172,6 +2185,50 @@ find . -type f ! -name '*vRhyme*' -exec cp {} ../49962_VentViruses_individual_fn
 find . -type f -name "*.fasta" -exec cat {} + > ../../49962_final_VentViruses_Nlinked.fna
 ```
 
+#Redoing the protein file for the viruses after changing the input fna set
+I want to grab the protein files as they were made from VIBRANT/vRhyme because I realized when you translate yourself the fragment viruses that were cut out of scaffolds are off in their numbering and this makes it difficult for mapping back to VIBRANT annotations or any metadata produced by VIBRANT.
+
+1. Copy the VIBRANT faa files into dir and only extract unbinned viruses from that file
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/VIBRANT_faa
+
+./copy_files.sh
+
+cat *faa > VentViruses_prelim.faa
+```
+
+2. Conveniently, I already have the protein names of the unbinned viruses from the master table parsing in R. Using that to get the list of proteins I need from the file created above.
+```{bash, eval = FALSE}
+pwd
+/Users/margueritelangwig/Google Drive/My Drive/PhD_Projects/VentViruses/HydrothermalVent_Viruses/VentVirus_Analysis/output
+
+cut -f2,3 master_table_VentPlumeViruses.tsv | grep -v "vRhyme" > ../../../VirusGenomes/unbinned_virus_protein_list.txt
+
+sed 's/=/_/g' VentViruses_prelim.faa > VentViruses_prelim_renamed.faa 
+
+perl /scratch/langwig/scripts/screen_list_new.pl unbinned_virus_protein_list_final.txt VentViruses_prelim_renamed.faa keep > ../VentViruses_Unbinned.faa
+```
+
+3. Now get the vRhyme proteins.
+```{bash, eval = FALSE}
+./copy_files_vRhyme.sh
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/VIBRANT_faa/faa_vRhyme/6640_vMAGs
+
+for i in `cat vMAG_5708_list.txt`; do cp $i ../5708_vMAGs/; done
+
+cat *faa > ../../5708_VentVirus_vMAGs.faa
+```
+
+4. Make the final file of proteins for vMAGs and vUnbinned
+```{bash, eval = FALSE}
+cat 5708_VentVirus_vMAGs.faa VentViruses_Unbinned.faa > ../Virus_Genomes/faa/49962_VentViruses.faa
+
+sed 's/=/_/g' 49962_VentViruses.faa > 49962_VentViruses_renamed.faa
+```
+595,416 proteins in the 49,962 viruses
 
 ### Unused
 Generate scores of vMAGs?

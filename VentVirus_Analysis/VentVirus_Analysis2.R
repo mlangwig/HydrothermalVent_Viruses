@@ -178,6 +178,9 @@ master_table_noProtein <- master_table %>%
   select(vMAG, type, gene_count:f) %>%
   unique()
 
+# write.table(master_table_noProtein, file = "output/master_table_VentPlumeViruses_protein.tsv", col.names = TRUE,
+#             quote = FALSE, row.names = FALSE, sep = "\t")
+
 #master table no proteins of med-quality and better only
 master_table_noProtein_hq <- master_table %>%
   select(vMAG, type, gene_count:f) %>%
@@ -190,6 +193,8 @@ table(master_table_noProtein_hq$type)
 master_table_simple <- master_table %>%
   select(vMAG, scaffold, protein, KO, AMG, KO.name, Pfam, 
          Pfam.name, VOG, VOG.name, type, checkv_quality, completeness, contamination, sum_len:f)
+# write.table(master_table_simple, file = "output/master_table_VentPlumeViruses_simple.tsv", col.names = TRUE,
+#             quote = FALSE, row.names = FALSE, sep = "\t")
 
 #add iphop host prediction
 master_table_iphop <- iphop %>%
