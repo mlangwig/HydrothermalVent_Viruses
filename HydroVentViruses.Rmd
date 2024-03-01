@@ -1978,6 +1978,22 @@ pwd
 awk 'FNR > 1 || NR == 1' *.tsv > 52samples_VIBRANT_annos.tsv
 ```
 
+## Easier to use the long format files
+Note that this is for all proteins so will parse for just viral proteins or else the file is a bit large to work with.
+
+1. Copy the VIBRANT annotation files to one location
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/VIBRANT_Annos
+
+./copy_files2.sh
+```
+
+2. Combine as one without all headers
+```{bash, eval = FALSE}
+awk 'FNR > 1 || NR == 1' *.tsv > 52samples_VIBRANT_annos.tsv
+```
+
 3. Choose the best annotation per scaffold based on bit score and then e value for tie breaker. I completed this in R.
 
 # Check mmseqs cluster with different annos using alignment

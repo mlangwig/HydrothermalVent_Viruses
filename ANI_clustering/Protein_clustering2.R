@@ -8,8 +8,63 @@ library(reshape2)
 library(textshape)
 library(magrittr)
 library(readr)
+library(data.table)
 
-######################################### Read Input ################################################
+################################# get protein annotations  ####################################
+
+########################### inputs
+vibrant <- read_tsv(file = "Input/52_VIBRANT_annos_long_viruses.tsv", col_names = FALSE)
+vibrant <- vibrant %>%
+  rename("protein" = "X1") %>%
+  rename("id" = "X2") %>%
+  rename("evalue" = "X3") %>%
+  rename("score" = "X4")
+#this is the VIBRANT annotation data from all of the hmmtbl_parse.tsv files VIBRANT produces
+
+#master table for annotation mapping
+vib_annos <- read_tsv(file = "../VentVirus_Analysis/output/master_table_VentPlumeViruses_simple.tsv")
+vib_annos <- vib_annos %>%
+  select(c(KO, KO.name, Pfam, Pfam.name, VOG, VOG.name)) %>%
+  unique()
+
+kos <- vib_annos %>%
+  select(KO, KO.name) %>%
+  rename("id" = "KO",
+         "anno" = "KO.name") %>%
+  drop_na()
+pfams <- vib_annos %>%
+  select(Pfam, Pfam.name) %>%
+  rename("id" = "Pfam",
+         "anno" = "Pfam.name") %>%
+  drop_na()
+vogs <- vib_annos %>%
+  select(VOG, VOG.name) %>%
+  rename("id" = "VOG",
+         "anno" = "VOG.name") %>%
+  drop_na()
+vib_annos <- rbind(kos,pfams,vogs)
+vib_annos <- unique(vib_annos)
+
+###########################
+
+#filter for best supported annotation based on bit score and evalue
+#check if something has same bit score and e value
+test <- vibrant %>%
+  group_by(protein) %>%
+  filter(n() > 1, all(score == first(score), evalue == first(evalue)))
+#one example of this, Lau_Basin_Abe_k95_1492896_flag_1_multi_24.9933_len_5352_6
+vibrant_best <- vibrant %>%
+  group_by(protein) %>%
+  slice(which.max(score)) %>% #take highest bit score
+  slice(which.min(evalue)) #%>% #take lowest e value
+#this code kept the first anno for the Lau virus with two hits same scores, I am keeping it because
+#this hit has a higher v-score (Pfam v-score =1.0, VOG v-score = 0.79)
+
+#add annotation info to vibrant_best
+vibrant_best_anno <- vib_annos %>%
+  right_join(vibrant_best, by = c("id" = "id"))
+
+######################################### mmseqs Input ################################################
 mmseqs <- read.csv2(file = "Input/PlumeVent_mmseqs_clusters_49962viruses.tsv", sep = "\t", header = FALSE)
 #595,416 proteins clustered
 #note that output from mmseqs2 is in long format so repeat proteins in first column
@@ -76,6 +131,13 @@ mmseqs_long_meta <- mmseqs_long_meta %>%
          Site = gsub(".*Axial.*","Axial", Site)
   )
 
+#add VIBRANT annotations to mmseqs meta
+vibrant_best_anno <- vibrant_best_anno %>%
+  rename("anno_id" = "id")
+mmseqs_long_meta_annos <- vibrant_best_anno %>%
+  right_join(mmseqs_long_meta, by = c("protein" = "genome_vRhyme")) %>%
+  drop_na()
+
 # Find which clusters have proteins from Plume vs Deposit
 mmseqs_PD_ids <- mmseqs_long_meta %>%
   select(id, PD) %>%
@@ -121,7 +183,19 @@ mmseqs_PD_GD <- mmseqs_long_meta %>%
 # write_delim(mmseqs_PD, file = "Output/virus_proteins_mmseqsClusts_PD.tsv", 
 #             col_names = TRUE, delim = "\t")
 
-################################# get protein annotations  ####################################
+#add the mmseqs annotation info to the PD and GD cluster file to see how many have annotations/what they are
+
+mmseqs_PD_GD_annos <- mmseqs_long_meta_annos %>%
+  dplyr::select(c("anno_id", "anno", "protein")) %>%
+  right_join(mmseqs_PD_GD, by = c("protein" = "genome_vRhyme")) %>%
+  drop_na() %>%
+  rename("protein_no_vRhyme" = "protein",
+         "protein" = "genome") %>%
+  select(c(id, protein, protein_no_vRhyme,PD, Site, anno_id, anno))
+
+
+
+
 
 
 ################### unused
@@ -133,4 +207,7 @@ mmseqs_PD_GD <- mmseqs_long_meta %>%
 # test2 <- read.delim2("../../mmseqs/master_table_prots.tsv", header = TRUE)
 # test3 <- setdiff(test, test2) 
 # test4 <- setdiff(test2, test) 
+
+#test3 <- as.data.frame(setdiff(vibrant_best$id, vib_annos$id))
+
 
