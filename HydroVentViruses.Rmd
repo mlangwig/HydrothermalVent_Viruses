@@ -1991,10 +1991,20 @@ pwd
 
 2. Combine as one without all headers
 ```{bash, eval = FALSE}
-awk 'FNR > 1 || NR == 1' *.tsv > 52samples_VIBRANT_annos.tsv
+awk 'FNR > 1 || NR == 1' *.tsv > 52_VIBRANT_annos_long.tsv
 ```
 
-3. Choose the best annotation per scaffold based on bit score and then e value for tie breaker. I completed this in R.
+3. Filter for just viral proteins
+```{bash, eval = FALSE}
+cp virus_prots_list_renamed.txt ../../../VIBRANT_Annos/
+sed 's/=/_/g' virus_prots_list_renamed.txt > virus_prots_list_renamed_noEqual.txt
+
+sed 's/=/_/g' 52_VIBRANT_annos_long.tsv > 52_VIBRANT_annos_long_noEqual.tsv
+
+grep -F -f virus_prots_list_renamed_noEqual.txt 52_VIBRANT_annos_long_noEqual.tsv > 52_VIBRANT_annos_long_viruses.tsv
+```
+
+4. Choose the best annotation per scaffold based on bit score and then e value for tie breaker. I completed this in R.
 
 # Check mmseqs cluster with different annos using alignment
 

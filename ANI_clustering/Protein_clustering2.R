@@ -73,6 +73,7 @@ mmseqs <- read.csv2(file = "Input/PlumeVent_mmseqs_clusters_49962viruses.tsv", s
 mmseqs <- mmseqs %>%
   rename("cluster.representative" = "V1") %>%
   rename("cluster.member" = "V2")
+
 ############################################ mmseqs ####################################################
 
 #Filter for non-self match in cluster
@@ -183,8 +184,9 @@ mmseqs_PD_GD <- mmseqs_long_meta %>%
 # write_delim(mmseqs_PD, file = "Output/virus_proteins_mmseqsClusts_PD.tsv", 
 #             col_names = TRUE, delim = "\t")
 
-#add the mmseqs annotation info to the PD and GD cluster file to see how many have annotations/what they are
+################################ mmseqs PD GD add annotations ###################################
 
+#add the mmseqs annotation info to the PD and GD cluster file to see how many have annotations/what they are
 mmseqs_PD_GD_annos <- mmseqs_long_meta_annos %>%
   dplyr::select(c("anno_id", "anno", "protein")) %>%
   right_join(mmseqs_PD_GD, by = c("protein" = "genome_vRhyme")) %>%
@@ -193,10 +195,300 @@ mmseqs_PD_GD_annos <- mmseqs_long_meta_annos %>%
          "protein" = "genome") %>%
   select(c(id, protein, protein_no_vRhyme,PD, Site, anno_id, anno))
 
+tst <- mmseqs_PD_GD_annos %>%
+  count(anno)
+
+#################### mmseqs calculate and plot protein overlap among sites ################################
+
+#column with specific site name for counting
+mmseqs_PD_GD$SiteDetail <- mmseqs_PD_GD$genome_vRhyme
+mmseqs_PD_GD <- mmseqs_PD_GD %>%
+  mutate(SiteDetail = gsub(".*Lau_Basin.*", "Lau Basin Plume", SiteDetail),
+         SiteDetail = gsub(".*ELSC.*", "Lau Basin Deposit", SiteDetail), #not distinguishing Laus here bc PD will get at that
+         SiteDetail = gsub(".*Guaymas_Basin.*", "Guaymas Basin Plume", SiteDetail),
+         SiteDetail = gsub(".*Guaymas_[0-9].*", "Guaymas Basin Deposit", SiteDetail),
+         SiteDetail = gsub(".*Brothers.*", "Brothers Volcano", SiteDetail),
+         SiteDetail = gsub(".*Cayman.*", "Mid-Cayman Rise", SiteDetail), 
+         SiteDetail = gsub(".*EPR.*", "East Pacific Rise", SiteDetail),
+         SiteDetail = gsub(".*Axial.*", "Axial Seamount", SiteDetail),
+         SiteDetail = gsub(".*MAR.*", "Mid-Atlantic Ridge", SiteDetail)
+  )
+
+#get total protein count
+prot_totals <- mmseqs_PD_GD %>%
+  group_by(SiteDetail) %>%
+  count()
+
+library(widyr)
+#pairwise_count to get counts of pairs within a group! 
+mmseqs_PD_GD_counts <- pairwise_count(mmseqs_PD_GD, SiteDetail, id, sort = TRUE) 
+
+#checking with easy examples to see if counts are correct
+# test <- mmseqs_PD_GD %>%
+#   group_by(id) %>%
+#   filter(any(SiteDetail == "East Pacific Rise") & any(SiteDetail == "Axial Seamount"))
+
+test3 <- mmseqs_PD_GD %>%
+  group_by(id) %>%
+  filter(any(SiteDetail == "Mid-Cayman Rise") & any(SiteDetail == "Brothers Volcano"))
+
+################################## donut plot ############################################
+
+
+colors <- c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
+            "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#63c2ba", ##499e97
+            "Lau Basin Deposit" = "#3F78C1","Lau Basin Plume" = "#72a0db","Mid-Atlantic Ridge" = "#8c510a",
+            "Mid-Cayman Rise" = "#000000")
+
+#new col for calculating fraction of total
+mmseqs_PD_GD_counts <- mmseqs_PD_GD_counts %>%
+  group_by(item1) %>%
+  mutate(fraction = n/sum(n)) %>%
+  ungroup()
+# Compute the cumulative percentages (top of each rectangle)
+mmseqs_PD_GD_counts <- mmseqs_PD_GD_counts %>%
+  group_by(item1) %>%
+  mutate(ymax = cumsum(fraction),
+         ymin = c(0, head(ymax, n=-1)),
+         labelPosition = (ymax + ymin) / 2,
+         label = paste0(n)) %>%
+  ungroup()
+
+dev.off()
+p <- ggplot(mmseqs_PD_GD_counts, aes(x=2, y=n, fill=item2, ymax=ymax, ymin=ymin)) +
+  geom_bar(position = 'fill', stat = 'identity')  +
+  facet_wrap(~item1) + 
+  geom_text( x=2, aes(y=labelPosition, label=label), size=2.5, color = "white") + 
+  theme_void() +
+  theme(panel.spacing = unit(1.5, "lines")) +
+  xlim(0.5, 2.5) +
+  coord_polar(theta = 'y') + 
+  labs(x=NULL, y=NULL) +
+  scale_fill_manual(values = colors, name = "Site")
+p
+#the spacing of the number text in the donuts is off but good enough, I'm going to fix
+#in Inkscape
+
+#ggsave(p, filename = "Output/protein_clust_donuts.svg", width = 11, height = 6)
+#ggsave(p, filename = "Output/protein_clust_donuts.png")
+
+################################## UpSet plot ############################################
+
+#install.packages("ggupset")
+#install.packages("UpSetR")
+library(ggupset)
+library(UpSetR)
+
+movs <- tidy_movies
+
+#for ggupset
+test <- mmseqs_PD_GD %>%
+  select(c(id, SiteDetail)) %>%
+  unique() %>%
+  group_by(id) %>%
+  #count(id)
+  summarize(Sites = list(SiteDetail))
+# test <- mmseqs_PD_GD %>%
+#   group_by(id) %>%
+#   summarize(Sites = list(SiteDetail))
+
+prot_totals <- prot_totals %>%
+  rename("prot_totals" = "n")
+#for UpSetR  
+# test <- prot_totals %>%
+#   right_join(mmseqs_PD_GD, by = c("SiteDetail" = "SiteDetail"))
+test1 <- mmseqs_PD_GD
+test1 <- test1 %>% filter(id == "74916")
+
+test <- mmseqs_PD_GD
+test <- test %>% #test <- 
+  distinct(id, SiteDetail) %>% #distinct(id, SiteDetail)
+  unnest(cols = SiteDetail) %>%
+  mutate(SiteMember=1) %>%
+  pivot_wider(names_from = SiteDetail, values_from = SiteMember, values_fill = list(SiteMember = 0)) %>%
+  as.data.frame() #%>%
+  UpSetR::upset(sets = c("Axial Seamount", "Brothers Volcano", "East Pacific Rise", 
+                         "Guaymas Basin Deposit", "Guaymas Basin Plume", 
+                         "Lau Basin Deposit", "Lau Basin Plume", "Mid-Atlantic Ridge",
+                         "Mid-Cayman Rise"), keep.order = TRUE)
+dev.off()
+test2 <- mmseqs_PD_GD
+test2 %>% #test2 <- 
+  group_by(id, SiteDetail) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  pivot_wider(names_from = SiteDetail, values_from = count, values_fill = 0) %>%
+  as.data.frame() %>%
+  mutate_if(is.numeric, as.numeric) %>%
+  mutate(id = as.integer(id)) %>%
+  mutate_at(vars(-id), ~ifelse(. > 1, 1, .)) %>%
+  as.data.frame() %>%
+  UpSetR::upset(sets = c("Brothers Volcano", "Lau Basin Deposit", "Mid-Atlantic Ridge",
+                         "Guaymas Basin Deposit", "East Pacific Rise", 
+                         "Lau Basin Plume", "Guaymas Basin Plume", "Axial Seamount", 
+                         "Mid-Cayman Rise"),
+                keep.order = TRUE,
+                nintersects = NA,
+                order.by = "freq",
+                sets.x.label = "Number of proteins",
+                queries = list(
+                  upset_query(set="Brothers Volcano", fill="#B56478")
+                ))
+
+
+movies = ggplot2movies::movies
+movies[movies$mpaa == '', 'mpaa'] = NA 
+movies = movies[complete.cases(movies), ]  
+
+
+# set.metadata = list(data = metadata, 
+#                     plots = list(list(type = "text", column = "Type", assign = 9,
+#                                       colors = c(Plume = "navy", Deposit = "black")),
+#                                  list(type = "matrix_rows", column = "Sites_Map", 
+#                                       colors = c("Axial Seamount" = "#4F508C", "Guaymas Basin Plume" = "#63c2ba",
+#                                                  "Lau Basin Plume" = "#72a0db", "Guaymas Basin Deposit" = "#28827A",
+#                                                  "Brothers Volcano" = "#B56478", "Mid-Cayman Rise" = "#000000",
+#                                                  "Lau Basin Deposit" = "#3F78C1", "Mid-Atlantic Ridge" = "#8c510a",
+#                                                  "East Pacific Rise" = "#CE9A28"), alpha = 0.8)))
 
 
 
 
+# upset(movies, set.metadata = list(data = metadata, 
+#                                   plots = list(list(type = "hist", column = "avgRottenTomatoesScore", assign = 20), 
+#                                                list(type = "bool", column = "accepted", assign = 5, 
+#                                                     colors = c("#FF3333", "#006400")), 
+#                                                list(type = "text", column = "Cities", 
+#                                                     assign = 5, colors = c(Boston = "green", NYC = "navy", LA = "purple")),
+#                                                list(type = "matrix_rows", column = "Cities", 
+#                                                     colors = c(Boston = "green", NYC = "navy", LA = "purple"), alpha = 0.5))), 
+#       queries = list(list(query = intersects, params = list("Drama"), color = "red", active = F), 
+#                      list(query = intersects,params = list("Action", "Drama"), active = T), 
+#                      list(query = intersects, params = list("Drama", "Comedy", "Action"), color = "orange", active = T)), 
+#       attribute.plots = list(gridrows = 45, plots = list(list(plot = scatter_plot, 
+#                                                               x = "ReleaseDate", y = "AvgRating", queries = T), list(plot = scatter_plot, 
+#                                                                                                                      x = "AvgRating", y = "Watches", queries = F)), ncols = 2), query.legend = "bottom")
+
+install.packages("ComplexUpset")
+library(ComplexUpset)
+
+movies <- read.csv( system.file("extdata", "movies.csv", package = "UpSetR"), header=T, sep=";" )
+
+dev.off()
+test2 <- mmseqs_PD_GD
+test2 <- test2 %>% #test2 <- 
+  group_by(id, SiteDetail) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  pivot_wider(names_from = SiteDetail, values_from = count, values_fill = 0) %>%
+  as.data.frame() %>%
+  #mutate_if(is.numeric, as.numeric) %>%
+  mutate(id = as.integer(id)) %>%
+  mutate_at(vars(-id), ~ifelse(. > 1, 1, .)) %>%
+  as.data.frame() %>%
+  select(`Axial Seamount`:`East Pacific Rise`)
+
+ComplexUpset::upset(test2,
+      colnames(test2),
+      name = 'Site',
+      width_ratio=0.12,
+      set_sizes = 
+        upset_set_size() + ylab('Number of proteins'),
+      base_annotations = list(
+        'Intersection size'=intersection_size(
+          text=list(size = 2)
+        )
+      ),
+      themes = upset_modify_themes(
+        list(
+          #'intersections_matrix'=theme(text=element_text(angle=90)),
+          'overall_sizes'=theme(axis.text.x = element_text(size = 8, angle = 90))
+        )
+      ),
+      matrix = (
+        intersection_matrix(geom=geom_point(shape='circle filled', size=3)) +
+          scale_color_manual(values=c("Axial Seamount" = "#4F508C", "Guaymas Basin Plume" = "#63c2ba",
+                                                            "Lau Basin Plume" = "#72a0db", "Guaymas Basin Deposit" = "#28827A",
+                                                            "Brothers Volcano" = "#B56478", "Mid-Cayman Rise" = "#000000",
+                                                            "Lau Basin Deposit" = "#3F78C1", "Mid-Atlantic Ridge" = "#8c510a",
+                                                            "East Pacific Rise" = "#CE9A28"),
+                                                   guide=guide_legend(override.aes=list(shape='circle'))
+                             )),
+                    queries = list(upset_query(set="Axial Seamount", fill="#4F508C"),
+                                   upset_query(set="Guaymas Basin Plume", fill="#63c2ba"),
+                                   upset_query(set="Lau Basin Plume", fill="#72a0db"),
+                                   upset_query(set="Guaymas Basin Deposit", fill="#28827A"),
+                                   upset_query(set="Brothers Volcano", fill="#B56478"),
+                                   upset_query(set="Mid-Cayman Rise", fill="#000000"),
+                                   upset_query(set="Lau Basin Deposit", fill="#3F78C1"),
+                                   upset_query(set="Mid-Atlantic Ridge", fill="#8c510a"),
+                                   upset_query(set="East Pacific Rise", fill="#CE9A28"))
+      )
+
+
+
+upset(
+  movies,
+  colnames(movies)[3:5],
+  name='genre',
+  width_ratio=0.1,
+  matrix=(
+    intersection_matrix(geom=geom_point(shape='circle filled', size=3))
+    + scale_color_manual(
+      values=c('Action'='red', 'Adventure'='blue', 'Children'='yellow'),
+      guide=guide_legend(override.aes=list(shape='circle'))
+    )
+  ),
+  queries=list(
+    upset_query(set='Action', fill='red'),
+    upset_query(set='Adventure', fill='blue'),
+    upset_query(set='Children', fill='yellow')
+  )
+)
+
+
+
+
+
+#                                         "Lau Basin Plume" = "#72a0db", "Guaymas Basin Deposit" = "#28827A",
+#                                         "Brothers Volcano" = "#B56478", "Mid-Cayman Rise" = "#000000",
+#                                         "Lau Basin Deposit" = "#3F78C1", "Mid-Atlantic Ridge" = "#8c510a",
+#                                         "East Pacific Rise" = "#CE9A28"
+
+
+tidy_movies <- tidy_movies
+movs <- tidy_movies %>%
+  distinct(title, year, length, .keep_all=TRUE) %>%
+  unnest(cols = Genres) %>%
+  mutate(GenreMember=1) %>%
+  pivot_wider(names_from = Genres, values_from = GenreMember, values_fill = list(GenreMember = 0)) %>%
+  as.data.frame() %>%
+  UpSetR::upset(sets = c("Action", "Romance", "Short", "Comedy", "Drama"), keep.order = TRUE)
+
+movies <- read.csv(system.file("extdata", "movies.csv", package = "UpSetR"), 
+                   header = T, sep = ";")
+sets <- names(movies[3:19])
+avgRottenTomatoesScore <- round(runif(17, min = 0, max = 90))
+metadata <- as.data.frame(cbind(sets, avgRottenTomatoesScore))
+names(metadata) <- c("sets", "avgRottenTomatoesScore")
+metadata$avgRottenTomatoesScore <- as.numeric(as.character(metadata$avgRottenTomatoesScore))
+
+sets <- as.data.frame(colnames(test2))
+sets <- sets %>%
+  rename("Sites" = "colnames(test2)") %>%
+  slice(-1) %>%
+  mutate(Sites_Map = Sites)
+PD <- data.frame(Type = c("Plume", "Plume", "Plume", "Deposit", "Deposit", "Plume",
+               "Deposit", "Deposit", "Deposit"))
+metadata <-cbind(sets, PD)
+
+
+dev.off()
+p <- ggplot(test, aes(x = Sites)) +
+  geom_bar() +
+  #geom_text(stat='count', aes(label=after_stat(count)), vjust=-1) +
+  scale_x_upset(n_intersections = 20)
+p
 
 ################### unused
 
