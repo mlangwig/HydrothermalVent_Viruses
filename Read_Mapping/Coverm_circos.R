@@ -233,6 +233,9 @@ for (i in seq_len(nrow(t.sym))) {
   }
 }
 
+#change plume deposit matches to different color
+result_matrix["Guaymas_Basin", "ELSC_Bowl"] <- "blue"
+
 # Print the result
 #print(result_matrix)
 
@@ -267,13 +270,13 @@ group$group <- gsub(".*MAR.*","Mid-Atlantic Ridge", group$group)
 #group <- tibble::rownames_to_column(group, "vent")
 group$vent <- gsub("Lau_Basin_","P_", group$vent)
 group$vent <- gsub("ELSC_","D_", group$vent)
-group$vent <- gsub("Brothers_","", group$vent)
+group$vent <- gsub("Brothers_","D_", group$vent)
 group$vent <- gsub("Guaymas_Basin","P_Guaymas", group$vent)
-group$vent <- gsub("Guaymas_","", group$vent)
-group$vent <- gsub("Cayman_","", group$vent)
-group$vent <- gsub("Axial_","", group$vent)
-group$vent <- gsub("EPR_","", group$vent)
-group$vent <- gsub("MAR_","", group$vent)
+group$vent <- gsub("Guaymas_","D_", group$vent)
+group$vent <- gsub("Cayman_","P_", group$vent)
+group$vent <- gsub("Axial_","P_", group$vent)
+group$vent <- gsub("EPR_","D_", group$vent)
+group$vent <- gsub("MAR_","D_", group$vent)
 group$vent <- gsub("_"," ", group$vent)
 
 m.connect_test <- t.sym
@@ -284,10 +287,35 @@ colnames(m.connect_test) <- paste(group$vent)
 rownames(result_matrix) <- paste(group$vent)
 colnames(result_matrix) <- paste(group$vent)
 
+result_matrix_b <- result_matrix
+df <- result_matrix
+#change deposit and plume match ups to blue color
+### following code segment written by ChatGPT
+# Iterate over the columns
+# Iterate over the columns
+for (row_name in rownames(df)) {
+  # Check if the row starts with "P" or "D"
+  if (startsWith(row_name, "P") || startsWith(row_name, "D")) {
+    # Iterate over the columns
+    for (col_name in colnames(df)) {
+      # Check if the column starts with "P" or "D"
+      if (startsWith(col_name, "P") || startsWith(col_name, "D")) {
+        # Check if the value is "red"
+        if (df[row_name, col_name] == "red") {
+          # Check if both row and column start with different letters
+          if ((startsWith(row_name, "P") && startsWith(col_name, "D")) ||
+              (startsWith(row_name, "D") && startsWith(col_name, "P"))) {
+            # Change the value to "blue"
+            df[row_name, col_name] <- "blue"
+          }
+        }
+      }
+    }
+  }
+}
 
-# library(data.table)
-# m <- data.table(as.vector(m.connect_test), as.vector(col(m.connect_test)), as.vector(row(m.connect_test)))
-# m <- m[ order(m[,1]), ]
+
+###
 
 #vector again
 #group <- dplyr::pull(group)
@@ -295,31 +323,31 @@ group2 <- setNames(as.character(group$group), group$vent)
 
 #set colors
 grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
-             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#499e97",
-             "Lau Basin Plume" = "#3F78C1", "Lau Basin Deposit" = "#72a0db",
+             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#63c2ba",
+             "Lau Basin Plume" = "#72a0db", "Lau Basin Deposit" = "#3F78C1",
              "Mid-Atlantic Ridge" = "#8c510a", "Mid-Cayman Rise" = "#000000",
              #distinct vent locations above
-             "4281-140" = "#CE9A28", "4559-240" = "#28827A",
-             "4561" = "#28827A", "4571-419" = "#28827A", 
+             "D 4281-140" = "#CE9A28", "D 4559-240" = "#28827A",
+             "D 4561" = "#28827A", "D 4571-419" = "#28827A", 
              #Guaymas deposit
-             "D Mariner" = "#72a0db", "D Abe" = "#72a0db", "D Vai Lili V2" = "#72a0db", 
-             "D Tui Malila" = "#72a0db", "D Bowl" = "#72a0db",
+             "D Mariner" = "#3F78C1", "D Abe" = "#3F78C1", "D Vai Lili V2" = "#3F78C1", 
+             "D Tui Malila" = "#3F78C1", "D Bowl" = "#3F78C1",
              #Lau deposit
-             "Deep" = "#000000", "Shallow" = "#000000", 
+             "P Deep" = "#000000", "P Shallow" = "#000000", 
              #MCR
-             "Diffuse" = "#B56478", "NWCA" = "#B56478", "LC" = "#B56478", 
-             "NWCB" = "#B56478", "UC" = "#B56478", 
+             "D Diffuse" = "#B56478", "D NWCA" = "#B56478", "D LC" = "#B56478", 
+             "D NWCB" = "#B56478", "D UC" = "#B56478", 
              #Brothers Volcano
-             "Lucky" = "#8c510a", "Rainbow" = "#8c510a",
+             "D Lucky" = "#8c510a", "D Rainbow" = "#8c510a",
              #MAR
-             "P Abe" = "#3F78C1", "P Kilo Moana" = "#3F78C1", "P Mariner" = "#3F78C1",
-             "P Tahi Moana" = "#3F78C1", "P Tui Malila" = "#3F78C1", 
+             "P Abe" = "#72a0db", "P Kilo Moana" = "#72a0db", "P Mariner" = "#72a0db",
+             "P Tahi Moana" = "#72a0db", "P Tui Malila" = "#72a0db", 
              #Lau plume
-             "Seawater" = "#4F508C", "Plume" = "#4F508C", 
+             "P Seawater" = "#4F508C", "P Plume" = "#4F508C", 
              #Axial Seamount
-             "PIR-30" = "#CE9A28", 
+             "D PIR-30" = "#CE9A28", 
              #EPR
-             "P Guaymas" = "#499e97" 
+             "P Guaymas" = "#63c2ba" 
              #Guaymas plume
 ) #specify colors of sites/outer ring
 
@@ -341,7 +369,7 @@ chordDiagram(m.connect_test,
              annotationTrack = c("grid"),
              annotationTrackHeight = c(.06, .06),
              #link.border = "black",
-             link.border = result_matrix,
+             link.border = df, #result_matrix
              link.sort = FALSE,
              transparency = 0.3,
              symmetric = TRUE,
@@ -367,35 +395,35 @@ circos.track(track.index = 2, panel.fun = function(x, y) {
 
 highlight.sector(sector.index = c("P Abe", "P Kilo Moana",
                                   "P Mariner", "P Tahi Moana",
-                                  "P Tui Malila"), track.index = 1, col = "#3F78C1", 
+                                  "P Tui Malila"), track.index = 1, col = "#72a0db", 
                  text = "Lau Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
                                   "D Bowl", "D Abe",
-                                  "D Vai Lili V2"), track.index = 1, col = "#72a0db", 
+                                  "D Vai Lili V2"), track.index = 1, col = "#3F78C1", 
                  text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("NWCA", "NWCB", "LC",
-                                  "UC", "Diffuse"), track.index = 1, col = "#B56478", 
+highlight.sector(sector.index = c("D NWCA", "D NWCB", "D LC",
+                                  "D UC", "D Diffuse"), track.index = 1, col = "#B56478", 
                  text = "Brothers Volcano", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("4561", "4571-419",
-                                  "4559-240"), track.index = 1, col = "#28827A", 
+highlight.sector(sector.index = c("D 4561", "D 4571-419",
+                                  "D 4559-240"), track.index = 1, col = "#28827A", 
                  text = "Guaymas Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("P Guaymas"), track.index = 1, col = "#499e97", 
+highlight.sector(sector.index = c("P Guaymas"), track.index = 1, col = "#63c2ba", 
                  text = "Guaymas Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("Deep", "Shallow"), track.index = 1, col = "#000000", 
+highlight.sector(sector.index = c("P Deep", "P Shallow"), track.index = 1, col = "#000000", 
                  text = "Mid-Cayman Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("Plume", "Seawater"), track.index = 1, col = "#4F508C", 
+highlight.sector(sector.index = c("P Plume", "P Seawater"), track.index = 1, col = "#4F508C", 
                  text = "Axial Seamount", cex = 0.5, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("4281-140", "PIR-30"), track.index = 1, col = "#CE9A28", 
+highlight.sector(sector.index = c("D 4281-140", "D PIR-30"), track.index = 1, col = "#CE9A28", 
                  text = "East Pacific Rise", cex = 0.5, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("Lucky", "Rainbow"), track.index = 1, col = "#8c510a", 
+highlight.sector(sector.index = c("D Lucky", "D Rainbow"), track.index = 1, col = "#8c510a", 
                  text = "Mid-Atlantic Ridge", cex = 0.5, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 
