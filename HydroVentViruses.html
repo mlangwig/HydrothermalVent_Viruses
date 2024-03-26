@@ -191,7 +191,10 @@
             <li><a href="#run-gtdbtk-v1.5.0-on-vent-mags">Run GTDBtk v1.5.0 on Vent MAGs</a></li>
             <li><a href="#using-codys-script-to-parse-drep-and-skani-output">Using Cody’s script to parse dRep and skani output</a></li>
             <li><a href="#using-codys-rfasta-to-split-faa-unbinned-viruses">Using Codys rfasta to split faa unbinned viruses</a></li>
-            <li><a href="#clustering-viral-protein-content-using-mmseqs">Clustering viral protein content using mmseqs</a></li>
+            <li><a href="#clustering-viral-protein-content-using-mmseqs">Clustering viral protein content using mmseqs</a>
+            <ul>
+            <li><a href="#mmseqs-clustering-using-49962-viruses">mmseqs clustering using 49962 viruses</a></li>
+            </ul></li>
             <li><a href="#genomad-for-virus-taxonomy">Genomad for virus taxonomy</a>
             <ul>
             <li><a href="#genomad-49962-viruses">Genomad 49,962 viruses</a></li>
@@ -212,6 +215,8 @@
             <ul>
             <li><a href="#running-coverm-again-with-49962-viruses">Running coverm again with 49,962 viruses</a></li>
             </ul></li>
+            <li><a href="#downloading-the-microbial-mags-from-ncbi">Downloading the microbial MAGs from NCBI</a></li>
+            <li><a href="#run-fastqc-on-reads">Run FASTQC on reads</a></li>
             <li><a href="#translate-viruses-to-protein-yourself-using-prodigal">Translate viruses to protein yourself using prodigal</a></li>
             <li><a href="#run-mmseqs-to-cluster-viral-proteins">Run mmseqs to cluster viral proteins</a></li>
             <li><a href="#run-phrogs-to-get-viral-protein-annotations">Run PHROGs to get viral protein annotations</a></li>
@@ -219,7 +224,10 @@
             <li><a href="#get-total-read-count-for-all-fastq-reads">Get total read count for all fastq reads</a></li>
             <li><a href="#get-size-of-assemblies">Get size of assemblies</a></li>
             <li><a href="#use-bitscore-to-choose-phrogs-or-kegg-annotation">Use bitscore to choose PHROGs or KEGG annotation</a></li>
-            <li><a href="#use-bitscore-to-choose-best-vibrant-annotation">Use bitscore to choose best VIBRANT annotation</a></li>
+            <li><a href="#use-bitscore-to-choose-best-vibrant-annotation">Use bitscore to choose best VIBRANT annotation</a>
+            <ul>
+            <li><a href="#easier-to-use-the-long-format-files">Easier to use the long format files</a></li>
+            </ul></li>
             <li><a href="#check-mmseqs-cluster-with-different-annos-using-alignment">Check mmseqs cluster with different annos using alignment</a></li>
             <li><a href="#redoing-vmags-with-high-protein-redundancy">Redoing vMAGs with high protein redundancy</a>
             <ul>
@@ -1180,7 +1188,7 @@ nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data1
 </div>
 <div id="skani-v0.2.0" class="section level2">
 <h2>skani v0.2.0</h2>
-<p>Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off for &gt;5k genomes.</p>
+<p>Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off when input is &gt;5k genomes.</p>
 <ol style="list-style-type: decimal">
 <li>vskani not functioning as expected yet so I am running skani, filtering it for 50AF, then using those genomes to cluster with mcl</li>
 </ol>
@@ -1259,6 +1267,53 @@ nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_v
 
 sed &#39;s/\t/\,/g&#39; dereplicated_virus.clusters | grep &quot;,&quot; | wc</code></pre>
 <p>Download dereplicated clusters file and process in ANI_clust.R.</p>
+</div>
+<div id="skani-v0.2.0-3kb-and-49962-viruses" class="section level3">
+<h3>skani v0.2.0 3kb and 49,962 Viruses</h3>
+<ol style="list-style-type: decimal">
+<li>Make folder of vMAG 3kb viruses (all of them, 5,708) and file of 3kb unbinned viruses (22,511):</li>
+</ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/seqkit
+
+awk &#39;$5 &gt;= 3000&#39; PlumeVentVirus_Seqkit_final.txt &gt; 3kb_49962_list.txt
+cut -f1 -d &quot; &quot; 3kb_49962_list.txt &gt; 3kb_49962_list_final.txt
+grep -v &quot;vRhyme&quot; 3kb_49962_list_final.txt &gt; 3kb_49962_list_noVrhyme.txt
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/skani/49962_viruses
+
+perl /scratch/langwig/scripts/screen_list_new.pl 3kb_49962_list_noVrhyme.txt ../../Virus_Genomes/49962_final_VentViruses.fna keep &gt; unbinned_VentViruses_3kb.fna
+
+mkdir 3kb_5708_vMAGs
+ln -s ../../../Virus_Genomes/fna/fna_vMAGs_separate/*fasta .</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Run skani</li>
+</ol>
+<pre class="bash"><code>mamba activate vskani
+mamba remove skani
+source ~/.bashrc
+
+nohup vskani all -c unbinned_VentViruses_3kb.fna -d 3kb_5708_vMAGs/ -x .fasta -o skani_v2_ANI_VentVirus_200m30cm_3kb_49962.tsv -m 200 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &amp;
+
+awk &#39;{ if ($4 &gt;= 50 &amp;&amp; $5 &gt;= 50) print $1 &quot;\t&quot; $2 &quot;\t&quot; $3 &quot;\t&quot; $4 &quot;\t&quot; $5 &quot;\t&quot; $6 &quot;\t&quot; $7 }&#39; skani_v2_ANI_VentVirus_200m30cm_3kb_49962.tsv &gt; skani_v2_ANI_VentVirus_200m30cm_3kb_49962_50AF.tsv</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Normalize ANI by lowest AF (ANI*lowest AF/100^2) and then filter for ≥70 ANI. This makes the preprocessed file.</li>
+</ol>
+<pre class="bash"><code>Rscript create_preprocessed.R</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Run mcl clustering on the processed file you output from the Rscript.</li>
+</ol>
+<pre class="bash"><code>mamba activate vskani
+
+mcxload -abc skani_v2_ANI_VentVirus_200m30cm_3kb_49962_50AF_processed.tsv -o skani_processed.mci -write-tab skani_processed.mcxload
+
+nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_virus_49962.clusters &amp;
+
+sed &#39;s/\t/\,/g&#39; dereplicated_virus.clusters | grep &quot;,&quot; | wc</code></pre>
+<ol start="5" style="list-style-type: decimal">
+<li>Download dereplicated clusters file and process in ANI_clust.R.</li>
+</ol>
 </div>
 </div>
 </div>
@@ -1367,6 +1422,19 @@ nohup mmseqs cluster PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu /storage1/dat
 mmseqs createtsv PlumeVent_Viruses_DB PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu PlumeVent_mmseqs_clusters.tsv --threads 20</code></pre>
 <p>cov-mode 0 means alignment covers <a href="https://github.com/soedinglab/mmseqs2/wiki#how-to-set-the-right-alignment-coverage-to-cluster">at least 0.8 of query and of target</a>. Using default clustering mode, –cluster-mode 0. This is the <a href="https://github.com/soedinglab/mmseqs2/wiki#clustering-modes">greedy set cover algorithm</a>, which iteratively selects the node with most connections and all its connected nodes to form a cluster and repeats until all nodes are in a cluster.</p>
 <p><a href="https://github.com/soedinglab/mmseqs2/wiki#cluster-tsv-format">See here</a> for explanation of tsv output format.</p>
+<div id="mmseqs-clustering-using-49962-viruses" class="section level2">
+<h2>mmseqs clustering using 49962 viruses</h2>
+<ol style="list-style-type: decimal">
+<li>Run mmseqs. 595,416 proteins between Plume and Vent binned and unbinned viruses.</li>
+</ol>
+<pre class="bash"><code>mamba activate mmseqs2
+
+mmseqs createdb 49962_VentViruses_renamed.faa PlumeVent_Viruses_49962_DB
+
+nohup mmseqs cluster PlumeVent_Viruses_49962_DB PlumeVent_Viruses_49962_DB_clu /scratch/langwig/tmp/ --cov-mode 0 --min-seq-id 0.75 --threads 60 &amp;
+
+mmseqs createtsv PlumeVent_Viruses_49962_DB PlumeVent_Viruses_49962_DB PlumeVent_Viruses_49962_DB_clu PlumeVent_mmseqs_clusters_49962viruses.tsv --threads 60</code></pre>
+</div>
 </div>
 <div id="genomad-for-virus-taxonomy" class="section level1">
 <h1>Genomad for virus taxonomy</h1>
@@ -1732,7 +1800,74 @@ nohup ./run_coverm_count_MinCov.sh &amp;</code></pre>
 mamba activate coverm
 
 nohup ./run_coverm_count_MinCov.sh &amp;</code></pre>
+<div id="checking-bin-115" class="section level3">
+<h3>Checking bin 115</h3>
+<p>Lau_Basin_Tahi_Moana_vRhyme_bin_115 has relative abundance that seems way too high so checking the vMAG by read mapping.</p>
+<ol style="list-style-type: decimal">
+<li>Organize the input files</li>
+</ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/abundance/check_LB_Tahi_bin_115/Reads
+
+find /storage2/Reads/HydroPlume/ -name &quot;TahiMoana_*&quot; | xargs -i ln -s {} .
+find /storage2/Reads/HydroPlume/ -name &quot;Abe_SRR1217565*&quot; | xargs -i ln -s {} .
+
+cp Lau_Basin_Tahi_Moana_vRhyme_bin_115.fasta ../../../abundance/check_LB_Tahi_bin_115/
+
+mamba create -n ncbi_datasets
+mamba activate ncbi_datasets
+mamba install -c conda-forge ncbi-datasets-cli
+
+datasets download genome accession GCA_012966065.1 --include protein,genome,seq-report</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Run it</li>
+</ol>
+<pre class="bash"><code>mamba activate coverm
+
+nohup ./run_coverm_count_MinCov.sh &amp;</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Trying with vMAG scaffolds separate</li>
+</ol>
+<pre class="bash"><code>mamba activate coverm
+
+nohup ./run_coverm_count_MinCov_4scafs.sh &amp;</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Trying to map all the MAGs from the project at the same time</li>
+</ol>
+<pre class="bash"><code>pwd
+
+ln -s /scratch/langwig/Projects/VentPlumeViruses/ncbi_MAGs/Plume_MAGs/*fna .
+
+nohup ./run_coverm_count_MinCov_4scafs_PlumeMAGs.sh &amp;</code></pre>
 </div>
+</div>
+</div>
+<div id="downloading-the-microbial-mags-from-ncbi" class="section level1">
+<h1>Downloading the microbial MAGs from NCBI</h1>
+<ol style="list-style-type: decimal">
+<li>Plume first because smaller</li>
+</ol>
+<pre class="bash"><code>mamba activate ncbi_datasets
+
+datasets download genome accession PRJNA488180 --include protein,genome
+
+find ncbi_dataset/data/GC* -name &quot;*fna&quot; | xargs -i cp {} Plume_MAGs/</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Download vent microbial MAGs</li>
+</ol>
+<pre class="bash"><code>mamba activate ncbi_datasets
+
+datasets download genome accession PRJNA488180 --include protein,genome
+
+find ncbi_dataset/data/GC* -name &quot;*fna&quot; | xargs -i cp {} Plume_MAGs/</code></pre>
+</div>
+<div id="run-fastqc-on-reads" class="section level1">
+<h1>Run FASTQC on reads</h1>
+<pre class="bash"><code>mamba create -n fastqc
+mamba activate fastqc
+mamba install bioconda::fastqc
+
+nohup fastqc -o /scratch/langwig/Projects/VentPlumeViruses/fastqc -d /scratch/langwig/tmp/ -t 20 *fastq.gz &amp;</code></pre>
 </div>
 <div id="translate-viruses-to-protein-yourself-using-prodigal" class="section level1">
 <h1>Translate viruses to protein yourself using prodigal</h1>
@@ -1909,9 +2044,33 @@ mv output.txt mmseqs_KEGG_phrogs_annos.txt</code></pre>
 <li>Combine as one without all headers</li>
 </ol>
 <pre class="bash"><code>awk &#39;FNR &gt; 1 || NR == 1&#39; *.tsv &gt; 52samples_VIBRANT_annos.tsv</code></pre>
+<div id="easier-to-use-the-long-format-files" class="section level2">
+<h2>Easier to use the long format files</h2>
+<p>Note that this is for all proteins so will parse for just viral proteins or else the file is a bit large to work with.</p>
+<ol style="list-style-type: decimal">
+<li>Copy the VIBRANT annotation files to one location</li>
+</ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/VIBRANT_Annos
+
+./copy_files2.sh</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Combine as one without all headers</li>
+</ol>
+<pre class="bash"><code>awk &#39;FNR &gt; 1 || NR == 1&#39; *.tsv &gt; 52_VIBRANT_annos_long.tsv</code></pre>
 <ol start="3" style="list-style-type: decimal">
+<li>Filter for just viral proteins</li>
+</ol>
+<pre class="bash"><code>cp virus_prots_list_renamed.txt ../../../VIBRANT_Annos/
+sed &#39;s/=/_/g&#39; virus_prots_list_renamed.txt &gt; virus_prots_list_renamed_noEqual.txt
+
+sed &#39;s/=/_/g&#39; 52_VIBRANT_annos_long.tsv &gt; 52_VIBRANT_annos_long_noEqual.tsv
+
+grep -F -f virus_prots_list_renamed_noEqual.txt 52_VIBRANT_annos_long_noEqual.tsv &gt; 52_VIBRANT_annos_long_viruses.tsv</code></pre>
+<ol start="4" style="list-style-type: decimal">
 <li>Choose the best annotation per scaffold based on bit score and then e value for tie breaker. I completed this in R.</li>
 </ol>
+</div>
 </div>
 <div id="check-mmseqs-cluster-with-different-annos-using-alignment" class="section level1">
 <h1>Check mmseqs cluster with different annos using alignment</h1>
@@ -2097,8 +2256,43 @@ find . -type f ! -name &#39;*vRhyme*&#39; -exec cp {} ../49962_VentViruses_indiv
 find . -type f -name &quot;*.fasta&quot; -exec cat {} + &gt; ../../49962_final_VentViruses_Nlinked.fna</code></pre>
 <p>#Redoing the protein file for the viruses after changing the input fna set I want to grab the protein files as they were made from VIBRANT/vRhyme because I realized when you translate yourself the fragment viruses that were cut out of scaffolds are off in their numbering and this makes it difficult for mapping back to VIBRANT annotations or any metadata produced by VIBRANT.</p>
 <ol style="list-style-type: decimal">
-<li></li>
+<li>Copy the VIBRANT faa files into dir and only extract unbinned viruses from that file</li>
 </ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/VIBRANT_faa
+
+./copy_files.sh
+
+cat *faa &gt; VentViruses_prelim.faa</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Conveniently, I already have the protein names of the unbinned viruses from the master table parsing in R. Using that to get the list of proteins I need from the file created above.</li>
+</ol>
+<pre class="bash"><code>pwd
+/Users/margueritelangwig/Google Drive/My Drive/PhD_Projects/VentViruses/HydrothermalVent_Viruses/VentVirus_Analysis/output
+
+cut -f2,3 master_table_VentPlumeViruses.tsv | grep -v &quot;vRhyme&quot; &gt; ../../../VirusGenomes/unbinned_virus_protein_list.txt
+
+sed &#39;s/=/_/g&#39; VentViruses_prelim.faa &gt; VentViruses_prelim_renamed.faa 
+
+perl /scratch/langwig/scripts/screen_list_new.pl unbinned_virus_protein_list_final.txt VentViruses_prelim_renamed.faa keep &gt; ../VentViruses_Unbinned.faa</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Now get the vRhyme proteins.</li>
+</ol>
+<pre class="bash"><code>./copy_files_vRhyme.sh
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/VIBRANT_faa/faa_vRhyme/6640_vMAGs
+
+for i in `cat vMAG_5708_list.txt`; do cp $i ../5708_vMAGs/; done
+
+cat *faa &gt; ../../5708_VentVirus_vMAGs.faa</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Make the final file of proteins for vMAGs and vUnbinned</li>
+</ol>
+<pre class="bash"><code>cat 5708_VentVirus_vMAGs.faa VentViruses_Unbinned.faa &gt; ../Virus_Genomes/faa/49962_VentViruses.faa
+
+sed &#39;s/=/_/g&#39; 49962_VentViruses.faa &gt; 49962_VentViruses_renamed.faa</code></pre>
+<p>595,416 proteins in the 49,962 viruses</p>
 <div id="unused" class="section level3">
 <h3>Unused</h3>
 <p>Generate scores of vMAGs?</p>

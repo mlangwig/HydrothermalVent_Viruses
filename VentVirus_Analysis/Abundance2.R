@@ -65,8 +65,8 @@ abund_long_cov$value <- as.numeric(abund_long_cov$value)
 abund_long_norm <- abund_long_cov
 abund_long_norm <- abund_long_norm %>%
   mutate(abun_norm = (value/num_seqs*100)) %>%
-  #filter(Type == "Read.Count")
-  filter(Type == "Relative.Abundance....")
+  filter(Type == "Read.Count")
+  #filter(Type == "Relative.Abundance....")
 
 ##################################### host metadata ##############################################
 

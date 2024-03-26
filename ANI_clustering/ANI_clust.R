@@ -10,59 +10,72 @@ library(tidygraph)
 library(reshape2)
 library(textshape)
 library(magrittr)
+library(stringi)
 
 ######################################### major inputs ################################################
 
-skani_ani<-read.delim2(file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF.tsv")
-mcl_clusters <- read.delim2(file = "Input/skani_v2/dereplicated_virus.clusters", sep = "\t", header = FALSE)
-genomad <- read.delim2(file = "../../genomad/vUnbinned_vMAGs_1500Ns_PlumeVent_virus_summary.tsv")
-iphop <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genus_m90.csv")
+ani<-read.delim2(file = "Input/skani_49962/skani_v2_ANI_VentVirus_200m30cm_3kb_49962_50AF_processed.tsv",
+                 header = FALSE)
+ani <- ani %>%
+  rename("Ref_name" = "V1",
+         "Query_name" = "V2",
+         "ANI_norm" = "V3")
+mcl_clusters <- read.delim2(file = "Input/skani_49962/dereplicated_virus_49962.clusters", sep = "\t", header = FALSE)
+genomad <- read.delim2(file = "../VentVirus_Analysis/input/49962_final_VentViruses_Nlinked_taxonomy_parsed.tsv")
+iphop <- read.csv(file = "../VentVirus_Analysis/input/Host_prediction_to_genus_m90_49962.csv")
+metadata <- read.delim2(file = "../VentVirus_Analysis/output/master_table_VentPlumeViruses_simple.tsv")
+metadata <- metadata %>%
+  select(c(vMAG, type:f)) %>%
+  unique()
 
 #################################### skani preprocessed ################################################
-# After running skani, create the processed file here:
+# # After running skani, create the processed file here:
+# 
+# #make number columns numeric
+# skani_ani <- transform(skani_ani,
+#                           ANI = as.numeric(ANI),
+#                           Align_fraction_ref = as.numeric(Align_fraction_ref),
+#                           Align_fraction_query = as.numeric(Align_fraction_query))
+# #filter for >50AF
+# skani_ani<-filter(skani_ani, Align_fraction_ref >= 50.0)
+# skani_ani<-filter(skani_ani, Align_fraction_query >= 50.0)
+# 
+# #remove .fasta
+# skani_ani$Ref_file <- gsub(".fasta","",skani_ani$Ref_file)
+# skani_ani$Query_file <- gsub(".fasta","",skani_ani$Query_file)
+# #remove 3kb_vMAGs
+# # skani_ani$Ref_file <- gsub("vMAGs_3kb_50AF/","",skani_ani$Ref_file)
+# # skani_ani$Query_file <- gsub("vMAGs_3kb_50AF/","",skani_ani$Query_file)
+# skani_ani$Ref_file <- gsub("3kb_vMAGs/","",skani_ani$Ref_file)
+# skani_ani$Query_file <- gsub("3kb_vMAGs/","",skani_ani$Query_file)
+# 
+# ###################### create file for mcl clustering ######################
 
-#make number columns numeric
-skani_ani <- transform(skani_ani,
-                          ANI = as.numeric(ANI),
-                          Align_fraction_ref = as.numeric(Align_fraction_ref),
-                          Align_fraction_query = as.numeric(Align_fraction_query))
-#filter for >50AF
-skani_ani<-filter(skani_ani, Align_fraction_ref >= 50.0)
-skani_ani<-filter(skani_ani, Align_fraction_query >= 50.0)
+#THIS WAS COMPLETED ON THE SERVER USING AN R SCRIPT THAT DOES THE SAME EXACT AS THE FOLLOWING
 
-#remove .fasta
-skani_ani$Ref_file <- gsub(".fasta","",skani_ani$Ref_file)
-skani_ani$Query_file <- gsub(".fasta","",skani_ani$Query_file)
-#remove 3kb_vMAGs
-# skani_ani$Ref_file <- gsub("vMAGs_3kb_50AF/","",skani_ani$Ref_file)
-# skani_ani$Query_file <- gsub("vMAGs_3kb_50AF/","",skani_ani$Query_file)
-skani_ani$Ref_file <- gsub("3kb_vMAGs/","",skani_ani$Ref_file)
-skani_ani$Query_file <- gsub("3kb_vMAGs/","",skani_ani$Query_file)
-
-###################### create file for mcl clustering ######################
-ani <- skani_ani %>%
-  select(-Ref_file, -Query_file)
-
-#only keep lowest AF
-ani$align_frac = ifelse(ani$Align_fraction_ref < ani$Align_fraction_query,
-                        ani$Align_fraction_ref, ani$Align_fraction_query)
-
-#normalize ANI by lowest AF
-ani$ANI_norm = ani$ANI*ani$align_frac/100^2
-
-#remove extraneous columns
-ani <- ani %>%
-  select(-ANI, -Align_fraction_ref, -Align_fraction_query, -align_frac)
-
-# remove  ANI below 70
-ani<-filter(ani, ANI_norm >= 0.70)
+# ani <- skani_ani %>%
+#   select(-Ref_file, -Query_file)
+# 
+# #only keep lowest AF
+# ani$align_frac = ifelse(ani$Align_fraction_ref < ani$Align_fraction_query,
+#                         ani$Align_fraction_ref, ani$Align_fraction_query)
+# 
+# #normalize ANI by lowest AF
+# ani$ANI_norm = ani$ANI*ani$align_frac/100^2
+# 
+# #remove extraneous columns
+# ani <- ani %>%
+#   select(-ANI, -Align_fraction_ref, -Align_fraction_query, -align_frac)
+# 
+# # remove  ANI below 70
+# ani<-filter(ani, ANI_norm >= 0.70)
 
 
-# File "ani" and the following table output are what was used as input for 
+# File "ani" and the following table output are what was used as input for
 #mcl clustering - these are the viruses that are clustered
-
-# write.table(ani, file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF_preprocessed.tsv",
-#             quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+# 
+# # write.table(ani, file = "Input/skani_v2/skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF_preprocessed.tsv",
+# #             quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
 
 
 ######################################### mcl ################################################
@@ -86,7 +99,7 @@ mcl_clusters <- mcl_clusters %>%
   mutate(count=n()) %>%
   filter(count >= 2) %>%
   select(-count) %>%
-  filter(id!="1") %>% #remove Pseudomonas virus cluster
+  #filter(id!="1") %>% #remove Pseudomonas virus cluster
   ungroup()
 
 #write the mcl table in this format
@@ -134,9 +147,11 @@ mcl_clusters <- mcl_clusters %>%
 ani <- subset(ani, id_Q == id)
 
 #get average ANI per cluster
+ani$ANI_norm <- as.numeric(ani$ANI_norm)
 ani <- ani %>% 
   group_by(id) %>% 
-  mutate(ANI_mean = mean(ANI_norm))
+  mutate(ANI_mean = mean(ANI_norm)) %>%
+  ungroup()
 
 ################################ map virus metadata to clusters ##########################################
 
@@ -146,28 +161,19 @@ ani_long <- melt(ani_long, id = c('id', 'ANI_mean')) %>%
   select(-'variable') %>%
   unique()
 
-##create needed input to map metadata to clusters
-#change one column name so they match
-vUnbinned_VP_master <- vUnbinned_VP_master %>% rename(vMAG = scaffold)
-#get columns of interest
-vMAG <- vMAG_VP_master %>% select(c('vMAG', 'type', 'contig_length',
-                                    'checkv_quality', 'provirus',
-                                    'completeness', 'contamination'))
-
-vUnbinned <- vUnbinned_VP_master %>% select(c('vMAG', 'type', 'contig_length',
-                                              'checkv_quality', 'provirus',
-                                              'completeness', 'contamination'))
-#bind/concatenate
-allVirus_master <- rbind(vMAG, vUnbinned) %>%
-  unique()
-#allVirus_master %>% 
+#check how many clusters are composed of just 2 viruses
+ani_2clusts <- ani_long %>%
+  group_by(id) %>%
+  filter(n() == 2)
+length(unique(ani_2clusts$id))
+#687 are pairwise
 
 #####change vMAG names from first scaffold name to file name for mapping
-
 #separate the vrhyme and non-vrhyme to make life easier
 ani_long_vrhyme <- ani_long %>% 
   filter(grepl("vRhyme", value)) %>%
   rename(value, "Virus"= "value" )
+#151 vMAGs in ani clusts
 
 ani_long_vrhyme <- ani_long_vrhyme %>% separate(Virus, c("Virus", NA), 
                                                         sep= "(?=_scaffold|_NODE|_k95)")
@@ -184,19 +190,10 @@ ani_long <- ani_long %>% filter(!grepl("vRhyme", value)) %>%
 ani_long <- rbind(ani_long_vrhyme, ani_long)
 
 #vlookup
-ani_long_metadata <- allVirus_master %>%
-  dplyr::select('vMAG', 'type', 'contig_length',
-                'checkv_quality', 'provirus',
-                'completeness', 'contamination') %>%
+ani_long_metadata <- metadata %>%
   right_join(ani_long, by = c("vMAG" = "Virus"))
 
-#add genomad taxonomy
-ani_long_metadata <- genomad %>%
-  dplyr::select('seq_name', 'taxonomy', 'n_genes', 'n_hallmarks') %>%
-  right_join(ani_long_metadata, by = c("seq_name" = "vMAG")) %>%
-  rename("vMAG" = "seq_name")
-
-#NOTE THAT MAPPING IPHOP DUPLICATES SOME VIRUSES BC SOME VIRUSES HAVE 1+ HOST PREDICTION SO DON'T DO THIS IF COUNTING
+#NOTE THAT MAPPING IPHOP DUPLICATES SOME VIRUSES BC SOME VIRUSES HAVE 1+ HOST PREDICTION
 #add iphop-predicted hosts
 ani_long_metadata <- iphop %>%
   dplyr::select('Virus', 'Host.genus', 'List.of.methods') %>%
@@ -207,9 +204,9 @@ ani_long_metadata <- iphop %>%
 ani_long_metadata$Site <- ani_long_metadata$vMAG 
 ani_long_metadata <- ani_long_metadata %>%
   separate(Site, c("Site", NA), sep= "_NODE|_scaffold|_vRhyme|_k95")
+
 #clean up site names
 #faster replace all the naming patterns
-#test <- coverm_rc_long
 ani_long_metadata$Site <- stri_replace_all_regex(ani_long_metadata$Site,
                                                 pattern=c("_A[0-9]",
                                                           "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
@@ -220,64 +217,59 @@ ani_long_metadata$Site <- stri_replace_all_regex(ani_long_metadata$Site,
 ani_long_metadata$Site <- gsub("*_M1[0-9]","",ani_long_metadata$Site)
 ani_long_metadata$Site <- gsub("*_M[0-9]","",ani_long_metadata$Site)
 
-################################ see clusters that have vent and plume ##########################################
+########################## see clusters that have both deposit and plume viruses #######################################
 
-#replace strings with Vent or Plume
-ani_long_metadata$Site <- gsub(".*Lau_Basin.*","Plume",ani_long_metadata$vMAG) #the placement of the periods is crucial for replacing whole string
-ani_long_metadata$Site <- gsub(".*Cayman.*","Plume",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*Guaymas_Basin.*","Plume",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*Axial.*","Plume",ani_long_metadata$Site)
+#replace strings with Deposit or Plume
+ani_long_metadata$Site_type <- gsub(".*Lau_Basin.*","Plume",ani_long_metadata$Site) #the placement of the periods is crucial for replacing whole string
+ani_long_metadata$Site_type <- gsub(".*Cayman.*","Plume",ani_long_metadata$Site_type)
+ani_long_metadata$Site_type <- gsub(".*Guaymas_Basin.*","Plume",ani_long_metadata$Site_type)
+ani_long_metadata$Site_type <- gsub(".*Axial.*","Plume",ani_long_metadata$Site_type)
 #separate the plume and vent dataframes to make life easier
-temp_plume <- ani_long_metadata %>% filter(Site == "Plume")
+temp_plume <- ani_long_metadata %>% filter(Site_type == "Plume")
 #remove Plume from mcl clusters so can make all names left Vent
-ani_long_metadata <- ani_long_metadata %>% filter(Site != "Plume")
-ani_long_metadata$Site <- "Vent"
+ani_long_metadata <- ani_long_metadata %>% filter(Site_type != "Plume")
+ani_long_metadata$Site_type <- "Deposit"
 #Now put them back together
 ani_long_metadata <- rbind(ani_long_metadata, temp_plume)
 
-#Add counts to filter for clusters that occur more than once (not a singleton)
-# temp_count <- ani_long_metadata %>%
-#   add_count(id) %>% 
-#   filter(n!=1) %>%
-#   select(-n)
-
-#number of viruses from Plume and Vent:
-#table(ani_long_metadata$Site)
-#406 plume and 1042 vent with skani parameters, 3kb, and 50AF
+#number of viruses from Plume and Deposit:
+table(ani_long_metadata$Site_type)
+#744 plume and 1259 deposit
 
 #group by cluster, count occurrences of Site
-temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
+temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site_type)
 #see if any cluster now occurs twice
 temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
-#no cluster contains plume + vent
+# --> no cluster contains plume + deposit <--
 
-################################ see clusters that contain distinct sites ##########################################
+########################## see clusters that contain geographically distinct sites ##########################################
 
 #replace strings with 7 general site names
-ani_long_metadata$Site <- gsub(".*Lau_Basin.*","Lau_Basin",ani_long_metadata$vMAG)
-ani_long_metadata$Site <- gsub(".*Cayman.*","Mid_Cayman_Rise",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*ELSC.*","Lau_Basin",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*Guaymas.*","Guaymas_Basin",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*Brothers.*","Brothers_Volcano",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*MAR.*","Mid_Atlantic_Ridge",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*EPR.*","EPR",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub(".*Axial.*","Axial_Seamount",ani_long_metadata$Site) 
-
-#number of clusters with 1+ rep from all sites:
-#table(ani_long_metadata$Site)
+ani_long_metadata$Site_gen <- gsub(".*Lau_Basin.*","Lau_Basin",ani_long_metadata$Site)
+ani_long_metadata$Site_gen <- gsub(".*Cayman.*","Mid_Cayman_Rise",ani_long_metadata$Site_gen)
+ani_long_metadata$Site_gen <- gsub(".*ELSC.*","Lau_Basin",ani_long_metadata$Site_gen)
+ani_long_metadata$Site_gen <- gsub(".*Guaymas.*","Guaymas_Basin",ani_long_metadata$Site_gen)
+ani_long_metadata$Site_gen <- gsub(".*Brothers.*","Brothers_Volcano",ani_long_metadata$Site_gen)
+ani_long_metadata$Site_gen <- gsub(".*MAR.*","Mid_Atlantic_Ridge",ani_long_metadata$Site_gen)
+ani_long_metadata$Site_gen <- gsub(".*EPR.*","EPR",ani_long_metadata$Site_gen)
+ani_long_metadata$Site_gen <- gsub(".*Axial.*","Axial_Seamount",ani_long_metadata$Site_gen) 
 
 #count occurrences of Site
-temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site)
+temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site_gen)
 #see if any cluster now occurs twice
 temp_count <-  temp_count %>% group_by(id) %>% filter(n()>1)
+length(unique(temp_count$id))
+#65 clusters contain cross site viruses
 
 #see these clusters from ani_long_metadata
 ids <- as.integer(unique(temp_count$id))
 ani_long_meta_gd <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
+length(unique(ani_long_meta_gd$vMAG))
+#152 viruses in clusters from geo distinct locations
 
 #remove undetermined from ani_long_meta_gd
-#test <- ani_long_meta_gd %>% filter(checkv_quality != "Not-determined")
-# ani_long_meta_gd <- ani_long_meta_gd %>% filter(taxonomy != "NA") %>% 
+# test <- ani_long_meta_gd %>% filter(checkv_quality != "Not-determined")
+# ani_long_meta_gd <- ani_long_meta_gd %>% filter(taxonomy != "NA") %>%
 #   filter(taxonomy != "Unclassified")
 
 write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
@@ -289,7 +281,7 @@ temp_count$id <- as.character(temp_count$id)
 #plot
 dev.off()
 plot <- temp_count %>%
-  ggplot(aes(x = reorder(id, rev(sort(as.numeric(id)))), y = as.numeric(n), fill = Site)) + #reorder is a fun new trick! to sort the order for plotting without changing the str type
+  ggplot(aes(x = reorder(id, rev(sort(as.numeric(id)))), y = as.numeric(n), fill = Site_gen)) + #reorder is a fun new trick! to sort the order for plotting without changing the str type
   geom_bar(stat = "identity") +
   #scale_fill_manual(values = col_vector) +
   labs(x = "Cluster", y = "Viral genomes") +
@@ -314,35 +306,14 @@ plot
 #ggsave(plot, filename = "Output/mcl_GeoDistinct_clusters.png", dpi = 500, height = 6, width = 6)
 
 
-################################ see intra-vent viral clusters ##########################################
-
-#Create Site column and create site names
-ani_long_metadata$Site <- ani_long_metadata$vMAG
-ani_long_metadata <- ani_long_metadata %>% separate(Site, c("Site", NA), sep= "(?=_scaffold|_NODE|_k95|_vRhyme)")
-
-#Remove some parts of site names
-ani_long_metadata$Site <- gsub("_A[0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("_M10","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("_T[0-9][0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("_T[0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("_M10","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("*_S0[0-9][0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("*_S1[0-9][0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("*_M1[0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("*_M[0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("*_[0-9][0-9][0-9]-[0-9][0-9][0-9]","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("*-380","",ani_long_metadata$Site)
-ani_long_metadata$Site <- gsub("*-384","",ani_long_metadata$Site)
-
-#see these clusters from ani_long_metadata
-#ids <- as.integer(unique(temp_count$id))
+################################ intra-vent viral clusters ##########################################
 
 #remove clusters that are geo distinct
 id_rem <- unique(ani_long_meta_gd$id)
 "%ni%" <- Negate("%in%")
 ani_long_meta_iv <- ani_long_metadata %>% filter(ani_long_metadata$id %ni% id_rem)
 
-## Remove clusters that only have ANI within a site e.g. clust 8 all NWCB
+## Remove clusters that only have ANI within a site e.g. clust 7 all NWCB
 #count occurrences of Site
 temp_count <- ani_long_meta_iv %>% group_by(id) %>% count(Site)
 #see if any cluster now occurs twice
@@ -353,6 +324,8 @@ iv_ids <- unique(temp_count$id)
 #THIS IF FINAL IV FILE
 #note will have issues if you reordered it in CircosPlot.R
 ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %in% iv_ids)
+length(unique(ani_long_meta_iv$id))
+# 462 clusters with intra vent related viruses
 
 
 #HERE FOR FILT VERSION to do counts
@@ -360,16 +333,17 @@ ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %in% iv_ids)
 ani_long_meta_iv_filt <- ani_long_meta_iv %>%
   #filter(taxonomy != "NA") %>%
   #filter(taxonomy != "Unclassified") %>%
-  # filter(checkv_quality != "Low-quality") %>%
-  # filter(checkv_quality != "Not-determined") %>%
-  filter(grepl("Lau", Site)) #%>%
-  filter(grepl("Lau_Basin_Kilo_Moana", Site)) %>%
-  filter(grepl("Lau_Basin_Abe", Site))
-  #filter(ANI_mean > 0.95)
+  #filter(checkv_quality != "Low-quality") %>%
+  #filter(checkv_quality != "Not-determined") %>%
+  filter(grepl("Axial|EPR", Site)) #%>%
+  #filter(ANI_mean > 0.85)
+  # filter(grepl("Lau_Basin_Kilo_Moana", Site)) %>%
+  # filter(grepl("Lau_Basin_Abe", Site))
+  
 
 #write the table
-write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
-            col.names = TRUE, sep = "\t")
+# write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
+#             col.names = TRUE, sep = "\t")
 
 ################################## calculate num of times combos of sites occur ################################################
 
@@ -380,7 +354,9 @@ plot_iv <- ani_long_meta_iv_filt %>%
 #count the occurrences of dif combos of sites grouped by cluster ID
 plot_iv <- ani_long_meta_iv_filt %>%
   group_by(id) %>%
-  mutate(Site = toString(Site)) #toString to get them in the comma separated list
+  mutate(Site = toString(Site)) %>% #toString to get them in the comma separated list 
+  select(id, Site) %>%
+  unique()
 test <- table(plot_iv$Site)
 plot_iv <- as.data.frame(test)
 
@@ -626,3 +602,54 @@ plot
 # qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
 # col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
 # pie(rep(1,n), col=sample(col_vector, n))
+
+
+##create needed input to map metadata to clusters
+#change one column name so they match
+# 
+# vUnbinned_VP_master <- vUnbinned_VP_master %>% rename(vMAG = scaffold)
+# #get columns of interest
+# vMAG <- vMAG_VP_master %>% select(c('vMAG', 'type', 'contig_length',
+#                                     'checkv_quality', 'provirus',
+#                                     'completeness', 'contamination'))
+# 
+# vUnbinned <- vUnbinned_VP_master %>% select(c('vMAG', 'type', 'contig_length',
+#                                               'checkv_quality', 'provirus',
+#                                               'completeness', 'contamination'))
+# #bind/concatenate
+# allVirus_master <- rbind(vMAG, vUnbinned) %>%
+#   unique()
+# #allVirus_master %>% 
+
+# #add genomad taxonomy
+# ani_long_metadata <- genomad %>%
+#   dplyr::select('seq_name', 'taxonomy', 'n_genes', 'n_hallmarks') %>%
+#   right_join(ani_long_metadata, by = c("seq_name" = "vMAG")) %>%
+#   rename("vMAG" = "seq_name")
+
+#Add counts to filter for clusters that occur more than once (not a singleton)
+# temp_count <- ani_long_metadata %>%
+#   add_count(id) %>% 
+#   filter(n!=1) %>%
+#   select(-n)
+
+# #Create Site column and create site names
+# ani_long_metadata$Site <- ani_long_metadata$vMAG
+# ani_long_metadata <- ani_long_metadata %>% separate(Site, c("Site", NA), sep= "(?=_scaffold|_NODE|_k95|_vRhyme)")
+# 
+# #Remove some parts of site names
+# ani_long_metadata$Site <- gsub("_A[0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("_M10","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("_T[0-9][0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("_T[0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("_M10","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("*_S0[0-9][0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("*_S1[0-9][0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("*_M1[0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("*_M[0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("*_[0-9][0-9][0-9]-[0-9][0-9][0-9]","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("*-380","",ani_long_metadata$Site)
+# ani_long_metadata$Site <- gsub("*-384","",ani_long_metadata$Site)
+# 
+# #see these clusters from ani_long_metadata
+# #ids <- as.integer(unique(temp_count$id))

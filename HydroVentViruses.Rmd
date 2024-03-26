@@ -1137,7 +1137,7 @@ nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data1
 
 ## skani v0.2.0 
 
-Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off for >5k genomes.
+Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off when input is >5k genomes.
 
 1. vskani not functioning as expected yet so I am running skani, filtering it for 50AF, then using those genomes to cluster with mcl
 
@@ -1231,6 +1231,55 @@ sed 's/\t/\,/g' dereplicated_virus.clusters | grep "," | wc
 ```
 
 Download dereplicated clusters file and process in ANI_clust.R.
+
+### skani v0.2.0 3kb and 49,962 Viruses
+
+1. Make folder of vMAG 3kb viruses (all of them, 5,708) and file of 3kb unbinned viruses (22,511):
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/seqkit
+
+awk '$5 >= 3000' PlumeVentVirus_Seqkit_final.txt > 3kb_49962_list.txt
+cut -f1 -d " " 3kb_49962_list.txt > 3kb_49962_list_final.txt
+grep -v "vRhyme" 3kb_49962_list_final.txt > 3kb_49962_list_noVrhyme.txt
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/skani/49962_viruses
+
+perl /scratch/langwig/scripts/screen_list_new.pl 3kb_49962_list_noVrhyme.txt ../../Virus_Genomes/49962_final_VentViruses.fna keep > unbinned_VentViruses_3kb.fna
+
+mkdir 3kb_5708_vMAGs
+ln -s ../../../Virus_Genomes/fna/fna_vMAGs_separate/*fasta .
+```
+
+2. Run skani
+```{bash, eval = FALSE}
+mamba activate vskani
+mamba remove skani
+source ~/.bashrc
+
+nohup vskani all -c unbinned_VentViruses_3kb.fna -d 3kb_5708_vMAGs/ -x .fasta -o skani_v2_ANI_VentVirus_200m30cm_3kb_49962.tsv -m 200 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
+
+awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_v2_ANI_VentVirus_200m30cm_3kb_49962.tsv > skani_v2_ANI_VentVirus_200m30cm_3kb_49962_50AF.tsv
+```
+
+3. Normalize ANI by lowest AF (ANI*lowest AF/100^2) and then filter for ≥70 ANI. This makes the preprocessed file.
+```{bash, eval = FALSE}
+Rscript create_preprocessed.R
+```
+
+4. Run mcl clustering on the processed file you output from the Rscript.
+```{bash, eval = FALSE}
+mamba activate vskani
+
+mcxload -abc skani_v2_ANI_VentVirus_200m30cm_3kb_49962_50AF_processed.tsv -o skani_processed.mci -write-tab skani_processed.mcxload
+
+nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_virus_49962.clusters &
+
+sed 's/\t/\,/g' dereplicated_virus.clusters | grep "," | wc
+```
+
+5. Download dereplicated clusters file and process in ANI_clust.R.
 
 # Using Seqkit to get genome size of vMAGs
 
@@ -1779,6 +1828,82 @@ mamba activate coverm
 
 nohup ./run_coverm_count_MinCov.sh &
 ```
+
+### Checking bin 115
+
+Lau_Basin_Tahi_Moana_vRhyme_bin_115 has relative abundance that seems way too high so checking the vMAG by read mapping.
+
+1. Organize the input files
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/abundance/check_LB_Tahi_bin_115/Reads
+
+find /storage2/Reads/HydroPlume/ -name "TahiMoana_*" | xargs -i ln -s {} .
+find /storage2/Reads/HydroPlume/ -name "Abe_SRR1217565*" | xargs -i ln -s {} .
+
+cp Lau_Basin_Tahi_Moana_vRhyme_bin_115.fasta ../../../abundance/check_LB_Tahi_bin_115/
+
+mamba create -n ncbi_datasets
+mamba activate ncbi_datasets
+mamba install -c conda-forge ncbi-datasets-cli
+
+datasets download genome accession GCA_012966065.1 --include protein,genome,seq-report
+```
+
+2. Run it
+```{bash, eval = FALSE}
+mamba activate coverm
+
+nohup ./run_coverm_count_MinCov.sh &
+```
+
+3. Trying with vMAG scaffolds separate
+```{bash, eval = FALSE}
+mamba activate coverm
+
+nohup ./run_coverm_count_MinCov_4scafs.sh &
+```
+
+4. Trying to map all the MAGs from the project at the same time
+```{bash, eval = FALSE}
+pwd
+
+ln -s /scratch/langwig/Projects/VentPlumeViruses/ncbi_MAGs/Plume_MAGs/*fna .
+
+nohup ./run_coverm_count_MinCov_4scafs_PlumeMAGs.sh &
+```
+
+
+# Downloading the microbial MAGs from NCBI
+
+1. Plume first because smaller
+```{bash, eval = FALSE}
+mamba activate ncbi_datasets
+
+datasets download genome accession PRJNA488180 --include protein,genome
+
+find ncbi_dataset/data/GC* -name "*fna" | xargs -i cp {} Plume_MAGs/
+```
+
+2. Download vent microbial MAGs
+```{bash, eval = FALSE}
+mamba activate ncbi_datasets
+
+datasets download genome accession PRJNA488180 --include protein,genome
+
+find ncbi_dataset/data/GC* -name "*fna" | xargs -i cp {} Plume_MAGs/
+```
+
+# Run FASTQC on reads
+
+```{bash, eval = FALSE}
+mamba create -n fastqc
+mamba activate fastqc
+mamba install bioconda::fastqc
+
+nohup fastqc -o /scratch/langwig/Projects/VentPlumeViruses/fastqc -d /scratch/langwig/tmp/ -t 20 *fastq.gz &
+```
+
 
 
 # Translate viruses to protein yourself using prodigal
