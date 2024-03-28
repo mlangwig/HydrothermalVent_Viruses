@@ -1,6 +1,7 @@
 ########################## Compiling and parsing virus CoverM abundance ############################
 library(dplyr)
 library(tidyverse)
+library(knitr)
 library(stringr)
 library(ggplot2)
 library(tidyr)
@@ -9,6 +10,7 @@ library(reshape2)
 library(viridis)
 library(pals)
 library(RColorBrewer)
+library(stringi)
 
 ######################################### inputs ##############################################
 
@@ -67,6 +69,10 @@ abund_long_norm <- abund_long_norm %>%
   mutate(abun_norm = (value/num_seqs*100)) %>%
   filter(Type == "Read.Count")
   #filter(Type == "Relative.Abundance....")
+
+### with Patricia
+abund_long_norm_Lau_TM <- abund_long_norm %>%
+  filter(Site == "Lau_Basin_Tahi_Moana_min1000_2")
 
 ##################################### host metadata ##############################################
 
@@ -154,33 +160,43 @@ abund_long_norm_iphop_p$Locat <- gsub("Vent","Deposit",abund_long_norm_iphop_p$L
 
 #set order of x axis 
 abund_long_norm_iphop_p$Site <- factor(abund_long_norm_iphop_p$Site, 
-                                       levels=c("Lau Basin Kilo Moana Plume 3","Lau Basin Abe Plume 1",
-                                                "Lau Basin Tahi Moana Plume 1","Lau Basin Kilo Moana Plume 2",
-                                                "Brothers NWCB S139","Brothers NWCB S012",
-                                                "ELSC Mariner M17", "Axial Plume",
-                                                "MAR Rainbow 355-202","Brothers NWCB S140",
-                                                "Cayman Shallow Plume 1","MAR Rainbow 354-166",
-                                                "Cayman Shallow Plume 2","Lau Basin Abe Plume 2",
-                                                "Brothers NWCB S141","Cayman Deep Plume 2","Brothers NWCA S144",
-                                                "Lau Basin Abe Plume 3","ELSC Tui Malila 134-614",
-                                                "Cayman Shallow Plume 3","EPR 4281-140","ELSC Tui Malila T2",
-                                                "Brothers NWCB S146","Cayman Deep Plume 3",
-                                                "Brothers NWCA S143","MAR Lucky 356-308",
-                                                "Cayman Deep Plume 1","MAR Lucky 356-284","ELSC Abe 128-326",
-                                                "Lau Basin Mariner Plume 2","ELSC Abe A3",
-                                                "Lau Basin Kilo Moana Plume 1","Lau Basin Mariner Plume 1",
-                                                "ELSC Vai Lili V2","Guaymas Basin Plume","Axial Seawater",
-                                                "EPR PIR-30","Brothers Diffuse S009","Lau Basin Kilo Moana Plume 4",
-                                                "Brothers Diffuse S015","Lau Basin Tui Malila Plume",
-                                                "Lau Basin Tahi Moana Plume 2", #end Gamma
-                                                "ELSC Abe A1","ELSC Tui Malila T11",
-                                                "ELSC Tui Malila T10","Brothers LC S014","Brothers LC S016",
-                                                "Guaymas 4559-240","ELSC Bowl M2",
-                                                "ELSC Tui Malila 132-544","Brothers NWCA S013",
-                                                "ELSC Mariner 131-447","Guaymas 4571-419","ELSC Mariner M10",
-                                                "Guaymas 4561-380","Brothers UC S010","Brothers NWCA S017",
-                                                "Brothers UC S147","Brothers NWCA S145","ELSC Bowl M1",
-                                                "Brothers UC S011","Guaymas 4561-384","Brothers NWCA S142")) # start Camp lowest to highest 
+                                       levels=c("Axial Plume", "MAR Rainbow 354-166",
+                                                "Cayman Shallow Plume 1", "Lau Basin Kilo Moana Plume 3",
+                                                "Cayman Shallow Plume 3", "Cayman Shallow Plume 2",
+                                                "Lau Basin Tahi Moana Plume 1", "Lau Basin Abe Plume 1",
+                                                "Brothers NWCB S139",
+                                                "Cayman Deep Plume 2", "Lau Basin Kilo Moana Plume 2",
+                                                "Brothers NWCB S012",
+                                                "Cayman Deep Plume 3", "Lau Basin Mariner Plume 1",
+                                                "Cayman Deep Plume 1", "Brothers NWCB S140",
+                                                "Lau Basin Kilo Moana Plume 1",
+                                                "Brothers NWCB S146", 
+                                                "ELSC Tui Malila 134-614", "Brothers NWCB S141",
+                                                "Lau Basin Abe Plume 3", "EPR 4281-140",
+                                                "ELSC Abe A3", "MAR Lucky 356-308",
+                                                "Lau Basin Mariner Plume 2", "Axial Seawater",
+                                                "Guaymas Basin Plume", "Lau Basin Tahi Moana Plume 2",
+                                                "Lau Basin Kilo Moana Plume 4", 
+                                                "ELSC Abe 128-326",
+                                                "EPR PIR-30", "ELSC Vai Lili V2",
+                                                "Lau Basin Tui Malila Plume", "Lau Basin Abe Plume 2", 
+                                                #end Gamma
+                                                "Brothers Diffuse S015", "Brothers Diffuse S009",
+                                                "MAR Lucky 356-284", "Brothers NWCA S143",
+                                                "ELSC Abe A1", 
+                                                "Brothers NWCA S144", "ELSC Tui Malila T2",
+                                                "ELSC Tui Malila T11", "Brothers LC S014",
+                                                "MAR Rainbow 355-202",
+                                                "Guaymas 4559-240", "ELSC Tui Malila T10",
+                                                "Brothers LC S016", "Guaymas 4571-419",
+                                                "ELSC Mariner 131-447", "ELSC Mariner M17",
+                                                "ELSC Bowl M2", "Brothers NWCA S013",
+                                                "Brothers UC S147", "ELSC Tui Malila 132-544",
+                                                "ELSC Mariner M10", "Brothers NWCA S017",
+                                                "ELSC Bowl M1",
+                                                "Guaymas 4561-380","Brothers UC S010",
+                                                "Brothers NWCA S145",
+                                                "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
 
 
 ############################ Plot  #############################
@@ -230,6 +246,64 @@ plot <- abund_long_norm_iphop_p %>%
 #coord_flip()
 plot
 
-# ggsave("output/coverm_CampGamma_normAbun.png", plot, 
-#        height = 10, width = 13,
-#        bg = "transparent")
+ggsave("output/coverm_CampGamma_normAbun.png", plot,
+       height = 12, width = 15,
+       bg = "transparent")
+
+################################### Plot virus abundance summed by taxa by site ################################
+
+#prepare input data from the normalized abundance info
+abund_long_norm_tax <- abund_long_norm %>%
+  filter(Genome != "Lau_Basin_Tahi_Moana_vRhyme_bin_115")
+abund_long_norm_tax <- genomad_tax %>%
+  right_join(abund_long_norm_tax, by = c("genome" = "Genome")) %>%
+  drop_na() %>%
+  select(c("genome", "c", "abun_norm"))
+abund_long_norm_tax$Site <- abund_long_norm_tax$genome
+abund_long_norm_tax <- abund_long_norm_tax %>%
+  separate(Site, c("Site", NA), sep = "_vRhyme|_NODE|_k95|_scaffold")
+abund_long_norm_tax$Site_Gen <- abund_long_norm_tax$Site
+abund_long_norm_tax$Site_Gen <- stri_replace_all_regex(abund_long_norm_tax$Site_Gen,
+                                                pattern=c("_A[0-9]",
+                                                          "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
+                                                          "_S1[0-9][0-9]", "_[0-9][0-9][0-9]-[0-9][0-9][0-9]",
+                                                          "-38[0-9]"),
+                                                replacement='',
+                                                vectorize=FALSE)
+
+abund_long_norm_tax$Site_Gen <- gsub("*_M1[0-9]","",abund_long_norm_tax$Site_Gen)
+abund_long_norm_tax$Site_Gen <- gsub("*_M[0-9]","",abund_long_norm_tax$Site_Gen)
+
+#group by taxonomy and site and sum
+abund_long_norm_tax <- abund_long_norm_tax %>%
+  group_by(Site_Gen, c) %>%
+  summarise(abun_norm = sum(abun_norm)) %>%
+  ungroup() %>%
+  filter(c != "c__Caudoviricetes")
+
+###plot
+dev.off()
+p <- ggplot(abund_long_norm_tax, aes(x = abun_norm, 
+                                  y = c, 
+                                  fill = c)) + #, fill = p
+  geom_bar(position = "dodge", stat = "identity", width = 0.2) + 
+  #geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
+  #xlab("Number of host predictions")  +
+  #ylab("Microbial Host Phyla") +
+  ggtitle("") +
+  scale_fill_viridis_d(guide="none") + #, direction = -1, name = "Microbial Phyla"
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0)) +  # Reverse the order of y-axis labels
+  theme_bw() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank()) +
+  facet_wrap(~ Site_Gen, scales = "free") #ncol = 1, strip.position = "left"
+p
+
+# ggsave("output/iphop_hosts.png", p, dpi = 500, width = 10, height = 5) #, width = 12, height = 6,
+# ggsave("output/iphop_hosts.pdf", p, dpi = 500, width = 6, height = 4)
+
+
+
+
