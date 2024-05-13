@@ -189,6 +189,8 @@
             <li><a href="#rerun-seqkit-on-viruses-49962">Rerun seqkit on viruses 49,962</a></li>
             </ul></li>
             <li><a href="#run-gtdbtk-v1.5.0-on-vent-mags">Run GTDBtk v1.5.0 on Vent MAGs</a></li>
+            <li><a href="#run-gtdbtk-v2.3.2-on-plume-and-vent-microbial-mags">Run GTDBtk v2.3.2 on Plume and Vent microbial MAGs</a></li>
+            <li><a href="#obtain-coverm-abundance-of-microbial-mags">Obtain coverm abundance of microbial MAGs</a></li>
             <li><a href="#using-codys-script-to-parse-drep-and-skani-output">Using Cody’s script to parse dRep and skani output</a></li>
             <li><a href="#using-codys-rfasta-to-split-faa-unbinned-viruses">Using Codys rfasta to split faa unbinned viruses</a></li>
             <li><a href="#clustering-viral-protein-content-using-mmseqs">Clustering viral protein content using mmseqs</a>
@@ -1386,6 +1388,24 @@ sort -k 4 -n -t &quot; &quot; PlumeVentVirus_Seqkit_final.txt | tail</code></pre
 <pre class="bash"><code>conda activate gtdbtk-1.5.0
 
 nohup gtdbtk classify_wf --genome_dir MAGs_Renamed/No_ViralContam/ --out_dir GTDBtk_v1.5.0/ --cpus 15 &amp;</code></pre>
+</div>
+<div id="run-gtdbtk-v2.3.2-on-plume-and-vent-microbial-mags" class="section level1">
+<h1>Run GTDBtk v2.3.2 on Plume and Vent microbial MAGs</h1>
+<pre class="bash"><code>mamba activate gtdbtk-2.3.2
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/MAGs_microbial
+
+nohup gtdbtk classify_wf --genome_dir fna_noVirusContam/ --mash_db . --out_dir GTDBtk_v2.3.2/ --cpus 50 &amp;</code></pre>
+</div>
+<div id="obtain-coverm-abundance-of-microbial-mags" class="section level1">
+<h1>Obtain coverm abundance of microbial MAGs</h1>
+<pre class="bash"><code>mamba activate coverm
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/MAGs_microbial
+
+nohup ./run_coverm_count_MinCov.sh &amp;</code></pre>
 </div>
 <div id="using-codys-script-to-parse-drep-and-skani-output" class="section level1">
 <h1>Using Cody’s script to parse dRep and skani output</h1>

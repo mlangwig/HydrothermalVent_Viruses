@@ -11,6 +11,7 @@ library(viridis)
 library(pals)
 library(RColorBrewer)
 library(stringi)
+library(ggbre)
 
 ######################################### inputs ##############################################
 
@@ -70,9 +71,9 @@ abund_long_norm <- abund_long_norm %>%
   filter(Type == "Read.Count")
   #filter(Type == "Relative.Abundance....")
 
-### with Patricia
-abund_long_norm_Lau_TM <- abund_long_norm %>%
-  filter(Site == "Lau_Basin_Tahi_Moana_min1000_2")
+# ### with Patricia
+# abund_long_norm_Lau_TM <- abund_long_norm %>%
+#   filter(Site == "Lau_Basin_Tahi_Moana_min1000_2")
 
 ##################################### host metadata ##############################################
 
@@ -103,6 +104,11 @@ abund_long_norm_iphop$Locat <- gsub(".*ELSC.*","Vent", abund_long_norm_iphop$Loc
 abund_long_norm_iphop$Locat <- gsub(".*EPR.*","Vent", abund_long_norm_iphop$Locat)
 abund_long_norm_iphop$Locat <- gsub(".*Guaymas.*","Vent", abund_long_norm_iphop$Locat)
 abund_long_norm_iphop$Locat <- gsub(".*MAR.*","Vent", abund_long_norm_iphop$Locat)
+
+#filter for viruses with viral hallmark
+abund_long_norm_iphop_vh <- master_table_iphop_filt %>%
+  dplyr::select(vMAG, total_hallmarks, Host.genus)
+  right_join(abund_long_norm_iphop, by = c("Virus" = "vMAG"))
 
 #abun_long_iphop <- abun_long_iphop %>% 
 #  filter(str_detect(Locat, "Plume")) #%>%
@@ -199,7 +205,8 @@ abund_long_norm_iphop_p$Site <- factor(abund_long_norm_iphop_p$Site,
                                                 "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
 
 
-############################ Plot  #############################
+####################### Stacked bar plot of Gamma and Campylo-infecting viral abundance ################################
+## Shows functional redundancy of viruses infecting these hosts
 
 # #distinct colors
 # library(RColorBrewer)
@@ -250,7 +257,10 @@ ggsave("output/coverm_CampGamma_normAbun.png", plot,
        height = 12, width = 15,
        bg = "transparent")
 
-################################### Plot virus abundance summed by taxa by site ################################
+############################## Bubble plot of virus abundance summed by taxa by site ################################
+## Shows distribution of different viral taxa at different sites
+
+#Add genome quality info to remove viruses based on length or quality/both?
 
 #prepare input data from the normalized abundance info
 abund_long_norm_tax <- abund_long_norm %>%
@@ -274,35 +284,102 @@ abund_long_norm_tax$Site_Gen <- stri_replace_all_regex(abund_long_norm_tax$Site_
 abund_long_norm_tax$Site_Gen <- gsub("*_M1[0-9]","",abund_long_norm_tax$Site_Gen)
 abund_long_norm_tax$Site_Gen <- gsub("*_M[0-9]","",abund_long_norm_tax$Site_Gen)
 
-#group by taxonomy and site and sum
 abund_long_norm_tax <- abund_long_norm_tax %>%
   group_by(Site_Gen, c) %>%
   summarise(abun_norm = sum(abun_norm)) %>%
   ungroup() %>%
-  filter(c != "c__Caudoviricetes")
+  mutate(log_n = log(abun_norm)) %>% #create log transformed abundance
+  mutate(log_n_plus1 = log_n+1) %>% #add 1 to log transformed
+  mutate(c = gsub("c__", "", c)) %>% #remove c__
+  mutate(c = sub("^$", "Unknown", c)) %>% #replace blanks with unknown
+  mutate(Site_Gen = gsub("_", " ", Site_Gen)) %>% #remove underscore from site names
+  mutate(Site_Gen = gsub("Guaymas Basin", "Guaymas Basin Plume", Site_Gen)) %>%
+  mutate(Site_Gen = gsub(" V2", "", Site_Gen))
+  
+#set order of Sites on x axis
+abund_long_norm_tax$Site_Gen <- factor(abund_long_norm_tax$Site_Gen, 
+                                       levels=c("Axial Plume", "Axial Seawater",
+                                                "Cayman Deep", "Cayman Shallow",
+                                                "Guaymas Basin Plume", 
+                                                "Lau Basin Abe", "Lau Basin Kilo Moana",
+                                                "Lau Basin Mariner", "Lau Basin Tahi Moana", 
+                                                "Lau Basin Tui Malila", 
+                                                #end plume
+                                                "Brothers Diffuse", "Brothers LC",
+                                                "Brothers NWCA", "Brothers NWCB",
+                                                "Brothers UC",
+                                                "ELSC Abe", "ELSC Bowl",
+                                                "ELSC Mariner", "ELSC Tui Malila",
+                                                "ELSC Vai Lili",
+                                                "EPR 4281-140", "EPR PIR-30",
+                                                "Guaymas 4559-240", "Guaymas 4561",
+                                                "Guaymas 4571-419",
+                                                "MAR Lucky", "MAR Rainbow")) #end deposit
 
-###plot
+#add columns with metadata for faceting
+abund_long_norm_tax$Site_Type <- abund_long_norm_tax$Site_Gen
+abund_long_norm_tax$Site_Type <- gsub(".*Axial.*","Plume", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub(".*Cayman.*","Plume", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub("Guaymas Basin Plume","Plume", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub(".*Lau.*","Plume", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub(".*Brothers.*","Deposit", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub(".*ELSC.*","Deposit", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub(".*EPR.*","Deposit", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub(".*Guaymas.*","Deposit", abund_long_norm_tax$Site_Type)
+abund_long_norm_tax$Site_Type <- gsub(".*MAR.*","Deposit", abund_long_norm_tax$Site_Type)
+
+abund_long_norm_tax$Virus_Realm <- abund_long_norm_tax$c
+abund_long_norm_tax$Virus_Realm <- gsub(".*Caudo.*","Duplodnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub(".*Malgrand.*","Monodnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Megaviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Faserviricetes","Monodnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Laserviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Tokiviricetes","Adnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Tectiliviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Arfiviricetes","Monodnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Herviviricetes","Duplodnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Duplopiviricetes","Riboviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Huolimaviricetes","Monodnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Pokkesviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Resentoviricetes","Riboviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Vidaverviricetes","Riboviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Polintoviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Maveriviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+
+
 dev.off()
-p <- ggplot(abund_long_norm_tax, aes(x = abun_norm, 
-                                  y = c, 
-                                  fill = c)) + #, fill = p
-  geom_bar(position = "dodge", stat = "identity", width = 0.2) + 
-  #geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
-  #xlab("Number of host predictions")  +
-  #ylab("Microbial Host Phyla") +
-  ggtitle("") +
-  scale_fill_viridis_d(guide="none") + #, direction = -1, name = "Microbial Phyla"
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_discrete(expand = c(0, 0)) +  # Reverse the order of y-axis labels
-  theme_bw() +
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.major.x = element_line(linetype = "dashed"),
-        panel.grid.minor = element_blank()) +
-  facet_wrap(~ Site_Gen, scales = "free") #ncol = 1, strip.position = "left"
-p
+p <- ggplot(abund_long_norm_tax, aes(y=c, x=Site_Gen))+
+  geom_point(aes(size=log_n_plus1, color = log_n_plus1))+ 
+  scale_size_continuous(breaks = c(-8, -4, 0, 4))+
+  scale_color_continuous(guide="legend", 
+                         type = "viridis",
+                         breaks = c(-8, -4, 0, 4))+
+  theme_bw()+
+  theme(strip.background = element_blank(),
+        strip.text.y = element_text(angle=-90),
+        #panel.grid = element_blank(),
+        axis.text.x = element_text(angle=45, hjust=-.025),
+        text = element_text(color="black"),
+        legend.position="right",
+        strip.placement = "outside",
+        panel.spacing.x = unit(0, "lines"),
+        panel.grid.major.y = element_line(linetype = "dashed"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+ #to prevent facet from being very spaced out
+  scale_x_discrete(limits=rev)+ #position="top"
+  scale_y_discrete(position = "right")+ #confusing it is right because of coord_flip
+  xlab("")+ #sites
+  ylab("")+ #viral class
+  labs(size = "Viral log relative abundance",
+       color = "Viral log relative abundance") +
+  facet_grid(Site_Type ~ Virus_Realm, scales = "free", switch = "y") + #wow this took me awhile - remember you can't factor the y axis and then get it to facet properly
+  #scale_y_discrete(limits=rev)+ # has to be this instead of factor
+  coord_flip()
+p  
 
-# ggsave("output/iphop_hosts.png", p, dpi = 500, width = 10, height = 5) #, width = 12, height = 6,
-# ggsave("output/iphop_hosts.pdf", p, dpi = 500, width = 6, height = 4)
+
+ggsave("output/VirusAbundance_byTaxa2.png", p, dpi = 500, width = 12, height = 7) #, width = 12, height = 6,
+ggsave("output/VirusAbundance_byTaxa2.pdf", p, dpi = 500, width = 12, height = 7)
 
 
 

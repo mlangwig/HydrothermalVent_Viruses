@@ -11,8 +11,8 @@ setwd("~/Google Drive/My Drive/PhD_Projects/VentViruses/HydrothermalVent_Viruses
 ######################################### Read the input ##################################################
 
 #iphop Vent
-iphop_genome <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genome_m90.csv", header = TRUE)
-iphop_genus <- read.csv(file = "../../iPHoP/PlumeVent_Host_prediction_to_genus_m90.csv", header = TRUE)
+iphop_genome <- read.csv(file = "../../iPHoP/old/PlumeVent_Host_prediction_to_genome_m90.csv", header = TRUE)
+iphop_genus <- read.csv(file = "../../iPHoP/old/PlumeVent_Host_prediction_to_genus_m90.csv", header = TRUE)
 
 sulfur_mags <- read.csv(file = "../../sulfur_cyclers/subset_sulfurHMM_MAGs_final_uniq_namesFixed.txt", header = FALSE)
 
@@ -117,8 +117,8 @@ iphop_genus_genome_sulfur_50comp <- iphop_genus_genome_sulfur_50comp %>% separat
                                                               c("rV", "kV", "pV", "cV", "oV", "fV", "gV", "sV"),
                                                               sep= ";")
 
-write.csv(file = "output/iphop_VentPlume_sulfur_50comp.csv", iphop_genus_genome_sulfur_50comp,
-          row.names = FALSE, quote = FALSE)
+#write.csv(file = "output/iphop_VentPlume_sulfur_50comp.csv", iphop_genus_genome_sulfur_50comp,
+#          row.names = FALSE, quote = FALSE)
 
 ## see how many viruses matched via BLAST 
 test <- iphop_genus_genome_sulfur_50comp %>% filter(str_detect(Method,"blast"))
@@ -164,9 +164,11 @@ mag_sulfur_plotting <- mag_sulfur_plotting %>%
   group_by(d, c, gene) %>%
   count(gene) %>%
   #arrange() %>%
+  ungroup() %>%
   mutate(c = str_replace(c, "c__", "")) %>%
   mutate(d = str_replace(d, "d__", "")) %>%
   arrange() %>%
+  ungroup()
   na_if('')
 
 mag_sulfur_plotting$c <- mag_sulfur_plotting$c %>% replace_na("Bacteria") #replace blank cell with Bac
@@ -177,7 +179,7 @@ sulf_mag_virus_count <- iphop_genus_genome_sulfur_50comp %>%
   summarise(count = n_distinct(Virus)) %>%
   count(c, name = "num_infecting_viruses") %>%
   mutate(c = str_replace(c, "c__", "")) %>%
-  na_if('') %>%
+  #na_if('') %>%
   mutate(num_infecting_viruses = paste0("(", num_infecting_viruses, ")"))
 sulf_mag_virus_count$c <- sulf_mag_virus_count$c %>% replace_na("Bacteria") #replace blank cell with Bac
 

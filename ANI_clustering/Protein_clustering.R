@@ -328,6 +328,10 @@ mmseqs_vibrant <- mmseqs_vibrant[mmseqs_vibrant$id %in% prots_GD_PV$id,] #subset
 length(unique(mmseqs_vibrant$genome)) #40,261 proteins GD and PV have annotation of 84,261 GD and PV proteins
 tail(names(sort(table(mmseqs_vibrant$id))), 1) #to view largest protein cluster
 
+mmseqs_vibrant_count <- mmseqs_vibrant %>%
+  group_by(prot_name) %>%
+  count()
+
 #see proteins that only occur 1-2 times
 # Group by the values in the specified column
 mmseqs_vibrant_rare <- mmseqs_vibrant %>%

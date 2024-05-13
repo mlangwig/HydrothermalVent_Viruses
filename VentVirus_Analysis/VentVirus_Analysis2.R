@@ -54,6 +54,14 @@ table(genomad_tax$c)
 #iPHoP host predictions
 iphop <- read.csv(file = "input/Host_prediction_to_genus_m90_49962.csv",
                   header = TRUE)
+
+iphop_filt <- iphop %>%
+  separate(Host.genus, c("d", "p", "c", "o", "f", "g"), sep= ";") %>%
+  group_by(Virus) %>%
+  filter(Confidence.score == max(Confidence.score, na.rm = TRUE)) %>% #note doesn't get rid of all duplicates because some have same confidence score
+  filter(c == "c__Gammaproteobacteria")
+
+virus_hallmarks <- read.delim2(file = "input/virus_hallmarks_sum.tsv")
   
 ####################################### Determine lytic vs lysogenic #############################################
 ################# for vMAGs that may have had dif types binned together
@@ -201,6 +209,45 @@ master_table_iphop <- iphop %>%
   right_join(master_table_noProtein, by = c("Virus" = "vMAG")) %>%
   rename("vMAG" = "Virus")
 
+#add number of virus hallmarks
+master_table_iphop <- virus_hallmarks %>%
+  right_join(master_table_iphop, by = c("gene" = "vMAG")) %>%
+  rename("vMAG" = "gene")
+
+#filter iphop results for just those viruses with hallmarks
+# master_table_iphop_filt <- master_table_iphop %>%
+#   filter(total_hallmarks > 0) 
+
+master_table_iphop_filt <- master_table_iphop
+master_table_iphop_filt <- master_table_iphop_filt[!is.na(master_table_iphop_filt$Host.genus),]
+
+#only keep phylum and class of the tax string
+master_table_iphop_filt <- master_table_iphop_filt %>% separate("Host.genus", c("d", "p", "c", "o", "f", "g"), 
+                                                            sep= ";")
+
+#add deposit and plume labels
+master_table_iphop_filt$Locat <- master_table_iphop_filt$vMAG_Site
+master_table_iphop_filt$Locat <- gsub(".*Axial.*","Plume", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub(".*Cayman.*","Plume", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub("Guaymas_Basin","Plume", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub(".*Lau.*","Plume", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub(".*Brothers.*","Deposit", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub(".*ELSC.*","Deposit", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub(".*EPR.*","Deposit", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub(".*Guaymas.*","Deposit", master_table_iphop_filt$Locat)
+master_table_iphop_filt$Locat <- gsub(".*MAR.*","Deposit", master_table_iphop_filt$Locat)
+
+master_table_iphop_filt2 <- master_table_iphop_filt %>%
+  filter(str_detect(Locat, "Deposit")) %>%
+  #filter(str_detect(Locat, "Plume")) #%>%
+  #filter(str_detect(d, "Archaea")) #%>%
+  #filter(str_detect(p, "p__Pseudomonadota")) %>%
+  #filter(str_detect(p, "p__Bacteroidota"))
+  #filter(str_detect(c, "c__Gammaproteobacteria"))
+  filter(str_detect(c, "c__Alphaproteobacteria"))
+  #filter(str_detect(p, "p__Campylobacterota"))
+  #filter(str_detect(g, "g__Colwellia"))
+
 ####################################### vMAGs >4 seqs #############################################
 
 # vMAG_5plus_prot <- master_table %>%
@@ -337,6 +384,20 @@ ggsave("output/genomad_tax.png", p, dpi = 500, width = 6, height = 4) #, width =
 ggsave("output/genomad_tax.pdf", p, dpi = 500, width = 6, height = 4)
 
 ############################### Host predictions ##################################
+#add site info of vMAG to iphop table
+master_table_iphop$vMAG_Site <- master_table_iphop$vMAG
+master_table_iphop <- master_table_iphop %>%
+  separate(vMAG_Site, c("vMAG_Site", NA), sep = "_vRhyme|_NODE|_k95|_scaffold")
+master_table_iphop$vMAG_Site <- stri_replace_all_regex(master_table_iphop$vMAG_Site,
+                                                       pattern=c("_A[0-9]",
+                                                                 "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
+                                                                 "_S1[0-9][0-9]", "_[0-9][0-9][0-9]-[0-9][0-9][0-9]",
+                                                                 "-38[0-9]"),
+                                                       replacement='',
+                                                       vectorize=FALSE)
+
+master_table_iphop$vMAG_Site <- gsub("*_M1[0-9]","",master_table_iphop$vMAG_Site)
+master_table_iphop$vMAG_Site <- gsub("*_M[0-9]","",master_table_iphop$vMAG_Site)
 
 #get just Proteobacteria to highlight their breakdown
 master_table_iphop_proteos <- master_table_iphop %>%
@@ -395,10 +456,70 @@ p <- ggplot(master_table_fig, aes(x = n,
   facet_wrap(~ d, scales = "free") #ncol = 1, strip.position = "left"
 p
 
-ggsave("output/iphop_hosts.png", p, dpi = 500, width = 10, height = 5) #, width = 12, height = 6,
-ggsave("output/iphop_hosts.pdf", p, dpi = 500, width = 6, height = 4)
+#ggsave("output/iphop_hosts.png", p, dpi = 500, width = 10, height = 5) #, width = 12, height = 6,
+#ggsave("output/iphop_hosts.pdf", p, dpi = 500, width = 6, height = 4)
 
 
+##############################    Version of plot where faceting by site
 
+#get just Proteobacteria to highlight their breakdown
+master_table_iphop_proteos <- master_table_iphop %>%
+  select(vMAG, Host.genus, vMAG_Site) %>%
+  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";") %>%
+  select(vMAG, d, p, c, vMAG_Site) %>%
+  filter(grepl("Pseudomonadota", p)) %>%
+  group_by(d, c, vMAG_Site) %>%
+  count(c) %>%
+  ungroup() %>%
+  mutate(c = str_replace(c, "c__", "")) %>%
+  mutate(d = str_replace(d, "d__", "")) %>%
+  mutate(c = str_replace(c, "$", "*")) %>%
+  rename("p" = "c") #arbitrary rename for merging
+
+#everything else minus Proteos
+master_table_fig <- master_table_iphop %>%
+  select(vMAG, Host.genus, vMAG_Site) %>%
+  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";") %>%
+  select(vMAG, d, p, c, vMAG_Site) %>% #, c
+  group_by(d, p, vMAG_Site) %>%
+  count(p) %>%
+  ungroup() %>%
+  drop_na() %>%
+  #mutate(c = str_replace(c, "c__", "")) %>%
+  mutate(p = str_replace(p, "p__", "")) %>%
+  mutate(d = str_replace(d, "d__", "")) %>%
+  mutate_at(vars(p), ~na_if(., "")) %>%
+  drop_na() %>%
+  filter(!grepl("Pseudomonadota", p))
+
+#bind the proteos and whole count together
+master_table_fig <- rbind(master_table_fig, master_table_iphop_proteos)
+
+#remove host predictions less than 10 for clarity of plot
+master_table_fig <- master_table_fig %>%
+  filter(n > 10)
+
+###plot
+dev.off()
+p <- ggplot(master_table_fig, aes(x = n, 
+                                  y = factor(p, levels = rev(levels(factor(p)))), 
+                                  fill = p)) + #, fill = p
+  geom_bar(position = "dodge", stat = "identity", width = 0.2) + 
+  #geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
+  xlab("Number of host predictions")  +
+  ylab("Microbial Host Phyla") +
+  ggtitle("") +
+  scale_fill_viridis_d(guide="none") + #, direction = -1, name = "Microbial Phyla"
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0)) +  # Reverse the order of y-axis labels
+  theme_bw() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank()) +
+  facet_wrap(~ vMAG_Site, scales = "free") #ncol = 1, strip.position = "left"
+p
+
+#ggsave("output/iphop_hosts.png", p, dpi = 500, width = 10, height = 5) #, width = 12, height = 6,
+#ggsave("output/iphop_hosts.pdf", p, dpi = 500, width = 6, height = 4)
 
 

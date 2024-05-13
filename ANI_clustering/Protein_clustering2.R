@@ -195,8 +195,20 @@ mmseqs_PD_GD_annos <- mmseqs_long_meta_annos %>%
          "protein" = "genome") %>%
   select(c(id, protein, protein_no_vRhyme,PD, Site, anno_id, anno))
 
+write_delim(mmseqs_PD_GD_annos, file = "Output/mmseqs_proteins_PD_GD_annos.tsv",
+            col_names = TRUE, delim = "\t")
+
 tst <- mmseqs_PD_GD_annos %>%
   count(anno)
+
+#see just the plume deposit cluster annotations
+mmseqs_PD_annos <- mmseqs_PD_GD_annos %>%
+  filter(id %in% mmseqs_PD_ids$id)
+
+mmseqs_PD_GD_annos_tmp <- mmseqs_PD_GD_annos %>%
+  filter(PD == "Plume") %>%
+  group_by(id) %>%
+  filter(all(c("Guaymas", "Lau_Basin") %in% Site))
 
 #################### mmseqs calculate and plot protein overlap among sites ################################
 

@@ -1372,6 +1372,17 @@ pwd
 nohup gtdbtk classify_wf --genome_dir fna_noVirusContam/ --mash_db . --out_dir GTDBtk_v2.3.2/ --cpus 50 &
 ```
 
+# Obtain coverm abundance of microbial MAGs
+
+```{bash, eval = FALSE}
+mamba activate coverm
+
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/MAGs_microbial
+
+nohup ./run_coverm_count_MinCov.sh &
+```
+
 # Using Cody's script to parse dRep and skani output
 
 **You need python3.11 for this script**

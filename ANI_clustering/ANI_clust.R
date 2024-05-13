@@ -335,7 +335,7 @@ ani_long_meta_iv_filt <- ani_long_meta_iv %>%
   #filter(taxonomy != "Unclassified") %>%
   #filter(checkv_quality != "Low-quality") %>%
   #filter(checkv_quality != "Not-determined") %>%
-  filter(grepl("Axial|EPR", Site)) #%>%
+  filter(grepl("Lau", Site)) #%>%
   #filter(ANI_mean > 0.85)
   # filter(grepl("Lau_Basin_Kilo_Moana", Site)) %>%
   # filter(grepl("Lau_Basin_Abe", Site))
