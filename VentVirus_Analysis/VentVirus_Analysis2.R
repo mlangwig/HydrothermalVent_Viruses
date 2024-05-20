@@ -225,8 +225,12 @@ master_table_iphop_filt <- master_table_iphop_filt[!is.na(master_table_iphop_fil
 master_table_iphop_filt <- master_table_iphop_filt %>% separate("Host.genus", c("d", "p", "c", "o", "f", "g"), 
                                                             sep= ";")
 
+#add Site labels
+master_table_iphop_filt$Site <- master_table_iphop_filt$vMAG
+master_table_iphop_filt <- master_table_iphop_filt %>% separate(Site, c("Site", NA), 
+                                      sep= "_NODE|_scaffold|_vRhyme|_k95")
 #add deposit and plume labels
-master_table_iphop_filt$Locat <- master_table_iphop_filt$vMAG_Site
+master_table_iphop_filt$Locat <- master_table_iphop_filt$Site
 master_table_iphop_filt$Locat <- gsub(".*Axial.*","Plume", master_table_iphop_filt$Locat)
 master_table_iphop_filt$Locat <- gsub(".*Cayman.*","Plume", master_table_iphop_filt$Locat)
 master_table_iphop_filt$Locat <- gsub("Guaymas_Basin","Plume", master_table_iphop_filt$Locat)
@@ -240,11 +244,13 @@ master_table_iphop_filt$Locat <- gsub(".*MAR.*","Deposit", master_table_iphop_fi
 master_table_iphop_filt2 <- master_table_iphop_filt %>%
   filter(str_detect(Locat, "Deposit")) %>%
   #filter(str_detect(Locat, "Plume")) #%>%
-  #filter(str_detect(d, "Archaea")) #%>%
+  filter(str_detect(d, "Archaea")) %>%
   #filter(str_detect(p, "p__Pseudomonadota")) %>%
+  #filter(str_detect(p, "p__Methanobacteriota_B")) #%>%
+  filter(str_detect(p, "p__Thermoplasmatota"))
   #filter(str_detect(p, "p__Bacteroidota"))
   #filter(str_detect(c, "c__Gammaproteobacteria"))
-  filter(str_detect(c, "c__Alphaproteobacteria"))
+  #filter(str_detect(c, "c__Alphaproteobacteria"))
   #filter(str_detect(p, "p__Campylobacterota"))
   #filter(str_detect(g, "g__Colwellia"))
 

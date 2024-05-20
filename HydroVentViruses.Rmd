@@ -7,6 +7,9 @@ output:
   toc: yes
   toc_float: yes
   pdf_document: default
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
@@ -16,21 +19,27 @@ knitr::opts_chunk$set(echo = TRUE)
 # Organizing the 43 assemblies
 
 ## Renaming
-1. 11 assemblies do not have the sample name associated with the file so I am adding it.
+
+1.  11 assemblies do not have the sample name associated with the file
+    so I am adding it.
+
 ```{bash, eval = FALSE}
 cd /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed
 
 for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> $i.renamed; done
 ```
 
-2. Special naming for S009:
+2.  Special naming for S009:
+
 ```{bash, eval = FALSE}
 for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\_metaspades_scaffolds.min1000.fasta/,x)}1' $i >> $i.renamed; done
 ```
 
-3. Adding site identifier to assembly names (after checking your sed first!)
+3.  Adding site identifier to assembly names (after checking your sed
+    first!)
 
 ### Brothers UC
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_UC_/g' S010_metaspades_scaffolds.min1000.fasta
 ```
@@ -42,7 +51,9 @@ sed -i 's/>/>Brothers_UC_/g' S011_metaspades_scaffolds.min1000.fasta
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_UC_/g' S147_metaspades_scaffolds.min1000.fasta
 ```
+
 ### Brothers LC
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_LC_/g' S014_metaspades_scaffolds.min1000.fasta
 ```
@@ -50,7 +61,9 @@ sed -i 's/>/>Brothers_LC_/g' S014_metaspades_scaffolds.min1000.fasta
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_LC_/g' S016_metaspades_scaffolds.min1000.fasta
 ```
+
 ### Brothers NWCA
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_NWCA_/g' S013_metaspades_scaffolds.min1000.fasta
 ```
@@ -74,7 +87,9 @@ sed -i 's/>/>Brothers_NWCA_/g' S144_metaspades_scaffolds.min1000.fasta
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_NWCA_/g' S145_metaspades_scaffolds.min1000.fasta
 ```
+
 ### Brothers NWCB
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_NWCB_/g' S012_metaspades_scaffolds.min1000.fasta
 ```
@@ -94,13 +109,17 @@ sed -i 's/>/>Brothers_NWCB_/g' S141_metaspades_scaffolds.min1000.fasta
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_NWCB_/g' S146_metaspades_scaffolds.min1000.fasta
 ```
+
 ### Brothers Diffuse
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>Brothers_Diffuse_/g' S009_metaspades_scaffolds.min1000.fasta
 
 sed -i 's/>/>Brothers_Diffuse_/g' S015_metaspades_scaffolds.min1000.fasta
 ```
+
 ### ELSC Abe
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>ELSC_Abe_/g' A1_metaspades_scaffolds.min1000.fasta
 
@@ -108,7 +127,9 @@ sed -i 's/>/>ELSC_Abe_/g' A3_metaspades_scaffolds.min1000.fasta
 
 sed -i 's/>/>ELSC_Abe_/g' 128-326.fasta
 ```
+
 ### ELSC Tui Malila
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>ELSC_Tui_Malila_/g' T10_metaspades_scaffolds.min1000.fasta
 
@@ -120,13 +141,17 @@ sed -i 's/>/>ELSC_Tui_Malila_/g' 132-544.fasta
 
 sed -i 's/>/>ELSC_Tui_Malila_/g' 134-614.fasta
 ```
+
 ### ELSC Bowl
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>ELSC_Bowl_/g' M1_metaspades_scaffolds.min1000.fasta
 
 sed -i 's/>/>ELSC_Bowl_/g' M2_metaspades_scaffolds.min1000.fasta
 ```
+
 ### ELSC Mariner
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>ELSC_Mariner_/g' 131-447.fasta
 
@@ -134,11 +159,15 @@ sed -i 's/>/>ELSC_Mariner_/g' M10_metaspades_scaffolds.min1000.fasta
 
 sed -i 's/>/>ELSC_Mariner_/g' M17_metaspades_scaffolds.min1000.fasta
 ```
+
 ### ELSC Vai Lili
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>ELSC_Vai_Lili_/g' V2_metaspades_scaffolds.min1000.fasta
 ```
+
 ### Guaymas
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>Guaymas_/g' 4559-240.fasta
 
@@ -148,19 +177,25 @@ sed -i 's/>/>Guaymas_/g' 4561-384.fasta
 
 sed -i 's/>/>Guaymas_/g' 4571-419.fasta
 ```
+
 ### EPR
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>EPR_/g' 4281-140.fasta
 
 sed -i 's/>/>EPR_/g' PIR-30.fasta
 ```
+
 ### MAR Rainbow
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>MAR_Rainbow_/g' 354-166.fasta
 
 sed -i 's/>/>MAR_Rainbow_/g' 355-202.fasta
 ```
+
 ### MAR Lucky
+
 ```{bash, eval = FALSE}
 sed -i 's/>/>MAR_Lucky_/g' 356-284.fasta
 
@@ -170,19 +205,28 @@ sed -i 's/>/>MAR_Lucky_/g' 356-308.fasta
 After scaffold renaming, I used `mv` commands to rename files.
 
 # Identifying viruses using VIBRANT
-VIBRANT filters to remove scaffolds <1kb so not filtering assembly before. ID's dsDNA, ssDNA, and RNA viruses
+
+VIBRANT filters to remove scaffolds \<1kb so not filtering assembly
+before. ID's dsDNA, ssDNA, and RNA viruses
+
 ```{bash, eval = FALSE}
 for i in Assemblies_Renamed/*.fasta; do VIBRANT_run.py -i $i -t 15; done
 ```
 
 ## Count the number of viruses identified by VIBRANT
+
 ```{bash, eval = FALSE}
 grep ">" -c VIBRANT_*/VIBRANT_phages*/*combined.fna | cut -f2 -d : | paste -sd+ | bc
 ```
+
 Total of 53,135 viruses identified
 
 # Run CheckV
-CheckV provides quality estimates of viral genomes. I'm running this first to determine how many medium and high confidence viruses we have. If it's a lot I'll only focus on these.
+
+CheckV provides quality estimates of viral genomes. I'm running this
+first to determine how many medium and high confidence viruses we have.
+If it's a lot I'll only focus on these.
+
 ```{bash, eval = FALSE}
 find -type f -name "*combined.fna" | xargs cp -t ../Virus_Genomes/fna/
 
@@ -190,15 +234,18 @@ nohup checkv end_to_end Virus_Genomes/fna/All_Viruses.fna CheckV_Output -t 20 &
 ```
 
 Check how many medium and high quality viruses:
+
 ```{bash,  eval = FALSE}
 grep -v 'Low-quality\|Not-determined' quality_summary.tsv | wc
 ```
-Result: 1,165 medium and high quality viruses (exclude header)
-146 complete viruses
-1,031 proviruses, or integrated viruses
+
+Result: 1,165 medium and high quality viruses (exclude header) 146
+complete viruses 1,031 proviruses, or integrated viruses
 
 ## Grab only the medium and high quality viruses
+
 Grab only the medium and high quality viruses predicted by CheckV
+
 ```{bash,  eval = FALSE}
 grep -v 'Low-quality\|Not-determined' quality_summary.tsv > MedHighQual_Viruses.tsv
 
@@ -213,7 +260,9 @@ Cp the faa viruses into a new folder
 find -type f -name "*combined.faa" | xargs cp -t ../Virus_Genomes/faa
 ```
 
-Get a list of the faa scaffold names for medium and high quality viruses:
+Get a list of the faa scaffold names for medium and high quality
+viruses:
+
 ```{bash,  eval = FALSE}
 for i in `cat ../../CheckV_Output/MedHighQual_Viruses_list.txt`; do grep $i *.faa >> MedHighQual_faa_list.txt; done
 
@@ -221,11 +270,13 @@ sed 's/>/\t/g' MedHighQual_faa_list.txt | cut -f2 > MedHighQual_faa_list_final.t
 ```
 
 Extract the faa seqs by name:
+
 ```{bash,  eval = FALSE}
 perl /storage1/data12/scripts/screen_list_new.pl MedHighQual_faa_list_final.txt All_Viruses.faa keep > MedHighQual_Viruses.faa
 ```
 
 ## CheckV 49,962 viruses
+
 ```{bash, eval = FALSE}
 mamba activate checkV
 export CHECKVDB="/storage2/databases/CheckV/checkv-db-v1.5/"
@@ -234,9 +285,14 @@ nohup checkv end_to_end ../Virus_Genomes/49962_final_VentViruses_Nlinked.fna Che
 ```
 
 # Organizing the MAGs
-I want to associate the site names and file name of each MAG to the scaffold header. I am not being as careful about renaming for the MAGs as I was for the assemblies, meaning I am just using general site name and not specific (e.g. Brothers vs Brothers_UC).
+
+I want to associate the site names and file name of each MAG to the
+scaffold header. I am not being as careful about renaming for the MAGs
+as I was for the assemblies, meaning I am just using general site name
+and not specific (e.g. Brothers vs Brothers_UC).
 
 ## Brothers Volcano
+
 ```{bash,  eval = FALSE}
 pwd
 
@@ -250,6 +306,7 @@ for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> 
 ```
 
 ## ELSC
+
 ```{bash,  eval = FALSE}
 rename 's/scaf2bin.//g' *.fasta
 
@@ -259,6 +316,7 @@ for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> 
 ```
 
 ## EPR
+
 ```{bash,  eval = FALSE}
 rename 's/scaf2bin.//g' *.fasta
 
@@ -268,6 +326,7 @@ for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> 
 ```
 
 ## Guaymas
+
 ```{bash,  eval = FALSE}
 rename 's/scaf2bin.//g' *.fasta
 
@@ -277,6 +336,7 @@ for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> 
 ```
 
 ## MAR
+
 ```{bash,  eval = FALSE}
 rename 's/scaf2bin.//g' *.fasta
 
@@ -288,6 +348,7 @@ for i in *.fasta; do awk '/>/{sub(">","&"FILENAME"_");sub(/\.fasta/,x)}1' $i >> 
 # Read Mapping
 
 ## EPR
+
 ```{bash,  eval = FALSE}
 conda activate
 
@@ -297,6 +358,7 @@ nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/
 ```
 
 ## Guaymas
+
 ```{bash,  eval = FALSE}
 nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/Guaymas/Guaymas_4559-240.fasta -r /storage1/Reads/HydroVents_ZhouReysenbach/Guaymas/*.fastq.gz -o Read_Mapping/Guaymas -t 20 &
 
@@ -320,7 +382,9 @@ nohup python3 /storage1/data14/software/mapping/mapper.py -i Assemblies_Renamed/
 ```
 
 ## Brothers and ELSC
+
 Now trying with Cody's mapping wrapper
+
 ```{bash,  eval = FALSE}
 conda activate
 
@@ -329,9 +393,13 @@ nohup python3 /storage1/data14/software/mapping/mapper.py -i AssembliesToReadsFi
 
 # Remove viral contamination from MAGs
 
-BLAST all viruses against all the MAGs. You are looking for 100% matches and 100% coverage. Unless it is a lysogenic virus, it should be contamination. Just because a virus is binned with a MAG does not mean it belongs to that virus.
+BLAST all viruses against all the MAGs. You are looking for 100% matches
+and 100% coverage. Unless it is a lysogenic virus, it should be
+contamination. Just because a virus is binned with a MAG does not mean
+it belongs to that virus.
 
-1. Run BLAST search
+1.  Run BLAST search
+
 ```{bash,  eval = FALSE}
 cat *.fasta > All_VentMAGs.fna
 
@@ -340,7 +408,8 @@ makeblastdb -in All_VentMAGs.fna -title "Vent_MAGs" -dbtype nucl
 nohup blastn -query  /storage1/data12/Projects/Vent_Viruses/Virus_Genomes/fna/All_Viruses.fna -db /storage1/data12/Projects/Vent_Viruses/MAGs_Renamed/Remove_ViralContam/All_VentMAGs.fna -out MAGs_Renamed/Remove_ViralContam/VirusHits_toMAGs.txt -num_threads 20 -outfmt "6 qseqid length qlen slen pident bitscore stitle" &
 ```
 
-2. Filter blast hits and subset from MAGs
+2.  Filter blast hits and subset from MAGs
+
 ```{bash,  eval = FALSE}
 python3 /storage1/data12/scripts/filter_blast_100c_pi.py VirusHits_toMAGs.txt VirusHits_toMAGs_filtered.txt
 
@@ -352,11 +421,16 @@ cat *noVirusContam* > All_VentMAGs_noViralContam.fna
 ```
 
 # ViWrap
-**Unfortunately this ended up not being an option because it would take a month to run through all my samples. One smaller scale sample took 10 hours, times 42 samples = inefficient.**
 
-Testing ViWrap - it would be nice if I could use it to get all the output I need :)
+**Unfortunately this ended up not being an option because it would take
+a month to run through all my samples. One smaller scale sample took 10
+hours, times 42 samples = inefficient.**
+
+Testing ViWrap - it would be nice if I could use it to get all the
+output I need :)
 
 ## Brothers Diffuse
+
 ```{bash,  eval = FALSE}
 conda activate /storage1/data22/ViWrap_conda_environments/ViWrap
 
@@ -376,7 +450,9 @@ ViWrap run --input_metagenome /storage1/data12/Projects/Vent_Viruses/Assemblies_
 nohup ./bash_BD.sh &
 ```
 
-I decided to leave off the custom MAG option for iphop since that takes a lot of time. I can take all the viruses and all the MAGs and run that on my own after I have all the vMAGs and unbinned viruses.
+I decided to leave off the custom MAG option for iphop since that takes
+a lot of time. I can take all the viruses and all the MAGs and run that
+on my own after I have all the vMAGs and unbinned viruses.
 
 ```{bash,  eval = FALSE}
 conda activate /storage1/data22/ViWrap_conda_environments/ViWrap
@@ -404,15 +480,13 @@ conda activate
 nohup python3 /storage1/data14/for_maggie/ViWrap_loop.py -s AssembliesToReads_ViWrap.txt -a /storage1/data12/Projects/Vent_Viruses/Assemblies_Renamed/ -r /storage1/Reads/HydroVents_ZhouReysenbach/ &
 ```
 
-
-
-
-
 # vRhyme Binning
 
-Don't judge me for running this one by one...I was doing it as the bam files were coming out from the read mapping because I'm impatient :)
+Don't judge me for running this one by one...I was doing it as the bam
+files were coming out from the read mapping because I'm impatient :)
 
 ## EPR
+
 ```{bash,  eval = FALSE}
 conda activate vRhyme
 
@@ -422,6 +496,7 @@ vRhyme -i VIBRANT_output/VIBRANT_EPR_PIR-30/VIBRANT_phages_EPR_PIR-30/EPR_PIR-30
 ```
 
 ## Guaymas
+
 ```{bash,  eval = FALSE}
 conda activate vRhyme
 
@@ -435,6 +510,7 @@ vRhyme -i VIBRANT_output/VIBRANT_Guaymas_4571-419/VIBRANT_phages_Guaymas_4571-41
 ```
 
 ## MAR
+
 ```{bash,  eval = FALSE}
 conda activate vRhyme
 
@@ -447,10 +523,10 @@ vRhyme -i VIBRANT_output/VIBRANT_MAR_Rainbow_354-166/VIBRANT_phages_MAR_Rainbow_
 vRhyme -i VIBRANT_output/VIBRANT_MAR_Rainbow_355-202/VIBRANT_phages_MAR_Rainbow_355-202/MAR_Rainbow_355-202.phages_combined.fna -b Read_Mapping/MAR/MAR_Rainbow_355-202/*.bam -t 5
 ```
 
-
-
 ## Brothers
+
 ### Diffuse
+
 ```{bash,  eval = FALSE}
 conda activate vRhyme
 
@@ -460,6 +536,7 @@ vRhyme -i VIBRANT_output/VIBRANT_Brothers_Diffuse_S015_metaspades_scaffolds.min1
 ```
 
 ### LC
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_Brothers_LC_S014_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_LC_S014_metaspades_scaffolds.min1000/Brothers_LC_S014_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_LC_S014/*bam -t 5
 
@@ -467,6 +544,7 @@ vRhyme -i VIBRANT_output/VIBRANT_Brothers_LC_S016_metaspades_scaffolds.min1000/V
 ```
 
 ### NWCA
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S013_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S013_metaspades_scaffolds.min1000/Brothers_NWCA_S013_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S013/*bam -t 5
 
@@ -481,8 +559,8 @@ vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S144_metaspades_scaffolds.min1000
 vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCA_S145_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCA_S145_metaspades_scaffolds.min1000/Brothers_NWCA_S145_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCA_S145/*bam -t 5
 ```
 
-
 ### NWCB
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCB_S012_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_NWCB_S012_metaspades_scaffolds.min1000/Brothers_NWCB_S012_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_NWCB_S012/*bam -t 5
 
@@ -496,6 +574,7 @@ vRhyme -i VIBRANT_output/VIBRANT_Brothers_NWCB_S146_metaspades_scaffolds.min1000
 ```
 
 ### UC
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_Brothers_UC_S010_metaspades_scaffolds.min1000/VIBRANT_phages_Brothers_UC_S010_metaspades_scaffolds.min1000/Brothers_UC_S010_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/Brothers_UC_S010/*bam -t 5
 
@@ -505,6 +584,7 @@ vRhyme -i VIBRANT_output/VIBRANT_Brothers_UC_S147_metaspades_scaffolds.min1000/V
 ```
 
 ### ELSC Abe
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_128-326/VIBRANT_phages_ELSC_Abe_128-326/ELSC_Abe_128-326.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_128-326/*bam -t 5
 
@@ -512,7 +592,9 @@ vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A1_metaspades_scaffolds.min1000/VIBRAN
 
 vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A3_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Abe_A3_metaspades_scaffolds.min1000/ELSC_Abe_A3_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_A3/*bam -t 5
 ```
+
 ### ELSC Mariner
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_ELSC_Bowl_M1_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Bowl_M1_metaspades_scaffolds.min1000/ELSC_Bowl_M1_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Bowl_M1/*bam -t 5
 
@@ -533,8 +615,8 @@ vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A1_metaspades_scaffolds.min1000/VIBRAN
 vRhyme -i VIBRANT_output/VIBRANT_ELSC_Abe_A3_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Abe_A3_metaspades_scaffolds.min1000/ELSC_Abe_A3_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Abe_A3/*bam -t 5
 ```
 
-
 ### ELSC Tui Malila
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_ELSC_Tui_Malila_132-544/VIBRANT_phages_ELSC_Tui_Malila_132-544/ELSC_Tui_Malila_132-544.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Tui_Malila_132-544/*bam -t 5
 
@@ -548,17 +630,20 @@ vRhyme -i VIBRANT_output/VIBRANT_ELSC_Tui_Malila_T2_metaspades_scaffolds.min1000
 ```
 
 ### Vai Lili
+
 ```{bash,  eval = FALSE}
 vRhyme -i VIBRANT_output/VIBRANT_ELSC_Vai_Lili_V2_metaspades_scaffolds.min1000/VIBRANT_phages_ELSC_Vai_Lili_V2_metaspades_scaffolds.min1000/ELSC_Vai_Lili_V2_metaspades_scaffolds.min1000.phages_combined.fna -b Read_Mapping/BrothersELSC/ELSC_Vai_Lili_V2/*bam -t 5
 ```
 
-
 # Renaming vMAGs
+
 ```{bash,  eval = FALSE}
 mkdir originals_vMAGs
 ```
 
-1. Run bash script with the following contents to find vMAGs, rename them, cp them 1 dir up:
+1.  Run bash script with the following contents to find vMAGs, rename
+    them, cp them 1 dir up:
+
 ```{bash,  eval = FALSE}
 ./rename_vMAGs.sh
 
@@ -573,7 +658,8 @@ find . -maxdepth 3 -type f -name "*fasta" -exec sh -c '
 ' sh {} +
 ```
 
-2. Find renamed vMAGs, put them in 1 folder, clean up the names
+2.  Find renamed vMAGs, put them in 1 folder, clean up the names
+
 ```{bash,  eval = FALSE}
 find -maxdepth 2 -name "*.fasta" | xargs -i mv {} fna/
 
@@ -583,6 +669,7 @@ rename 's/_metaspades_scaffolds.min1000//' *.fasta
 ```
 
 # Use vRhyme to get the N-linked scaffolds of vMAGs
+
 You'll need this to run CheckV, iphop, and other programs on the vMAGs
 
 ```{bash,  eval = FALSE}
@@ -593,30 +680,39 @@ link_bin_sequences.py -i fna/ -o fna_Nlinked_scaffolds
 
 # Get a file of unbinned viruses for the same 42 samples
 
-1. Concatenate the viruses into 1 file
+1.  Concatenate the viruses into 1 file
+
 ```{bash,  eval = FALSE}
 cat *fasta > ../all_vMAGs.fna
 ```
 
-2. Make a mapping file to use in the future for mapping vMAG file name: scaffold names
+2.  Make a mapping file to use in the future for mapping vMAG file name:
+    scaffold names
+
 ```{bash,  eval = FALSE}
 grep ">" *.fasta | sed 's/:>/\t/g' | sed 's/.fasta/\t/g' | cut -f1,3 | sed 's/__/\t/g' | cut -f1,3 > ../vMAG_scaffold_mapping.txt
 
 cut -f2 vMAG_scaffold_mapping.txt > binned_viral_scaffolds.txt
 ```
 
-3. Subset the file of all viruses for unbinned viruses using the txt file of binned viral scaffolds
+3.  Subset the file of all viruses for unbinned viruses using the txt
+    file of binned viral scaffolds
+
 ```{bash,  eval = FALSE}
 screen_list_new.pl ../../../vRhyme/binned_viral_scaffolds.txt All_Viruses.fna > unbinned_VentViruses.fna
 ```
 
 # Run iphop on the vUnbinned and vMAGs
-Run iphop on the 1500N-concatenated vMAGs and unbinned viruses so you can compare host predictions with the plume viruses.
 
-**If you're doing this again, do step 2 first if you anticipate any illegal characters in your MAGs. Then proceed**
+Run iphop on the 1500N-concatenated vMAGs and unbinned viruses so you
+can compare host predictions with the plume viruses.
 
-First, make a custom iphop database using the MAGs from the 42 vents
-1. Run gtdbtk 1.5.0 on the MAGs
+**If you're doing this again, do step 2 first if you anticipate any
+illegal characters in your MAGs. Then proceed**
+
+First, make a custom iphop database using the MAGs from the 42 vents 1.
+Run gtdbtk 1.5.0 on the MAGs
+
 ```{bash,  eval = FALSE}
 conda activate gtdbtk-1.5.0
 
@@ -625,7 +721,14 @@ nohup gtdbtk de_novo_wf --genome_dir MAGs_Renamed/No_ViralContam/ --bacteria --o
 nohup gtdbtk de_novo_wf --genome_dir MAGs_Renamed/No_ViralContam/ --archaea --outgroup_taxon p__Altarchaeota --out_dir Vent_MAGs_gtdbtk_denovo_wf/ --cpus 20 --force --extension fna &
 ```
 
-2. Create iphop database. I ran into the same problem that James did where iphop complained about illegal characters so I'm going to follow his steps to fix it. In the second command we are running iphop predict with the MAGs as the input viruses to get the "cleaned file" since my MAGs are giving me errors for illegal characters. Then use the split_MAGs.py script to split up the MAGs back into individual files.
+2.  Create iphop database. I ran into the same problem that James did
+    where iphop complained about illegal characters so I'm going to
+    follow his steps to fix it. In the second command we are running
+    iphop predict with the MAGs as the input viruses to get the "cleaned
+    file" since my MAGs are giving me errors for illegal characters.
+    Then use the split_MAGs.py script to split up the MAGs back into
+    individual files.
+
 ```{bash,  eval = FALSE}
 conda activate iphop
 
@@ -634,7 +737,11 @@ nohup iphop predict --fa_file MAGs_Renamed/All_VentMAGs_noViralContam.fna --out_
 python3 split_MAGs.py
 ```
 
-3. Rerun GTDBtk stuff with new names/cleaned MAGs. Remember the outgroups should be something you do not have in your dataset. So remember to check the GTDBtk taxonomy of your MAGs, then choose an outgroup that is distant.
+3.  Rerun GTDBtk stuff with new names/cleaned MAGs. Remember the
+    outgroups should be something you do not have in your dataset. So
+    remember to check the GTDBtk taxonomy of your MAGs, then choose an
+    outgroup that is distant.
+
 ```{bash,  eval = FALSE}
 conda activate gtdbtk-1.5.0
 
@@ -643,19 +750,22 @@ nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/clean_fnas/ --bacteria --o
 nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/clean_fnas/ --archaea --outgroup_taxon p__Huberarchaeota --out_dir Vent_MAGs_gtdbtk_denovo_wf_clean/ --cpus 20 &
 ```
 
-4. Add MAGs finally to iphop db
+4.  Add MAGs finally to iphop db
+
 ```{bash,  eval = FALSE}
 nohup iphop add_to_db --fna_dir clean_iphop_MAGs/clean_fnas/ --gtdb_dir Vent_MAGs_gtdbtk_denovo_wf_clean/ --out_dir iPHoP_Sept_2021_w_VentMAGs --db_dir /storage1/databases/iPHoP/Sept_2021_pub/ &
 ```
 
-5. Run iphop using your custom database
+5.  Run iphop using your custom database
+
 ```{bash,  eval = FALSE}
 nohup iphop predict --fa_file Virus_Genomes/fna/vUnbinned_vMAG_1500Ns_VentViruses.fna --db_dir iPHoP_Sept_2021_w_VentMAGs/ --out_dir iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb -t 20 --no_qc &
 ```
 
 ## Run iphop on vUnbinned and vMAGs 49,962 viruses
 
-1. Create conda env on virserver
+1.  Create conda env on virserver
+
 ```{bash,  eval = FALSE}
 mamba create --name iphop_1.3.3
 
@@ -665,12 +775,16 @@ mamba install -c bioconda iphop
 ```
 
 Download database (in a screen or with nohup)
+
 ```{bash,  eval = FALSE}
 iphop download -d /storage2/databases/iPHoP
 ```
+
 Ran test and it completed without errors
 
-2. Make custom MAG iphop database. First clean the MAGs. Run this until it produces the clean MAGs file and then kill the run.
+2.  Make custom MAG iphop database. First clean the MAGs. Run this until
+    it produces the clean MAGs file and then kill the run.
+
 ```{bash,  eval = FALSE}
 nohup iphop predict --fa_file MAGs_microbial/PlumeVent_MAGs_3872.fna --out_dir clean_iphop_MAGs --db_dir /storage2/databases/iPHoP/Aug_2023_pub_rw/ --num_threads 60 &
 
@@ -678,28 +792,41 @@ mkdir clean_fnas
 
 python3.8 split_MAGs.py
 ```
-For some reason the last MAG in the list, MAR_356-308_metabat2_112, was not extracted. Fixing now:
+
+For some reason the last MAG in the list, MAR_356-308_metabat2_112, was
+not extracted. Fixing now:
+
 ```{bash,  eval = FALSE}
 grep "MAR_356-308_metabat2_112" PlumeVent_MAGs_3872_clean.fna > scaffold_list.txt
 sed -i 's/>//g' scaffold_list.txt
 
 perl /scratch/langwig/scripts/screen_list_new.pl scaffold_list.txt PlumeVent_MAGs_3872_clean.fna keep > MAR_356-308_metabat2_112.fasta
 ```
-Actually I'm noticing that there isn't the same number of scaffolds in the clean_fnas folder files than the original clean file. Going to retry the separation using an awk script because not sure the python script is functioning as expected.
 
-Splitting clean MAGs file into individual MAGs. First convert the MAG file into 1 liners
+Actually I'm noticing that there isn't the same number of scaffolds in
+the clean_fnas folder files than the original clean file. Going to retry
+the separation using an awk script because not sure the python script is
+functioning as expected.
+
+Splitting clean MAGs file into individual MAGs. First convert the MAG
+file into 1 liners
+
 ```{bash,  eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/clean_iphop_MAGs
 
 perl -lne 'if(/^(>.*)/){ $head=$1 } else { $fa{$head} .= $_ } END{ foreach $s (sort(keys(%fa))){ print "$s\n$fa{$s}\n" }}' PlumeVent_MAGs_3872_clean.fna > PlumeVent_MAGs_3872_clean_1ne.fna
 ```
-Then split it using a bash script (this took forever, recommend modifying in the future for speed)
+
+Then split it using a bash script (this took forever, recommend
+modifying in the future for speed)
+
 ```{bash,  eval = FALSE}
 ./split_MAGs.sh
 ```
 
-3. Then run gtdbtk on the clean microbial MAGs.
+3.  Then run gtdbtk on the clean microbial MAGs.
+
 ```{bash,  eval = FALSE}
 mamba create -n gtdbtk-2.3.2 -c conda-forge -c bioconda gtdbtk=2.3.2
 mamba activate gtdbtk-2.3.2
@@ -712,17 +839,20 @@ nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/output_MAGs/ --bacteria --
 nohup gtdbtk de_novo_wf --genome_dir clean_iphop_MAGs/output_MAGs/ --archaea --outgroup_taxon p__Altiarchaeota --out_dir iphop/cleanMAGs_gtdbtk_denovo_wf_2_3_2 --cpus 60 --force --extension fasta &
 ```
 
-4. Then add the MAGs to an iphop database using the GTDBtk output
+4.  Then add the MAGs to an iphop database using the GTDBtk output
+
 ```{bash,  eval = FALSE}
 nohup iphop add_to_db --fna_dir clean_iphop_MAGs/output_MAGs/ --gtdb_dir iphop/cleanMAGs_gtdbtk_denovo_wf_2_3_2 --out_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs --db_dir /storage2/databases/iPHoP/Aug_2023_pub_rw/ -t 60 &
 ```
 
-5. Finally, run iphop 
+5.  Finally, run iphop
+
 ```{bash,  eval = FALSE}
 nohup iphop predict --fa_file Virus_Genomes/fna/6347_virus_scaffolds_vMAGsOld.fasta --db_dir iphop/iPHoP_Aug_2023_w_VentPlumeMAGs/ --out_dir iphop/iphop_6347_vMAGsOld_VentViruses_custDB -t 65 --no_qc &
 ```
 
 # Collect the VIBRANT output into single files
+
 ```{bash,  eval = FALSE}
 find VIBRANT* -name "*AMG_individuals*" | xargs -i cp {} AMG_VIBRANT_output/AMG_individuals/
 
@@ -744,11 +874,14 @@ nohup checkv end_to_end Virus_Genomes/fna/all_vMAGs_1500Ns.fna CheckV_vMAGs -t 2
 ```{bash, eval = FALSE}
 screen_list_new.pl ../vRhyme/binned_viral_scaffolds.txt quality_summary.tsv > quality_summary_vUnbinned_Vents.tsv
 ```
-I ended up doing this quickly with vlookup in excel because this was not behaving as expected/not working
+
+I ended up doing this quickly with vlookup in excel because this was not
+behaving as expected/not working
 
 # Rename the faa vMAG files
 
-1. Modify the bash script to find the faa vMAGs
+1.  Modify the bash script to find the faa vMAGs
+
 ```{bash, eval = FALSE}
 ./rename_vMAGs.sh
 
@@ -763,12 +896,14 @@ find . -maxdepth 3 -type f -name "*[0-9].faa" -exec sh -c '
 ' sh {} +
 ```
 
-2. Mv them to 1 dir
+2.  Mv them to 1 dir
+
 ```{bash, eval = FALSE}
 find -maxdepth 2 -name "*[0-9].faa" | xargs -i mv {} /storage1/data12/Projects/Vent_Viruses/vRhyme/faa/
 ```
 
-3. Clean up the names
+3.  Clean up the names
+
 ```{bash, eval = FALSE}
 rename 's/vRhyme_results_//' *.faa
 rename 's/.phages_combined//' *.faa
@@ -776,9 +911,11 @@ rename 's/_metaspades_scaffolds.min1000//' *.faa
 ```
 
 # Clustering
+
 ## Using skani to compare ANI between viruses
 
 This utilizes a skani-vMAG.py script written by Cody.
+
 ```{bash, eval = FALSE}
 conda install -c bioconda skani
 
@@ -787,7 +924,9 @@ nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c ../Virus_Geno
 
 ## Cluster the skani results using mcl
 
-1. Preprocess the file using polars. This utilizes preprocess.py written by Cody.
+1.  Preprocess the file using polars. This utilizes preprocess.py
+    written by Cody.
+
 ```{bash, eval = FALSE}
 conda create --name mcl
 conda install -c "bioconda/label/cf201901" mcl
@@ -796,32 +935,39 @@ conda install -c conda-forge polars
 /storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_output_vUnbinned_vMAGs_Vents.tsv -o skani_PreprocessedOutput_vUnbinned_vMAGs_Vents.tsv
 ```
 
-2. Pass the preprocessed file to mcxload
+2.  Pass the preprocessed file to mcxload
+
 ```{bash, eval = FALSE}
 mcxload -abc skani/skani_PreprocessedOutput_vUnbinned_vMAGs_Vents.tsv -o mcl_clusters/vUnbinned_vMAGs_Vents.mci -write-tab mcl_clusters/vUnbinned_vMAGs_Vents.mcxload
 ```
 
-3. Then to mcl
+3.  Then to mcl
+
 ```{bash, eval = FALSE}
 nohup mcl vUnbinned_vMAGs_Vents.mci -use-tab vUnbinned_vMAGs_Vents.mcxload -o out_vUnbinned_vMAGs_Vents.clusters &
 ```
-That pipeline seems to work and I get 2,574 clusters. That seems reasonable for 31,136 viruses. The clusters look mixed by vent.
+
+That pipeline seems to work and I get 2,574 clusters. That seems
+reasonable for 31,136 viruses. The clusters look mixed by vent.
 
 ## ANI clustering with skani and mcl using both Vent and Plume data
 
-1. Compare ANI using skani
+1.  Compare ANI using skani
+
 ```{bash, eval = FALSE}
 conda activate
 
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c fna_vUnbinned/unbinned_PlumeVent_viruses.fna -d fna_vMAGs -x .fasta --outdir . -o skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv &
 ```
 
-2. Preprocess
+2.  Preprocess
+
 ```{bash, eval = FALSE}
 /storage1/data14/software/skani-vMAG/python/preprocess.py -i ../../skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -o skani_ANI_vUnbinned_vMAGs_PlumeVents_processed.tsv
 ```
 
-3. MCL
+3.  MCL
+
 ```{bash, eval = FALSE}
 conda activate mcl
 
@@ -829,61 +975,83 @@ mcxload -abc skani_ANI_vUnbinned_vMAGs_PlumeVents_processed.tsv -o vUnbinned_vMA
 
 nohup mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcxload -o vUnbinned_vMAGs_PlumeVents.clusters &
 ```
+
 This produced 3,294 clusters from 38,014 viruses
 
-4. Analyze cluster output
-First convert file to comma separated for easier data wrangling.
+4.  Analyze cluster output First convert file to comma separated for
+    easier data wrangling.
+
 ```{bash, eval = FALSE}
 sed 's/\t/,/g' vUnbinned_vMAGs_PlumeVents.clusters > vUnbinned_vMAGs_PlumeVents.clusters.csv
 ```
 
-Grab only comma separated lines to see how many clusters excluding singletons.
+Grab only comma separated lines to see how many clusters excluding
+singletons.
+
 ```{bash, eval = FALSE}
 grep "," vUnbinned_vMAGs_PlumeVents.clusters.csv > vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv
 
 cat vUnbinned_vMAGs_PlumeVents.clusters_noSingletons.csv | wc
 ```
-**2,797 clusters with 2 or more viral genomes. 497 viral genomes are singletons**
+
+**2,797 clusters with 2 or more viral genomes. 497 viral genomes are
+singletons**
 
 ### To reformat mcl cluster table so that vRhyme MAG names are in the right format
 
 ```{bash, eval = FALSE}
 cut -f1,2 mcl_formatted_table_VentPlumeViruses.tsv | sort | sed 's/__/\t/g' | sed 's/vRhyme_/vRhyme_bin_/g' | sed 's/_k95/\t/g' | sed 's/_NODE/\t/g' | sed 's/_scaffold/\t/g' | grep "vRhyme" | cut -f1,2,3 | awk '{ print $1 " " $3 "_" $2}' > mcl_vMAGs_renamed.txt
 ```
-**Used this to create mcl_formatted_table_VentPlumeViruses_renamedFinal, which is the final mcl cluster file with the right names for all 1kb viruses from Plume and Vent**
+
+**Used this to create mcl_formatted_table_VentPlumeViruses_renamedFinal,
+which is the final mcl cluster file with the right names for all 1kb
+viruses from Plume and Vent**
 
 ### Redoing mcl clustering of 1kb PlumeVent skani output for higher aligned fraction
 
-1. To only get output for viral genomes where aligned fraction is >50%
+1.  To only get output for viral genomes where aligned fraction is \>50%
+
 ```{bash, eval = FALSE}
 awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv > skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv
 ```
 
-2. Preprocess that file - I had to do this on sulfur because needed polars from mcl conda environment. Remember has to be older version if you're getting the error about sep vs separation
+2.  Preprocess that file - I had to do this on sulfur because needed
+    polars from mcl conda environment. Remember has to be older version
+    if you're getting the error about sep vs separation
+
 ```{bash, eval = FALSE}
 /storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv -o skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv
 ```
-**Notice that lowest value from this processed file is much higher than the lowest from the old processed file**
 
-3. Run mcxload
+**Notice that lowest value from this processed file is much higher than
+the lowest from the old processed file**
+
+3.  Run mcxload
+
 ```{bash, eval = FALSE}
 mcxload -abc skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF_processed.tsv -o mcl/vUnbinned_vMAGs_PlumeVents_50AF.mci -write-tab mcl/vUnbinned_vMAGs_PlumeVents_50AF.mcxload
 ```
 
-4. Run mcl
+4.  Run mcl
+
 ```{bash, eval = FALSE}
 mcl vUnbinned_vMAGs_PlumeVents_50AF.mci -use-tab vUnbinned_vMAGs_PlumeVents_50AF.mcxload -o out_vUnbinned_vMAGs_PlumeVents_50AF.clusters
 ```
+
 1,021 clusters found
 
-5. Convert to csv
+5.  Convert to csv
+
 ```{bash, eval = FALSE}
 sed 's/\t/,/g' out_vUnbinned_vMAGs_PlumeVents_50AF.clusters > out_vUnbinned_vMAGs_PlumeVents_50AF.clusters.csv
 ```
 
 ## Final clustering with skani and mcl, Vent and Plume, 5kb and above viruses
 
-1. Set up directories of viral genomes by creating sym links for vMAGs >=5kb. Also get 1 file of unbinned viruses >5kb. Remember to replace "=" in name to "_" because of issues.
+1.  Set up directories of viral genomes by creating sym links for vMAGs
+    \>=5kb. Also get 1 file of unbinned viruses \>5kb. Remember to
+    replace "=" in name to "\_" because of issues.
+
 ```{bash, eval = FALSE}
 pwd
 /storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent_5kb
@@ -897,7 +1065,8 @@ for i in `cat 5kb_PlumeVentViruses_list_vMAGsOnly.txt`; do ln -s /storage1/data1
 perl screen_list_new.pl 5kb_vUnbinned.txt unbinned_PlumeVentViruses.fna keep > vUnbinned_PlumeVent_Viruses_5kb.fna
 ```
 
-2. Rerun ANI with skani
+2.  Rerun ANI with skani
+
 ```{bash, eval = FALSE}
 conda activate
 
@@ -906,14 +1075,16 @@ nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c vUnbinned_Plu
 cp skani_ANI.tsv skani_ANI_PlumeVent_Viruses_5kb.tsv
 ```
 
-3. Preprocess the skani ANI results to cluster with mcl
+3.  Preprocess the skani ANI results to cluster with mcl
+
 ```{bash, eval = FALSE}
 conda activate mcl
 
 /storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_PlumeVent_Viruses_5kb.tsv -o skani_ANIprocessed_PlumeVent_Viruses_5kb.tsv
 ```
 
-4. Run clustering with mcl
+4.  Run clustering with mcl
+
 ```{bash, eval = FALSE}
 conda activate mcl
 
@@ -926,7 +1097,8 @@ sed 's/\t/,/g' PlumeVent_Viruses_5kb.clusters > PlumeVent_Viruses_5kb.clusters.c
 
 ## Redoing skani with only sulfur cycling viruses
 
-1. Rerun skani on just sulfur cycling viruses (on Sulfur)
+1.  Rerun skani on just sulfur cycling viruses (on Sulfur)
+
 ```{bash, eval = FALSE}
 nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbinned.fna -d VirusGenomes/vMAGs/ -x .fasta --outdir . &
 
@@ -935,18 +1107,29 @@ mv skani_ANI.tsv skani_ANI_VentPlume_sulfurViruses.tsv
 /storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_VentPlume_sulfurViruses.tsv -o skani_ANI_VentPlume_sulfurViruses_processed.tsv
 ```
 
-2. Filter for >50AF
+2.  Filter for \>50AF
+
 ```{bash, eval = FALSE}
 awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_ANI_VentPlume_sulfurViruses.tsv > skani_ANI_VentPlume_sulfurViruses_50AF.tsv
 ```
 
-3. Also preprocess the sulfur only viruses ANI with AF50
+3.  Also preprocess the sulfur only viruses ANI with AF50
+
 ```{bash, eval = FALSE}
 /storage1/data14/software/skani-vMAG/python/preprocess.py -i skani_ANI_VentPlume_sulfurViruses_50AF.tsv -o skani_ANI_VentPlume_sulfurViruses_50AF_processed.tsv
 ```
-**This made me realize the problem with skani triangle is it won't filter by AF. With this method I just used, I can see the ANI of sulfur viruses for those that have AF ≥50%. Do this, get the viruses, then use those in skani triangle for more accurate picture of ANI**
 
-4. Rerun skani triangle to get the matrix for ANI plotting using new info learned. Here I am only giving it the viruses I know have an aligned fraction of ≥50 for **both** viruses, not just 1 way. You can use the --min_af option but might still get misleading results because one of the virus pairs could have low % aligned fraction.
+**This made me realize the problem with skani triangle is it won't
+filter by AF. With this method I just used, I can see the ANI of sulfur
+viruses for those that have AF ≥50%. Do this, get the viruses, then use
+those in skani triangle for more accurate picture of ANI**
+
+4.  Rerun skani triangle to get the matrix for ANI plotting using new
+    info learned. Here I am only giving it the viruses I know have an
+    aligned fraction of ≥50 for **both** viruses, not just 1 way. You
+    can use the --min_af option but might still get misleading results
+    because one of the virus pairs could have low % aligned fraction.
+
 ```{bash, eval = FALSE}
 skani triangle -s 80 --full-matrix --min-af 49 sulfur_genomes_for_SkaniTriangle/* > skani_ani_sulfur_FullMatrix.txt
 
@@ -955,7 +1138,8 @@ sed 's+sulfur_genomes_for_SkaniTriangle/++g' skani_ani_sulfur_FullMatrix.txt > s
 
 ## Get ANI per cluster using Cody's git repo
 
-1. Install
+1.  Install
+
 ```{bash, eval = FALSE}
 git clone https://github.com/cody-mar10/skani-vMAG.git
 cd skani-vMAG
@@ -963,7 +1147,8 @@ mamba create -n vskani -c conda-forge -c bioconda "skani>=0.1" "polars>=0.18"
 pip install -e .
 ```
 
-2. Run
+2.  Run
+
 ```{bash, eval = FALSE}
 vskani summarize -i skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -mo mcl/PlumeVent/vUnbinned_vMAGs_PlumeVents.clusters -o ani_skani_PlumeVent.tsv
 ```
@@ -974,26 +1159,30 @@ vskani summarize -i skani_ANI_vUnbinned_vMAGs_PlumeVents_50AF.tsv -mo mcl/out_vU
 
 ### Rerun skani and mcl using Cody's git repo and dif parameters
 
-1. Running on virserver
+1.  Running on virserver
+
 ```{bash, eval = FALSE}
 nohup vskani all -c Virus_Genomes/fna/unbinned_PlumeVentViruses.fna -d Virus_Genomes/fna/fna_vMAGs_separate/ -x .fasta --outdir skani/PlumeVent_500m30cm -o skani_ANI_VentPlume_500m30cm.tsv -m500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
 ```
 
-2. Didn't make it to mcl so running that manually:
+2.  Didn't make it to mcl so running that manually:
+
 ```{bash, eval = FALSE}
 mcxload -abc skani_processed.tsv -o mcl/vUnbinned_vMAGs_PlumeVents.mci -write-tab mcl/vUnbinned_vMAGs_PlumeVents.mcxload
 
 mcl vUnbinned_vMAGs_PlumeVents.mci -use-tab vUnbinned_vMAGs_PlumeVents.mcxload -o mcl_VentPlume_skani500m30cm.clusters
 ```
 
-3. Summarize ANI values
+3.  Summarize ANI values
+
 ```{bash, eval = FALSE}
 vskani summarize -i ../skani_ANI_VentPlume_500m30cm.tsv -mo mcl_VentPlume_skani500m30cm.clusters -o ani_skani_500m30cm_PlumeVent.tsv
 ```
 
 ### Same as above but with ≥3kb viruses
 
-I was being dumb before, just needed to install mcl in the conda env. Then it is good to go and produces all output.
+I was being dumb before, just needed to install mcl in the conda env.
+Then it is good to go and produces all output.
 
 ```{bash, eval = FALSE}
 nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o skani_ANI_VentPlume_500m30cm_3kb.tsv -m500 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
@@ -1001,7 +1190,9 @@ nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o
 
 ## Clustering using dRep
 
-1. Split the unbinned viruses into individual files. I realized I need to replace the "=" in the header name because Unix does not like it
+1.  Split the unbinned viruses into individual files. I realized I need
+    to replace the "=" in the header name because Unix does not like it
+
 ```{bash, eval = FALSE}
 splitfasta unbinned_VentViruses.fasta
 
@@ -1014,12 +1205,18 @@ done
 ./rename_script.sh
 ```
 
-2. Symlink the individual virus genomes. Has to be done in a for loop because normal symlink method is too many arguments when bash is searching for the paths.
+2.  Symlink the individual virus genomes. Has to be done in a for loop
+    because normal symlink method is too many arguments when bash is
+    searching for the paths.
+
 ```{bash, eval = FALSE}
 for i in /storage1/data12/Projects/Vent_Viruses/Virus_Genomes/fna/vUnbinned_fna/unbinned_VentViruses_split_files/*fasta; do ln -s $i .; done
 ```
 
-3. Repeat for the Plume unbinned viruses. I think the "=" is a problem in the names so I am changing it to underscore for the purposes of dRep
+3.  Repeat for the Plume unbinned viruses. I think the "=" is a problem
+    in the names so I am changing it to underscore for the purposes of
+    dRep
+
 ```{bash, eval = FALSE}
 sed 's/=/_/g' unbinned_PlumeViruses.fna > unbinned_PlumeViruses_renamed.fasta
 
@@ -1037,20 +1234,29 @@ ln -s /storage1/data12/Projects/Plume_Viruses/Virus_Genomes/unbinned_PlumeViruse
 ```
 
 To confirm have the expected total of viruses:
+
 ```{bash, eval = FALSE}
 ls | wc -l
 ```
+
 **38,014 viruses total**
 
-4. **Nevermind, this step isn't necessary because you can ignore Genome qual**. Compile the CheckV info to provide to dRep: genome,completeness,contamination
+4.  **Nevermind, this step isn't necessary because you can ignore Genome
+    qual**. Compile the CheckV info to provide to dRep:
+    genome,completeness,contamination
 
 ```{bash, eval = FALSE}
 cat CheckV_Output/quality_summary.tsv CheckV_vMAGs/quality_summary_vMAGs_Vents.tsv > checkV_vUnbinned_vMAGs_Vents.tsv
 ```
 
-5. Run dRep dereplicate - using the guidance provided at the bottom of [this page](https://drep.readthedocs.io/en/latest/choosing_parameters.html) for clustering bacteriophages and plasmids
+5.  Run dRep dereplicate - using the guidance provided at the bottom of
+    [this
+    page](https://drep.readthedocs.io/en/latest/choosing_parameters.html)
+    for clustering bacteriophages and plasmids
 
-First, make a txt file of the paths to the vMAGs because list is too long to call with a wildcard.
+First, make a txt file of the paths to the vMAGs because list is too
+long to call with a wildcard.
+
 ```{bash, eval = FALSE}
 ls > ../vMAG_paths.txt
 sed -i 's+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g' vMAG_paths.txt
@@ -1059,37 +1265,54 @@ sed -i 's+^+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+g' vM
 ```{bash, eval = FALSE}
 nohup dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths.txt --S_algorithm ANImf -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 &
 ```
-**This run with ANImf (uses nucmer to align genomes) is estimated to take ~1 week with >30k viral genomes. So I am cancelling the run and switching to fastANI. I'll probably lose some accuracy but I guess it's necessary because a week per run won't allow me to tweak parameters if necessary.**
+
+**This run with ANImf (uses nucmer to align genomes) is estimated to
+take \~1 week with \>30k viral genomes. So I am cancelling the run and
+switching to fastANI. I'll probably lose some accuracy but I guess it's
+necessary because a week per run won't allow me to tweak parameters if
+necessary.**
 
 Final command used was this:
+
 ```{bash, eval = FALSE}
 /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep -g vMAG_paths.txt --S_algorithm fastANI -nc .5 -l 1000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15
 ```
 
-6. Analyze dRep output. Use the following command to see how many representatives are in each cluster:
+6.  Analyze dRep output. Use the following command to see how many
+    representatives are in each cluster:
+
 ```{bash, eval = FALSE}
 cut -d "," -f6 Cdb.csv | sort | uniq -c | sort -nr
 ```
+
 14,942 clusters total.
 
 Get the cluster ID of every cluster that has 2 or more representatives
+
 ```{bash, eval = FALSE}
 cut -d "," -f6 Cdb.csv | sort | uniq -c | sort -nr | head -n1657 > ../cdb_clusterIDs_2orMore.txt
 ```
-**There are 1,657 clusters that have 2 or more representatives. 13,285 are singletons.** 
+
+**There are 1,657 clusters that have 2 or more representatives. 13,285
+are singletons.**
 
 Loop to get all the names of all the reps in a cluster
+
 ```{bash, eval = FALSE}
 for i in `cat clusterIDs_toGrab.txt`; do grep -w $i Cdb.csv | cut -d "," -f1 >> $i.ViralGenomes.txt; done
 ```
 
 Now add the file name to each txt file so can cat them all together
+
 ```{bash, eval = FALSE}
 awk -i inplace -v ORS='\r\n' 'FNR==1{print FILENAME}1' *
 ```
 
 ## dRep with 5kb viruses
-1. There should be 7297 viruses with genomes >5kb. Put them into 1 folder for dRep. Then make the virus genome path file
+
+1.  There should be 7297 viruses with genomes \>5kb. Put them into 1
+    folder for dRep. Then make the virus genome path file
+
 ```{bash, eval = FALSE}
 for i in `cat 5kb_PlumeVentViruses_list_noEqual.txt`; do cp /storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/$i input_VentPlume_viruses_fna_5kb/; done
 
@@ -1101,7 +1324,8 @@ sed -i 's+/storage1/data12/Projects/Vent_Viruses/dRep/input_viruses_fna/+/storag
 
 ```
 
-2. Run it
+2.  Run it
+
 ```{bash, eval = FALSE}
 conda activate drep
 
@@ -1124,7 +1348,9 @@ nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data1
 
 ## Realized dRep has been throwing errors for some clusters
 
-Looks like on the 5kb run, ~190 viral scaffolds are not making it into the final clustering so trying to troubleshoot errors here:
+Looks like on the 5kb run, \~190 viral scaffolds are not making it into
+the final clustering so trying to troubleshoot errors here:
+
 ```{bash, eval = FALSE}
 conda activate drep
 
@@ -1133,13 +1359,14 @@ sed 's+/dRep/input_viruses_fna+/dRep/dRep_1kb/input_viruses_fna+g' vMAG_paths.tx
 nohup /storage1/data12/miniconda3/envs/drep/bin/dRep dereplicate /storage1/data12/Projects/Vent_Viruses/dRep/dRep_5kb_debug -g 5kb_VirusGenomes_paths.txt --S_algorithm fastANI -nc .5 -l 5000 -N50W 0 -sizeW 1 --ignoreGenomeQuality --clusterAlg single -p 15 --debug --skip_plots &
 ```
 
+## skani v0.2.0
 
+Rerunning skani and whole pipeline with skani version0.2.0 because of
+major bug with previous version where ANI calculations were off when
+input is \>5k genomes.
 
-## skani v0.2.0 
-
-Rerunning skani and whole pipeline with skani version0.2.0 because of major bug with previous version where ANI calculations were off when input is >5k genomes.
-
-1. vskani not functioning as expected yet so I am running skani, filtering it for 50AF, then using those genomes to cluster with mcl
+1.  vskani not functioning as expected yet so I am running skani,
+    filtering it for 50AF, then using those genomes to cluster with mcl
 
 ```{bash, eval = FALSE}
 mamba activate vskani
@@ -1151,7 +1378,9 @@ nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o
 awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani2_ANI_VentPlume_200m30cm_3kb.tsv > skani2_ANI_VentPlume_200m30cm_3kb_50AF.tsv
 ```
 
-2. Then downloaded the 50AF file to remove self matches so could get an accurate list of virus names for clustering
+2.  Then downloaded the 50AF file to remove self matches so could get an
+    accurate list of virus names for clustering
+
 ```{bash, eval = FALSE}
 cut -f1 skani2_ANI_VentPlume_noSelf.tsv | grep -v "unbinned" | sort | uniq > vMAGs.txt
 
@@ -1161,16 +1390,24 @@ for i in `cat vMAGs.txt`; do cp ../../PlumeVent_500m30cm_3kb/3kb_vMAGs/$i 3kb_vM
 
 perl /scratch/langwig/scripts/screen_list_new.pl vUnbinned_final.txt ../../PlumeVent_500m30cm_3kb/unbinned_PlumeVentViruses_3kb.fna keep > unbinned_PlumeVentViruses_3kb_50AF.fna
 ```
+
 Col 1 gives same name results as col 2. 6 and 7 had unique unbinned.
 
-3. run vskani on 50AF genomes
+3.  run vskani on 50AF genomes
+
 ```{bash, eval = FALSE}
 nohup vskani all -c unbinned_PlumeVentViruses_3kb_50AF.fna -d vMAGs_3kb_50AF/ -x .fasta -o skani2_ANI_VentPlume_200m30cm_3kb_50AF.tsv -m 200 -cm 30 -s 70 -f 50 -t 30 -ma .7  --outdir . &
 ```
+
 Then import the skani tsv file into R for processing.
 
-
-I realized I want to filter the skani results before clustering. So I took the file `skani2_ANI_VentPlume_200m30cm_3kb.tsv` produced above from `vskani all` and created the processed file in R with 3 columns, no headers, calling it `skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv`. ANI was normalized by lowest AF (ANI*lowest AF/100^2) and filtered for ≥70. Now finishing clustering manually:
+I realized I want to filter the skani results before clustering. So I
+took the file `skani2_ANI_VentPlume_200m30cm_3kb.tsv` produced above
+from `vskani all` and created the processed file in R with 3 columns, no
+headers, calling it
+`skani2_ANI_VentPlume_200m30cm_3kb_preprocessed.tsv`. ANI was normalized
+by lowest AF (ANI\*lowest AF/100\^2) and filtered for ≥70. Now finishing
+clustering manually:
 
 ```{bash, eval = FALSE}
 conda activate vskani
@@ -1182,9 +1419,11 @@ nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_v
 
 ### skani v0.2.0 3kb
 
-Rerunning skani v0.2.0 with new set of 3kb viruses - old set was off for some reason.
+Rerunning skani v0.2.0 with new set of 3kb viruses - old set was off for
+some reason.
 
-1. Make folder and file of 3kb viruses:
+1.  Make folder and file of 3kb viruses:
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/Virus_Genomes/fna/all_fna_vMAG_vUnbinned
@@ -1197,7 +1436,8 @@ pwd
 perl /storage2/scratch/langwig/scripts/screen_list_new.pl 3kb_list.txt ../../Virus_Genomes/Final_All_PlumeVent_Viruses_unbinned.fna keep > unbinned_PlumeVentViruses_3kb.fna 
 ```
 
-2. Run skani
+2.  Run skani
+
 ```{bash, eval = FALSE}
 mamba activate vskani
 mamba remove skani
@@ -1208,7 +1448,11 @@ nohup vskani all -c unbinned_PlumeVentViruses_3kb.fna -d 3kb_vMAGs/ -x .fasta -o
 awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani2_ANI_VentPlume_200m30cm_3kb_12_31.tsv > skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF.tsv
 ```
 
-3. Download file to remove self matches in ANI_clust.R. This is so you can get a list of viruses to cluster - some of them will only be in the table bc they have a self to self hit. (Don't do this part, all you have to do is cluster the file, skip to step 4):
+3.  Download file to remove self matches in ANI_clust.R. This is so you
+    can get a list of viruses to cluster - some of them will only be in
+    the table bc they have a self to self hit. (Don't do this part, all
+    you have to do is cluster the file, skip to step 4):
+
 ```{bash, eval = FALSE}
 cut -f1,2 skani2_ANI_VentPlume_200m30cm_3kb_12_31_50AF_preprocessed.tsv | sed 's/\t/\n/g' | sort | uniq | grep -v "unbinned_PlumeVentViruses_3kb.fna" > 3kb_50AF_vMAG_list.txt
 
@@ -1219,7 +1463,10 @@ for i in `cat 3kb_50AF_vMAG_list.txt`; do cp ../PlumeVent_500m30cm_3kb/3kb_vMAGs
 perl /scratch/langwig/scripts/screen_list_new.pl 3kb_50AF_unbinned_list.txt unbinned_PlumeVentViruses_3kb.fna keep > unbinned_PlumeVentViruses_3kb_50AF.fna
 ```
 
-4. Run mcl clustering on the preprocessed file you output from R (ignore what I did in step 3, not necessary). MAKE SURE WHEN REPEATING THIS THE PREPROCESSED INPUT FILE IS JUST THE 3 COLUMNS.
+4.  Run mcl clustering on the preprocessed file you output from R
+    (ignore what I did in step 3, not necessary). MAKE SURE WHEN
+    REPEATING THIS THE PREPROCESSED INPUT FILE IS JUST THE 3 COLUMNS.
+
 ```{bash, eval = FALSE}
 mamba activate vskani
 
@@ -1234,7 +1481,9 @@ Download dereplicated clusters file and process in ANI_clust.R.
 
 ### skani v0.2.0 3kb and 49,962 Viruses
 
-1. Make folder of vMAG 3kb viruses (all of them, 5,708) and file of 3kb unbinned viruses (22,511):
+1.  Make folder of vMAG 3kb viruses (all of them, 5,708) and file of 3kb
+    unbinned viruses (22,511):
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/seqkit
@@ -1252,7 +1501,8 @@ mkdir 3kb_5708_vMAGs
 ln -s ../../../Virus_Genomes/fna/fna_vMAGs_separate/*fasta .
 ```
 
-2. Run skani
+2.  Run skani
+
 ```{bash, eval = FALSE}
 mamba activate vskani
 mamba remove skani
@@ -1263,12 +1513,16 @@ nohup vskani all -c unbinned_VentViruses_3kb.fna -d 3kb_5708_vMAGs/ -x .fasta -o
 awk '{ if ($4 >= 50 && $5 >= 50) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 }' skani_v2_ANI_VentVirus_200m30cm_3kb_49962.tsv > skani_v2_ANI_VentVirus_200m30cm_3kb_49962_50AF.tsv
 ```
 
-3. Normalize ANI by lowest AF (ANI*lowest AF/100^2) and then filter for ≥70 ANI. This makes the preprocessed file.
+3.  Normalize ANI by lowest AF (ANI\*lowest AF/100\^2) and then filter
+    for ≥70 ANI. This makes the preprocessed file.
+
 ```{bash, eval = FALSE}
 Rscript create_preprocessed.R
 ```
 
-4. Run mcl clustering on the processed file you output from the Rscript.
+4.  Run mcl clustering on the processed file you output from the
+    Rscript.
+
 ```{bash, eval = FALSE}
 mamba activate vskani
 
@@ -1279,11 +1533,13 @@ nohup mcl skani_processed.mci -use-tab skani_processed.mcxload -o dereplicated_v
 sed 's/\t/\,/g' dereplicated_virus.clusters | grep "," | wc
 ```
 
-5. Download dereplicated clusters file and process in ANI_clust.R.
+5.  Download dereplicated clusters file and process in ANI_clust.R.
 
 # Using Seqkit to get genome size of vMAGs
 
-1. I have to run this because the CheckV contig length is going to be off since that was run on vMAGs that were N-linked.
+1.  I have to run this because the CheckV contig length is going to be
+    off since that was run on vMAGs that were N-linked.
+
 ```{bash, eval = FALSE}
 conda activate seqkit
 
@@ -1295,7 +1551,9 @@ less vMAG_Seqkit_stats.tsv  | sed '/^file/d'  | sed 's/.fasta//g' | sed 's/\s\s*
 
 cut -f1,4-8 vMAG_stats_parsed.tsv | sed '1i Genome\tnum_seqs\tsum_len\tmin_len\tavg_len\tmax_len' > vMAG_stats_parsed_calc.tsv
 ```
-Doing the above and getting the calc file is all you need, I did the part below thinking I need GB...but KB is fine.
+
+Doing the above and getting the calc file is all you need, I did the
+part below thinking I need GB...but KB is fine.
 
 ```{bash, eval = FALSE}
 sed 's/\,//g' vMAG_stats_parsed_calc.tsv | tail +2 | awk '{ printf "%.3f\n", $3/1e+06 }' | sed '1i Genome_Size_MB' > result.txt
@@ -1303,14 +1561,22 @@ sed 's/\,//g' vMAG_stats_parsed_calc.tsv | tail +2 | awk '{ printf "%.3f\n", $3/
 paste vMAG_stats_parsed_calc.tsv result.txt > vMAG_GenSizeMB.tsv
 ```
 
-2. Download the file and combine vMAG genome size in KB with the length of the unbinned virus from column 2 of the CheckV output. Now you have the file of all viruses, binned and unbinned, with genome size in KB to use for plotting and quality checking results.
+2.  Download the file and combine vMAG genome size in KB with the length
+    of the unbinned virus from column 2 of the CheckV output. Now you
+    have the file of all viruses, binned and unbinned, with genome size
+    in KB to use for plotting and quality checking results.
+
 ```{bash, eval = FALSE}
 cut -f1,2 quality_summary_vUnbinned_Vents.tsv > vUnbinned_GenSize_KB.tsv
 
 cat Vent_vMAG_GenSize_KB.tsv vUnbinned_GenSize_KB.tsv > Vent_vUnbinned_vMAG_GenSize_KB.tsv
 ```
 
-Rerun Seqkit genome size on all viruses vent and plume, vMAG and vUnbinned, all at once. (Reminder CheckV contig length is going to be off since that was run on vMAGs that were N-linked). Doing this on Virserver, 12/12/23. Seqkit Version 2.6.1
+Rerun Seqkit genome size on all viruses vent and plume, vMAG and
+vUnbinned, all at once. (Reminder CheckV contig length is going to be
+off since that was run on vMAGs that were N-linked). Doing this on
+Virserver, 12/12/23. Seqkit Version 2.6.1
+
 ```{bash, eval = FALSE}
 mamba activate
 
@@ -1329,14 +1595,18 @@ sed -i 's/\,//g' VentPlume_seqkit_stats_renamed_space.txt
 
 ## Rerun seqkit on viruses 49,962
 
-1. Make Nlinked vMAGs. Using defaults which add 1500 Ns.
+1.  Make Nlinked vMAGs. Using defaults which add 1500 Ns.
+
 ```{bash, eval = FALSE}
 mamba activate vRhyme
 
 link_bin_sequences.py -i final_VentVirus_individual_fnas -o final_VentVirus_individual_fnas_Nlinked
 ```
 
-2. Rerun Seqkit genome size on all viruses vent and plume, vMAG and vUnbinned, all at once. Doing this on Virserver, 02/24/24. Seqkit Version 2.6.1
+2.  Rerun Seqkit genome size on all viruses vent and plume, vMAG and
+    vUnbinned, all at once. Doing this on Virserver, 02/24/24. Seqkit
+    Version 2.6.1
+
 ```{bash, eval = FALSE}
 mamba activate
 
@@ -1387,8 +1657,9 @@ nohup ./run_coverm_count_MinCov.sh &
 
 **You need python3.11 for this script**
 
-1. dRep parsing
--a points to the ANI file, which is Nbd.csv for dRep. -c to clusters file, Cdb.csv for dRep
+1.  dRep parsing -a points to the ANI file, which is Nbd.csv for dRep.
+    -c to clusters file, Cdb.csv for dRep
+
 ```{bash, eval = FALSE}
 conda create -n py311 python=3.11
 conda activate py311
@@ -1398,7 +1669,8 @@ mamba install -c conda-forge polars networkx matplotlib numpy python=3.11
 /storage1/data14/for_maggie/calc_ani_per_cluster.py -a data_tables/Ndb.csv -c data_tables/Cdb.csv -m fastani-drep
 ```
 
-2. skani parsing
+2.  skani parsing
+
 ```{bash, eval = FALSE}
 /storage1/data14/for_maggie/calc_ani_per_cluster.py -a /storage1/data12/Projects/Vent_Viruses/skani/PlumeVent/skani_ANI_vUnbinned_vMAGs_PlumeVents.tsv -c /storage1/data12/Projects/Vent_Viruses/mcl_clusters/PlumeVent/vUnbinned_vMAGs_PlumeVents.clusters -m skani-mcl
 ```
@@ -1411,7 +1683,9 @@ rfasta split -i All_Viruses.faa -d vUnbinned_faa_split -m genome
 
 # Clustering viral protein content using mmseqs
 
-1. Run mmseqs. 595,541 proteins between Plume and Vent binned and unbinned viruses.
+1.  Run mmseqs. 595,541 proteins between Plume and Vent binned and
+    unbinned viruses.
+
 ```{bash, eval = FALSE}
 conda install -c bioconda mmseqs2
 
@@ -1421,13 +1695,25 @@ nohup mmseqs cluster PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu /storage1/dat
 
 mmseqs createtsv PlumeVent_Viruses_DB PlumeVent_Viruses_DB PlumeVent_Viruses_DB_clu PlumeVent_mmseqs_clusters.tsv --threads 20
 ```
-cov-mode 0 means alignment covers [at least 0.8 of query and of target](https://github.com/soedinglab/mmseqs2/wiki#how-to-set-the-right-alignment-coverage-to-cluster). Using default clustering mode, --cluster-mode 0. This is the [greedy set cover algorithm](https://github.com/soedinglab/mmseqs2/wiki#clustering-modes), which iteratively selects the node with most connections and all its connected nodes to form a cluster and repeats until all nodes are in a cluster.\n
 
-[See here](https://github.com/soedinglab/mmseqs2/wiki#cluster-tsv-format) for explanation of tsv output format.
+cov-mode 0 means alignment covers [at least 0.8 of query and of
+target](https://github.com/soedinglab/mmseqs2/wiki#how-to-set-the-right-alignment-coverage-to-cluster).
+Using default clustering mode, --cluster-mode 0. This is the [greedy set
+cover
+algorithm](https://github.com/soedinglab/mmseqs2/wiki#clustering-modes),
+which iteratively selects the node with most connections and all its
+connected nodes to form a cluster and repeats until all nodes are in a
+cluster.\n
+
+[See
+here](https://github.com/soedinglab/mmseqs2/wiki#cluster-tsv-format) for
+explanation of tsv output format.
 
 ## mmseqs clustering using 49962 viruses
 
-1. Run mmseqs. 595,416 proteins between Plume and Vent binned and unbinned viruses.
+1.  Run mmseqs. 595,416 proteins between Plume and Vent binned and
+    unbinned viruses.
+
 ```{bash, eval = FALSE}
 mamba activate mmseqs2
 
@@ -1440,12 +1726,17 @@ mmseqs createtsv PlumeVent_Viruses_49962_DB PlumeVent_Viruses_49962_DB PlumeVent
 
 # Genomad for virus taxonomy
 
-1. Add this to your .bashrc first
+1.  Add this to your .bashrc first
+
 ```{bash, eval = FALSE}
 export LANG="en_US.UTF-8"
 ```
 
-2. Download genomad with mamba and run it. **Caution when running** genomad uses tensorflow during the classification step and at this step it will significantly overuse the amount of threads you set. It seems like it's using all available CPUs?
+2.  Download genomad with mamba and run it. **Caution when running**
+    genomad uses tensorflow during the classification step and at this
+    step it will significantly overuse the amount of threads you set. It
+    seems like it's using all available CPUs?
+
 ```{bash, eval = FALSE}
 mamba create -n genomad -c conda-forge -c bioconda genomad
 
@@ -1454,7 +1745,9 @@ mamba activate genomad
 nohup genomad end-to-end --cleanup Virus_Genomes/vUnbinned_vMAGs_1500Ns_PlumeVent.fna genomad_output /storage2/databases/genomad_db/ -t 30 &
 ```
 
-3. Use Cody's parsing script to get the taxonomy info from genomad into GTDBtk format
+3.  Use Cody's parsing script to get the taxonomy info from genomad into
+    GTDBtk format
+
 ```{bash, eval = FALSE}
 conda activate
 
@@ -1465,7 +1758,8 @@ python /storage1/data14/for_maggie/genomad/fix_genomad_taxonomy.py -i vUnbinned_
 
 ## Genomad 49,962 viruses
 
-1. Rerun genomad
+1.  Rerun genomad
+
 ```{bash, eval = FALSE}
 mamba activate genomad
 
@@ -1476,7 +1770,8 @@ nohup genomad annotate ../Virus_Genomes/final_VentViruses_42815_Nlinked.fna geno
 nohup genomad end-to-end ../Virus_Genomes/49962_final_VentViruses_Nlinked.fna genomad_end /storage2/databases/genomad_db/ -t 20 --splits 5 --cleanup --min-virus-hallmarks-short-seqs 0 &
 ```
 
-2. Rerun Cody's tax parsing script
+2.  Rerun Cody's tax parsing script
+
 ```{bash, eval = FALSE}
 mamba activate
 
@@ -1485,7 +1780,9 @@ mamba install -c conda-forge polars
 python /scratch/langwig/scripts/fix_genomad_taxonomy.py -i 49962_final_VentViruses_Nlinked_taxonomy.tsv -o 49962_final_VentViruses_Nlinked_taxonomy_parsed.tsv
 ```
 
-3. Get number of hallmarks from genomad annotate output and see how many are ≥1
+3.  Get number of hallmarks from genomad annotate output and see how
+    many are ≥1
+
 ```{bash, eval = FALSE}
 cut -f1,14 49962_final_VentViruses_Nlinked_genes.tsv | sed 's/\(.*\)_/\1\t/' | cut -f1,3 > virus_hallmarks.tsv
 
@@ -1498,27 +1795,35 @@ awk '$2 >= 1' virus_hallmarks_sum.tsv | wc
 
 ## Annotating microbial MAGs
 
-1. Copy data to virserver. Cpying MAGs with no viral contamination. Renamed to remove NoViralContam from names.
+1.  Copy data to virserver. Cpying MAGs with no viral contamination.
+    Renamed to remove NoViralContam from names.
+
 ```{bash, eval = FALSE}
 cp /storage1/data12/Projects/Vent_Viruses/MAGs_Renamed/No_ViralContam/*fna .
 ```
 
-2. Plume MAGs I already have the faa format MAGs without viral contamination. So just going to translate Vent MAGs on sulfur and then cp faa files to virserver.
+2.  Plume MAGs I already have the faa format MAGs without viral
+    contamination. So just going to translate Vent MAGs on sulfur and
+    then cp faa files to virserver.
+
 ```{bash, eval = FALSE}
 for sample in *.fna; do prodigal -i $sample -a Prodigal/$sample.faa -o Prodigal/$sample_output.txt; done
 ```
 
 3 Run the hmm search
+
 ```{bash, eval = FALSE}
 for file in /scratch/langwig/Databases/Metabolic_genes_hmms/*.hmm; do hmmsearch --cut_tc --cpu 30 --tblout $file.txt $file ../PlumeVent_MAGs_3872.faa; echo "next hmm"; done
 ```
 
-4. Get best hits
+4.  Get best hits
+
 ```{bash, eval = FALSE}
 for i in *.txt; do python3 /storage2/scratch/langwig/scripts/hmm_parser.py -i $i -o $i.parsed.txt; done
 ```
-**Note that some are 0 because did not have trusted cutoff**. \n
-**Also this did not actually grab best hits as expected but organized nicely**
+
+**Note that some are 0 because did not have trusted cutoff**. \n **Also
+this did not actually grab best hits as expected but organized nicely**
 
 ## Annotating MAGs using Disco
 
@@ -1526,31 +1831,37 @@ for i in *.txt; do python3 /storage2/scratch/langwig/scripts/hmm_parser.py -i $i
 nohup perl /storage2/scratch/langwig/Tools/DiSCo/tool/DiSCo.pl -i MAGs_microbial/PlumeVent_MAGs_3872.faa -d /storage2/scratch/langwig/Projects/VentPlumeViruses/Disco/ -o -n 30 -m /storage2/scratch/langwig/Tools/DiSCo/tool/DiSCo_HMMlib -f /storage2/scratch/langwig/Tools/DiSCo/tool/filter_DiSCo.pl &
 ```
 
-
 ### Sulfur hmm search parsing
 
-**File that is named subset_sulfurHMM_MAG_names_final_uniq.txt contains the names of microbial MAGs that encode aprA, dsrABD, fccB, soxBCY, or phsA**
+**File that is named subset_sulfurHMM_MAG_names_final_uniq.txt contains
+the names of microbial MAGs that encode aprA, dsrABD, fccB, soxBCY, or
+phsA**
 
 Wild sed commands to get rid of annoying names...
+
 ```{bash, eval = FALSE}
 sed 's/_355-202/\t/2' subset_sulfurHMM_MAGs_final_uniq.txt | cut -f1 | sed 's/_354-166/\t/2' | sed 's/_4571-419/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_4561-380/\t/2' | sed 's/_4559-240/\t/2' | sed 's/_4281-140/\t/2' | sed 's/_4562-384/\t/2' | sed 's/_PIR-30/\t/2' | sed 's/_V2/\t/2' | sed 's/_T2/\t/2' | sed 's/_T11/\t/2' | sed 's/_T10/\t/2' | sed 's/_M2/\t/2' | sed 's/_M17/\t/2' | sed 's/_M1/\t/2' | cut -f1 | sed 's/_A3/\t/2' | sed 's/_A1/\t/2' | sed 's/_134-614/\t/2' | sed 's/_132-544/\t/2' | sed 's/_131-447/\t/2' | sed 's/_128-326/\t/2' | sed 's/_S147/\t/2' | sed 's/_S146/\t/2' | sed 's/_S145/\t/2' | sed 's/_S144/\t/2' | sed 's/_S14/\t/2'| cut -f1 | sed 's/_S13/\t/2' | cut -f1 | sed 's/_S0/\t/2' | cut -f1 | sort | uniq > subset_sulfurHMM_MAGs_final_uniq_namesFixed.txt
 ```
 
 ## Annotations of blast-based iphop matches
 
-What are the genes that link viruses and hosts based on blast output of iphop?
+What are the genes that link viruses and hosts based on blast output of
+iphop?
 
-1. Get viruses that infect sulfur cyclers from BLAST file
+1.  Get viruses that infect sulfur cyclers from BLAST file
+
 ```{bash, eval = FALSE}
 for i in `cat sulfur_Virus_list.txt`; do grep -w $i ../../iphop/iphop_vUnbinned_vMAG_1500Ns_MAGdb/blastgenomes_seqids.txt >> blastgenomes_seqids_sulfur.txt; done
 ```
 
-2. Then grab the matches to sulfur cycling MAGs, leave out ref genomes
+2.  Then grab the matches to sulfur cycling MAGs, leave out ref genomes
+
 ```{bash, eval = FALSE}
 for i in `cat sulfur_MAG_list_50comp.txt`; do grep -w $i blastgenomes_seqids_sulfur.txt >> blastgenomes_seqids_sulfur_VirusMAG.txt; done
 ```
 
-3. Get coordinates for MAGs
+3.  Get coordinates for MAGs
+
 ```{bash, eval = FALSE}
 cut -f3,6,7 blastgenomes_seqids_sulfur_VirusMAG.txt > MAG_coordinates.txt
 
@@ -1567,11 +1878,15 @@ diamond blastp --db GenomesToBlast/sulfur_MAGs.db.dmnd --query GenomesToBlast/su
 
 ## Comparison of sulfur viruses to GOV
 
-I want to see if the viruses that infect sulfur cycling microbes are similar to viruses from the GOV.
+I want to see if the viruses that infect sulfur cycling microbes are
+similar to viruses from the GOV.
 
-1. Download GOV from this [link](https://de.cyverse.org/data/ds/iplant/home/shared/iVirus/GOV2.0) in CyVerse
+1.  Download GOV from this
+    [link](https://de.cyverse.org/data/ds/iplant/home/shared/iVirus/GOV2.0)
+    in CyVerse
 
-2. Use skani to compare ANI
+2.  Use skani to compare ANI
+
 ```{bash, eval = FALSE}
 cat GOV2_viral_populations_larger_than_5KB_or_circular.fasta ../skani/sulfur_viruses/sulfur_vUnbinned.fna > sulfur_vUnbinned_GOV5kb_circ.fasta
 
@@ -1580,7 +1895,11 @@ nohup /storage1/data14/software/skani-vMAG/python/skani-vMAG.py -c sulfur_vUnbin
 
 # Run Virsorter on viruses
 
-YOU NEED TO MAKE SURE YOUR PYTHON IS SET UP CORRECTLY. Even though I had the correct versions in my conda env, it was still reading from /home/langwig/.local/lib and using the wrong python version, so float was deprecated. The following fixed it: 
+YOU NEED TO MAKE SURE YOUR PYTHON IS SET UP CORRECTLY. Even though I had
+the correct versions in my conda env, it was still reading from
+/home/langwig/.local/lib and using the wrong python version, so float
+was deprecated. The following fixed it:
+
 ```{bash, eval = FALSE}
 rm -r /home/langwig/.local/lib
 
@@ -1589,7 +1908,9 @@ mamba create -n virsorter -c conda-forge -c bioconda "numpy<1.20" virsorter=2
 nohup virsorter run -i test.fa --min-length 1500 -j 4 all -d /storage2/databases/VirSorter2/db &
 ```
 
-You can use this command **inside the activated conda env** to see what python versions the env is actually using and reading.
+You can use this command **inside the activated conda env** to see what
+python versions the env is actually using and reading.
+
 ```{bash, eval = FALSE}
 python -c 'import sys; print(sys.path)'
 ```
@@ -1599,36 +1920,48 @@ nohup virsorter run -i Virus_Genomes/fna/unbinned_vMAGs_1500Ns_PlumeVentViruses.
 ```
 
 ## Virsorter run again
+
 Rerunning with the loose parameters plus N-linked vMAGs.
 
-1. Remove e coli viruses from the input file
+1.  Remove e coli viruses from the input file
+
 ```{bash, eval = FALSE}
 perl /storage1/data12/scripts/screen_list_new.pl ecoli_fna_list_toRemove.txt unbinned_vMAGs_1500Ns_PlumeVentViruses.fna > unbinned_vMAGs_1500Ns_PlumeVentViruses_noEcoli.fna
 ```
 
-2. Run it
+2.  Run it
+
 ```{bash, eval = FALSE}
 mamba activate virsorter
 
 nohup virsorter run -i Virus_Genomes/unbinned_vMAGs_1500Ns_PlumeVentViruses_noEcoli.fna -w Virsorter/Nlinked_vMAGs_noMinScore -j 90 --keep-original-seq --prep-for-dramv --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off --min-score 0.0 &
 ```
 
-3. See how many viruses encode a hallmark
+3.  See how many viruses encode a hallmark
+
 ```{bash, eval = FALSE}
 awk -F"\t" '$10 > 0' final-viral-score.tsv
 ```
+
 hallmark = col 10
 
 # Comparing regions of overlap of viruses in ANI clusters
 
-1. Set up so that the viral genomes in a cluster are in separate folders.
+1.  Set up so that the viral genomes in a cluster are in separate
+    folders.
 
-a. Split virus genome file into individual files (had to rename = to _)
+```{=html}
+<!-- -->
+```
+a.  Split virus genome file into individual files (had to rename = to
+    \_)
+
 ```{bash, eval = FALSE}
 rfasta split -i unbinned_viruses_GeoDistinct.fna -d unbinned_fna_split -m genome
 ```
 
-b. split txt file into many txt files
+b.  split txt file into many txt files
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/skani/virus_alignments/txt_files/split_txts
@@ -1642,7 +1975,10 @@ rename 's/._final/_final/g' *final.txt
 for i in *final.txt; do sed -i 's/=/_/g' $i; done
 ```
 
-c. Created copy_files.sh with the help of chatGPT. Script is the following to use txt files to make fna files of all genomes per cluster:
+c.  Created copy_files.sh with the help of chatGPT. Script is the
+    following to use txt files to make fna files of all genomes per
+    cluster:
+
 ```{bash, eval = FALSE}
 #!/bin/bash
 
@@ -1673,9 +2009,13 @@ for txt_file in "$source_txt_dir"/*.txt; do
 done
 ```
 
-2. Run blastn on viruses
+2.  Run blastn on viruses
 
-a. Get fnas into separate directories for running blastn
+```{=html}
+<!-- -->
+```
+a.  Get fnas into separate directories for running blastn
+
 ```{bash, eval = FALSE}
 rename 's/_final/_VirusClust/g' *fna
 
@@ -1700,7 +2040,9 @@ for fna_file in "$fna_dir"/*.fna; do
 done
 ```
 
-b. Run makeblastdb on all the fnas. Used version 2.14.1+ of makeblastdb.
+b.  Run makeblastdb on all the fnas. Used version 2.14.1+ of
+    makeblastdb.
+
 ```{bash, eval = FALSE}
 #!/bin/bash
 
@@ -1732,7 +2074,8 @@ done
 
 ```
 
-c. Run blastn on all the fnas with their dbs.
+c.  Run blastn on all the fnas with their dbs.
+
 ```{bash, eval = FALSE}
 ./run_blastn.sh
 
@@ -1768,9 +2111,15 @@ for dir in "$base_dir"/*VirusClust*/; do
 done
 ```
 
-3. Parse output to get regions of overlap among viruses.
+3.  Parse output to get regions of overlap among viruses.
 
-a. I created an R script to read the blast output file and remove self to self blasts as well as duplicate comparisons when the first sequence and second sequence are compared identically but flipped order (subject vs query sequence).
+```{=html}
+<!-- -->
+```
+a.  I created an R script to read the blast output file and remove self
+    to self blasts as well as duplicate comparisons when the first
+    sequence and second sequence are compared identically but flipped
+    order (subject vs query sequence).
 
 ```{bash, eval = FALSE}
 find -name "*.txt" -exec cp {} . \;
@@ -1779,7 +2128,9 @@ cat *txt > all_VirusClust_blastn.txt
 Rscript parse_blastn.R
 ```
 
-b. Take filtered_blastn_results.txt file produced from R script and extract coordinates you want to grab.  
+b.  Take filtered_blastn_results.txt file produced from R script and
+    extract coordinates you want to grab.\
+
 ```{bash, eval = FALSE}
 cut -f1,7,8 filtered_blastn_results.txt > query_results.txt
 cut -f2,9,10 filtered_blastn_results.txt > subj_results.txt
@@ -1787,17 +2138,20 @@ cut -f2,9,10 filtered_blastn_results.txt > subj_results.txt
 cat query_results.txt subj_results.txt > all_VirusClust_blastn_filtered.txt
 ```
 
-4. bedtools to obtain ORFs of interest that have overlap
+4.  bedtools to obtain ORFs of interest that have overlap
+
 ```{bash, eval = FALSE}
 mamba install -c bioconda bedtools
 
 bedtools intersect -a bed_GeoDistinct_VirusClusts.tsv -b bed_PlumeVent_viruses.tsv -wa -wb > result.txt
 ```
+
 -f 0.50 option for 50% overlap. Or -F?
 
 # Running coverm to obtain virus abundance
 
-1. Get paths to all the reads in one folder using symbolic links
+1.  Get paths to all the reads in one folder using symbolic links
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/Reads
@@ -1807,7 +2161,8 @@ find /storage2/Reads/HydroPlume/ -name "*gz" | xargs -i ln -s {} .
 find /storage2/Reads/HydroVents_ZhouReysenbach/ -name "*gz" | xargs -i ln -s {} .
 ```
 
-2. Get paths to all viral genomes in one folder using symbolic links
+2.  Get paths to all viral genomes in one folder using symbolic links
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/abundance/Genomes_fna
@@ -1819,20 +2174,32 @@ find ../../Virus_Genomes/fna/fna_vMAGs_separate/ -name "*fasta" | xargs -i ln -s
 find ../../Virus_Genomes/fna/split_fasta_files/ -name "*fasta" | xargs -i ln -s {} .
 ```
 
-3. Run the bash script to run coverm
+3.  Run the bash script to run coverm
+
 ```{bash, eval = FALSE}
 time nohup ./run_coverm.sh &
 ```
 
-4. Running again with the count option in --methods to also get count of reads mapped
+4.  Running again with the count option in --methods to also get count
+    of reads mapped
+
 ```{bash, eval = FALSE}
 mamba activate coverm
 
 nohup ./run_coverm_count.sh &
 ```
-Had to add --min-covered-fraction 0 to the script based on error: "The 'counts' coverage estimator cannot be used when --min-covered-fraction is > 0 as it does not calculate the covered fraction. You may wish to set the --min-covered-fraction to 0 and/or run this estimator separately."
 
-5. Running again with the covered_fraction option in --methods to also get covered fraction because I want to filter for >75 covered fraction. Also added --min-read-percent-identity 90 --min-read-aligned-length 50 to be more stringent on reads mapped.
+Had to add --min-covered-fraction 0 to the script based on error: "The
+'counts' coverage estimator cannot be used when --min-covered-fraction
+is \> 0 as it does not calculate the covered fraction. You may wish to
+set the --min-covered-fraction to 0 and/or run this estimator
+separately."
+
+5.  Running again with the covered_fraction option in --methods to also
+    get covered fraction because I want to filter for \>75 covered
+    fraction. Also added --min-read-percent-identity 90
+    --min-read-aligned-length 50 to be more stringent on reads mapped.
+
 ```{bash, eval = FALSE}
 mamba activate coverm
 
@@ -1841,7 +2208,9 @@ nohup ./run_coverm_count_MinCov.sh &
 
 ## Running coverm again with 49,962 viruses
 
-Broke vMAGs with high protein redundancy into individual scaffolds again. Rerunning:
+Broke vMAGs with high protein redundancy into individual scaffolds
+again. Rerunning:
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/abundance/49962_coverm_count/
@@ -1853,9 +2222,11 @@ nohup ./run_coverm_count_MinCov.sh &
 
 ### Checking bin 115
 
-Lau_Basin_Tahi_Moana_vRhyme_bin_115 has relative abundance that seems way too high so checking the vMAG by read mapping.
+Lau_Basin_Tahi_Moana_vRhyme_bin_115 has relative abundance that seems
+way too high so checking the vMAG by read mapping.
 
-1. Organize the input files
+1.  Organize the input files
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/abundance/check_LB_Tahi_bin_115/Reads
@@ -1872,21 +2243,24 @@ mamba install -c conda-forge ncbi-datasets-cli
 datasets download genome accession GCA_012966065.1 --include protein,genome,seq-report
 ```
 
-2. Run it
+2.  Run it
+
 ```{bash, eval = FALSE}
 mamba activate coverm
 
 nohup ./run_coverm_count_MinCov.sh &
 ```
 
-3. Trying with vMAG scaffolds separate
+3.  Trying with vMAG scaffolds separate
+
 ```{bash, eval = FALSE}
 mamba activate coverm
 
 nohup ./run_coverm_count_MinCov_4scafs.sh &
 ```
 
-4. Trying to map all the MAGs from the project at the same time
+4.  Trying to map all the MAGs from the project at the same time
+
 ```{bash, eval = FALSE}
 pwd
 
@@ -1895,10 +2269,10 @@ ln -s /scratch/langwig/Projects/VentPlumeViruses/ncbi_MAGs/Plume_MAGs/*fna .
 nohup ./run_coverm_count_MinCov_4scafs_PlumeMAGs.sh &
 ```
 
-
 # Downloading the microbial MAGs from NCBI
 
-1. Plume first because smaller
+1.  Plume first because smaller
+
 ```{bash, eval = FALSE}
 mamba activate ncbi_datasets
 
@@ -1907,7 +2281,8 @@ datasets download genome accession PRJNA488180 --include protein,genome
 find ncbi_dataset/data/GC* -name "*fna" | xargs -i cp {} Plume_MAGs/
 ```
 
-2. Download vent microbial MAGs
+2.  Download vent microbial MAGs
+
 ```{bash, eval = FALSE}
 mamba activate ncbi_datasets
 
@@ -1926,17 +2301,19 @@ mamba install bioconda::fastqc
 nohup fastqc -o /scratch/langwig/Projects/VentPlumeViruses/fastqc -d /scratch/langwig/tmp/ -t 20 *fastq.gz &
 ```
 
-
-
 # Translate viruses to protein yourself using prodigal
-1. Translate to proteins because confusion with the files I have. On virserver
+
+1.  Translate to proteins because confusion with the files I have. On
+    virserver
+
 ```{bash, eval = FALSE}
 cat vMAGs_PlumeVent_noNs.fna unbinned_PlumeVentViruses.fna > All_PlumeVent_Viruses.fna
 
 nohup prodigal -p meta -i All_PlumeVent_Viruses.fna -a ../faa/All_PlumeVent_Viruses_prodigal.faa -o ../faa/output.txt &
 ```
 
-2. Remove E coli virus contamination
+2.  Remove E coli virus contamination
+
 ```{bash, eval = FALSE}
 for i in `cat contam_virus_ecoli_list.txt; do grep $i All_PlumeVent_Viruses_prodigal.faa >> ecoli_faa_list_toRemove.txt; done
 
@@ -1950,6 +2327,7 @@ perl /scratch/langwig/scripts/screen_list_new.pl ecoli_faa_list_toRemove_renamed
 # Run mmseqs to cluster viral proteins
 
 Run mmseqs clustering
+
 ```{bash, eval = FALSE}
 mamba install -c bioconda mmseqs2=15.6f452
 
@@ -1962,7 +2340,8 @@ mmseqs createtsv PlumeVent_Viruses_DB PlumeVent_Viruses_DB PlumeVent_Viruses_DB_
 
 # Run PHROGs to get viral protein annotations
 
-1. Run PHROGs
+1.  Run PHROGs
+
 ```{bash, eval = FALSE}
 mmseqs createdb All_PlumeVent_Viruses_prodigal_noEcoli.faa PlumeVirus_mmseqs_PHROGsDB
 
@@ -1971,43 +2350,59 @@ nohup mmseqs search /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_d
 mmseqs createtsv /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs results.tsv
 ```
 
-alternative command for increased sensitivity (did not end up using these):
+alternative command for increased sensitivity (did not end up using
+these):
+
 ```{bash, eval = FALSE}
 nohup mmseqs search /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs ./tmp -s 7 --threads 20 &
 
 nohup mmseqs search /storage1/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs ./tmp -s 1 --threads 30 &
 ```
 
-2. Filter the PHROGs output for lowest e value. Then subset the PHROGs results for the proteins identified as GD and PV to see what they are
+2.  Filter the PHROGs output for lowest e value. Then subset the PHROGs
+    results for the proteins identified as GD and PV to see what they
+    are
+
 ```{bash, eval = FALSE}
 Rscript parse_evalue.R
 
 for i in `cat vir_prots_mmseqClusts_GD_PD.tsv`; do grep $i results_evalparsed.tsv >> results_GD_PD_viruses.txt; done
 ```
 
-3. Try and get descriptive header
+3.  Try and get descriptive header
+
 ```{bash, eval = FALSE}
 mamba activate mmseqs2
 
 mmseqs createtsv /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs results_fh.tsv --full-header
 ```
+
 **This is not working properly**
 
-4. Write an R script to get the real names of PHROGs ids mapped onto result
+4.  Write an R script to get the real names of PHROGs ids mapped onto
+    result
+
 ```{bash, eval = FALSE}
 Rscript map_phrogs.R
 ```
-**R isn't working well on the server anymore, not sure what is happening but downloading files to do on my comp**
 
-5. Cody fixed a prob where we were missing a PHROGs file to say which database was which to run convertalis. Got it working now like this:
+**R isn't working well on the server anymore, not sure what is happening
+but downloading files to do on my comp**
+
+5.  Cody fixed a prob where we were missing a PHROGs file to say which
+    database was which to run convertalis. Got it working now like this:
+
 ```{bash, eval = FALSE}
 mmseqs convertalis /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs alis_test.tsv
 
 mmseqs convertalis /storage2/databases/PHROGs/phrogs_mmseqs_db/phrogs_profile_db PlumeVirus_mmseqs_PHROGsDB results_mmseqs convert_alis.tsv --format-output "query,target,evalue,pident,bits,qcov,tcov,alnlen,qlen,tlen"
 ```
-I ended up using the second command to get custom output so I could filter by params like pident and qcov and tcov.
 
-6. Filter output for ≥80% cov (col 6 & 7), ≥75% seq id (col 4).
+I ended up using the second command to get custom output so I could
+filter by params like pident and qcov and tcov.
+
+6.  Filter output for ≥80% cov (col 6 & 7), ≥75% seq id (col 4).
+
 ```{bash, eval = FALSE}
 awk '{ if ($6 >= .8 && $7 >= .8) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10}' convert_alis.tsv > convert_alis_80cov.tsv
 
@@ -2015,43 +2410,51 @@ awk '{ if ($4 >= 75) print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\
 
 sed  -i '1i query target  evalue  pident  bits  qcov  tcov  alnlen  qlen  tlen' convert_alis_80cov_75pi.tsv
 ```
-Import 80 cov and 75 pi file into R, filter for best e value hit when multiple hits per sequence.
 
+Import 80 cov and 75 pi file into R, filter for best e value hit when
+multiple hits per sequence.
 
 # Run dramv to get viral protein annotations
 
-1. Run Virsorter to get dramv input file - and make sure it processes all viruses
+1.  Run Virsorter to get dramv input file - and make sure it processes
+    all viruses
+
 ```{bash, eval = FALSE}
 nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter -i ../Virus_Genomes/All_PlumeVent_Viruses.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &
 ```
 
-2. Run DRAMv
+2.  Run DRAMv
+
 ```{bash, eval = FALSE}
 DRAM-setup.py import_config --config_loc /storage2/databases/dram-latest/CONFIG 
 
 nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-affi-contigs-for-dramv_renamed.tab -o annotation --threads 50 &
 ```
 
-3. Rename it for parsing
+3.  Rename it for parsing
+
 ```{bash, eval = FALSE}
 sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
 ```
 
-4. Grab the GD and PV protein annotations
+4.  Grab the GD and PV protein annotations
+
 ```{bash, eval = FALSE}
 sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
 
 Rscript subset_GDpd_prots.R
 ```
 
-5. Try distilling
+5.  Try distilling
+
 ```{bash, eval = FALSE}
 DRAM-v.py distill -i annotation/ -o distilled
 ```
 
 # Get total read count for all fastq reads
 
-1. Read count using seqkit
+1.  Read count using seqkit
+
 ```{bash, eval = FALSE}
 nohup seqkit stats -To stats.tsv *.fastq.gz &
 ```
@@ -2066,9 +2469,12 @@ nohup seqkit stats -To stats.tsv *.fasta &
 
 # Use bitscore to choose PHROGs or KEGG annotation
 
-To annotate the general category of proteins that were clustered with mmseqs, using PHROGs and KEGG annotations, choosing best based on bitscore.
+To annotate the general category of proteins that were clustered with
+mmseqs, using PHROGs and KEGG annotations, choosing best based on
+bitscore.
 
-1. Prepare the PHROGs output
+1.  Prepare the PHROGs output
+
 ```{bash, eval = FALSE}
 cut -f1,2,3 results_evalparsed.tsv > phrogs_evalparsed_VentViruses.tsv
 
@@ -2084,7 +2490,8 @@ sed -i 's/vRhyme_[0-9][0-9]__//g' convert_alis_80cov_75pi_eval_bit_novRhyme.tsv
 sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' convert_alis_80cov_75pi_eval_bit_novRhyme.tsv
 ```
 
-2. Prepare the KEGG output
+2.  Prepare the KEGG output
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/KEGG_VIBRANT_output
@@ -2096,7 +2503,8 @@ awk 'FNR > 1 || NR == 1' *.tsv > 52samples_KEGG_hmmtbl_parse.tsv
 awk -F'\t' 'BEGIN{OFS="\t"} {print $2, $1, $4}' 52samples_KEGG_hmmtbl_parse.tsv > 52samples_KEGG_hmmtbl_parse2.tsv
 ```
 
-3. Put the phrogs with no vRhyme and KEGG together
+3.  Put the phrogs with no vRhyme and KEGG together
+
 ```{bash, eval = FALSE}
 tail -n +2 phrogs_evalparsed_VentViruses_novRhyme.tsv | cat 52samples_KEGG_hmmtbl_parse2.tsv - > merged_KEGG_phrogs_viruses.txt
 
@@ -2110,9 +2518,13 @@ mv output.txt mmseqs_KEGG_phrogs_annos.txt
 ```
 
 # Use bitscore to choose best VIBRANT annotation
-I noticed the PHROGs annotations were really inconsistent within a cluster and had poor agreement, so I'm trying VIBRANT annotations because I think it will perform better.
 
-1. Copy the VIBRANT annotation files to one location
+I noticed the PHROGs annotations were really inconsistent within a
+cluster and had poor agreement, so I'm trying VIBRANT annotations
+because I think it will perform better.
+
+1.  Copy the VIBRANT annotation files to one location
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/VIBRANT_Annos
@@ -2120,15 +2532,19 @@ pwd
 ./copy_files.sh
 ```
 
-2. Combine as one without all headers
+2.  Combine as one without all headers
+
 ```{bash, eval = FALSE}
 awk 'FNR > 1 || NR == 1' *.tsv > 52samples_VIBRANT_annos.tsv
 ```
 
 ## Easier to use the long format files
-Note that this is for all proteins so will parse for just viral proteins or else the file is a bit large to work with.
 
-1. Copy the VIBRANT annotation files to one location
+Note that this is for all proteins so will parse for just viral proteins
+or else the file is a bit large to work with.
+
+1.  Copy the VIBRANT annotation files to one location
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/VIBRANT_Annos
@@ -2136,12 +2552,14 @@ pwd
 ./copy_files2.sh
 ```
 
-2. Combine as one without all headers
+2.  Combine as one without all headers
+
 ```{bash, eval = FALSE}
 awk 'FNR > 1 || NR == 1' *.tsv > 52_VIBRANT_annos_long.tsv
 ```
 
-3. Filter for just viral proteins
+3.  Filter for just viral proteins
+
 ```{bash, eval = FALSE}
 cp virus_prots_list_renamed.txt ../../../VIBRANT_Annos/
 sed 's/=/_/g' virus_prots_list_renamed.txt > virus_prots_list_renamed_noEqual.txt
@@ -2151,31 +2569,47 @@ sed 's/=/_/g' 52_VIBRANT_annos_long.tsv > 52_VIBRANT_annos_long_noEqual.tsv
 grep -F -f virus_prots_list_renamed_noEqual.txt 52_VIBRANT_annos_long_noEqual.tsv > 52_VIBRANT_annos_long_viruses.tsv
 ```
 
-4. Choose the best annotation per scaffold based on bit score and then e value for tie breaker. I completed this in R.
+4.  Choose the best annotation per scaffold based on bit score and then
+    e value for tie breaker. I completed this in R.
 
 # Check mmseqs cluster with different annos using alignment
 
-Using cluster 74952 as an example - 3 seqs, 2 are tail annotation, 1 is DmsA. 3 sequences put into the file clust_74952_test.faa. Now for alignment:
+Using cluster 74952 as an example - 3 seqs, 2 are tail annotation, 1 is
+DmsA. 3 sequences put into the file clust_74952_test.faa. Now for
+alignment:
+
 ```{bash, eval = FALSE}
 mafft --auto clust_74952_test.faa > clust_74952_test_mafftAuto.faa
 ```
-Uniprot thinks they are all DNA-directed RNA polymerase, which doesn't match the annotations I have...great. This is probably fine according to this "Many bacterial and eukaryotic viruses with double-stranded DNA genomes in the realms Duplodnaviria and Varidnaviria encode homologs of cellular RNAPs (collectively denoted “two-barrel RNAPs”)" [Chaban et al., 2024](https://www.nature.com/articles/s41467-023-44630-z)
+
+Uniprot thinks they are all DNA-directed RNA polymerase, which doesn't
+match the annotations I have...great. This is probably fine according to
+this "Many bacterial and eukaryotic viruses with double-stranded DNA
+genomes in the realms Duplodnaviria and Varidnaviria encode homologs of
+cellular RNAPs (collectively denoted “two-barrel RNAPs”)" [Chaban et
+al., 2024](https://www.nature.com/articles/s41467-023-44630-z)
 
 # Redoing vMAGs with high protein redundancy
+
 ## Get scores of vMAGs
-1. Get all the files with protein redundancy reports of vMAGs
+
+1.  Get all the files with protein redundancy reports of vMAGs
+
 ```{bash, eval = FALSE}
 ./copy_files.sh
 
 awk 'FNR > 1 || NR == 1' *.tsv > ../52_vRhyme_summary.tsv
 ```
 
-2. Filter file for vMAGs with protein redundancy ≥2
+2.  Filter file for vMAGs with protein redundancy ≥2
+
 ```{bash, eval = FALSE}
 awk '$4 >= 2' 52_vRhyme_summary.tsv > 52_vRhyme_summary_2plus.tsv
 ```
 
-3. Problem with that file is that the vMAGs don't have a unique ID. I added one using a bash script here:
+3.  Problem with that file is that the vMAGs don't have a unique ID. I
+    added one using a bash script here:
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/vRhyme_redundancy/summary_files
@@ -2186,14 +2620,18 @@ cat *modified.tsv > ../52_vRhyme_summary_modified.tsv
 
 awk '$4 >= 2' 52_vRhyme_summary_modified.tsv > 52_vRhyme_summary_mod_2plus.tsv
 ```
+
 **NOTE: did not remove top line because forgot to keep the header**
 
-4. Make the list based on this file of vMAGs to split into scaffolds:
+4.  Make the list based on this file of vMAGs to split into scaffolds:
+
 ```{bash, eval = FALSE}
 cut -f1 52_vRhyme_summary_mod_2plus.tsv > list_vMAGs_protRed.txt
 ```
 
-5. To get the vMAGs into separate files I need to replace the "=" in the names or else the file names have quotes around them.
+5.  To get the vMAGs into separate files I need to replace the "=" in
+    the names or else the file names have quotes around them.
+
 ```{bash, eval = FALSE}
 for i in *fasta; do sed 's/=/_/g' $i >> ../$i.renamed; done
 
@@ -2206,11 +2644,14 @@ for i in `cat prot_red_list_vMAGs.txt`; do mv $i prot_red_vMAGs; done
 ```
 
 Then used series of seds to get rid of vRhyme in the scaffold names
+
 ```{bash, eval = FALSE}
 rename 's/vRhyme_[0-9][0-9][0-9]__//g' *fasta
 ```
 
-6. Realized all of the individual files created do not have ">", the carrot was removed. Adding it back in here:
+6.  Realized all of the individual files created do not have "\>", the
+    carrot was removed. Adding it back in here:
+
 ```{bash, eval = FALSE}
 for i in *fasta; do sed '1s/^/>/' $i >> $i.renamed; done
 
@@ -2225,9 +2666,12 @@ find . -type f -name "*.fasta" -exec cat {} + > final_VentViruses_42815.fna
 
 # Redoing vMAGs with 2+ lysogenic members
 
-Identified vMAGs with 2+ lysogenic members using R and the VIBRANT type info. See VentVirus_Analysis2.R. There are 114 vMAGs with 2+ lysogenic members.
+Identified vMAGs with 2+ lysogenic members using R and the VIBRANT type
+info. See VentVirus_Analysis2.R. There are 114 vMAGs with 2+ lysogenic
+members.
 
-1. Get list of contaminant vMAGs with 2+ lysogenic members
+1.  Get list of contaminant vMAGs with 2+ lysogenic members
+
 ```{bash, eval = FALSE}
 pwd
 /Users/margueritelangwig/Google Drive/My Drive/PhD_Projects/VentViruses/vRhyme
@@ -2235,19 +2679,23 @@ pwd
 cut -f1 vMAG_114_lysogenic_list.txt > vMAGs_114_lysogenic_contam.txt
 ```
 
-2. Move them and split. I modified the original script to keep ">" which was a problem before.
+2.  Move them and split. I modified the original script to keep "\>"
+    which was a problem before.
+
 ```{bash, eval = FALSE}
 cp prot_red_vMAGs.sh vMAGs_lysogenic_red.sh
 
 ./vMAGs_lysogenic_red.sh
 ```
 
-3. Move the vMAGs and count the scaffolds to make sure they match. 
+3.  Move the vMAGs and count the scaffolds to make sure they match.
+
 ```{bash, eval = FALSE}
 for i in `cat vMAGs_114_lysogenic_contam.txt`; do mv $i vMAGs_lysogenic_contam; done
 ```
 
-4. Rename the vMAGs broken into individual scaffolds
+4.  Rename the vMAGs broken into individual scaffolds
+
 ```{bash, eval = FALSE}
 sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' *fasta
 sed -i 's/vRhyme_[0-9][0-9]__//g' *fasta
@@ -2260,7 +2708,8 @@ rename 's/vRhyme_[0-9]__//g' *fasta
 rename 's/_scaffold.fasta/.fasta/g' *fasta
 ```
 
-5. Make the final directory of viral genomes to work out of
+5.  Make the final directory of viral genomes to work out of
+
 ```{bash, eval = FALSE}
 mkdir 43995_VentViruses_individual_fnas
 
@@ -2275,13 +2724,16 @@ cp fna_vMAGs_separate/*fasta 43995_VentViruses_individual_fnas/
 find . -type f -name "*.fasta" -exec cat {} + > ../../43995_final_VentViruses.fna
 ```
 
-6. Make N-linked version of vMAGs file for downstream analyses
+6.  Make N-linked version of vMAGs file for downstream analyses
+
 ```{bash, eval = FALSE}
 mamba activate vRhyme
 
 link_bin_sequences.py -i fna_vMAGs_separate/ -o 43995_VentViruses_individual_fnas_Nlinked
 ```
+
 Move all other seqs into the folder with it
+
 ```{bash, eval = FALSE}
 find . -type f ! -name '*vRhyme*' -exec cp {} ../43995_VentViruses_individual_fnas_Nlinked/ \;
 
@@ -2301,9 +2753,13 @@ sed 's/.fasta:>/\t/g' vMAG_scaffolds_6088.txt | cut -f1,2 | sed 's/__/\t/g' | cu
 
 # Redoing vMAGs with 11+ scaffolds
 
-I identified all the vMAGs that had 11 or more scaffolds and am returning these to the ubinned portion. This number of scaffolds is higher than expected for binned viruses which shouldn't be in so many fragments. 
+I identified all the vMAGs that had 11 or more scaffolds and am
+returning these to the ubinned portion. This number of scaffolds is
+higher than expected for binned viruses which shouldn't be in so many
+fragments.
 
-1. Use the script to .
+1.  Use the script to .
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/Virus_Genomes/fna/fna_vMAGs_separate
@@ -2313,7 +2769,8 @@ cp vMAGs_lysogenic_red.sh vMAGs_11scafs.sh
 ./vMAGs_11scafs.sh
 ```
 
-2. Rename the scaffolds that are now unbinned.
+2.  Rename the scaffolds that are now unbinned.
+
 ```{bash, eval = FALSE}
 sed -i 's/vRhyme_[0-9][0-9][0-9]__//g' *fasta
 sed -i 's/vRhyme_[0-9][0-9]__//g' *fasta
@@ -2326,12 +2783,14 @@ rename 's/vRhyme_[0-9]__//g' *fasta
 rename 's/_scaffold.fasta/.fasta/g' *fasta
 ```
 
-3. Move the 11 plus scaffold vMAGs into a separate folder
+3.  Move the 11 plus scaffold vMAGs into a separate folder
+
 ```{bash, eval = FALSE}
 for i in `cat vMAG_11scaffold_plus.txt`; do mv $i vMAGs_11scaffold_contam; done
 ```
 
-4. Make the final directory of viral genomes to work out of
+4.  Make the final directory of viral genomes to work out of
+
 ```{bash, eval = FALSE}
 mkdir 49962_VentViruses_individual_fnas
 
@@ -2347,7 +2806,8 @@ cp fna_vMAGs_separate/*fasta 49962_VentViruses_individual_fnas/
 find . -type f -name "*.fasta" -exec cat {} + > ../../49962_final_VentViruses.fna
 ```
 
-5. Make N-linked version of vMAGs file for downstream analyses
+5.  Make N-linked version of vMAGs file for downstream analyses
+
 ```{bash, eval = FALSE}
 mamba activate vRhyme
 
@@ -2358,10 +2818,16 @@ find . -type f ! -name '*vRhyme*' -exec cp {} ../49962_VentViruses_individual_fn
 find . -type f -name "*.fasta" -exec cat {} + > ../../49962_final_VentViruses_Nlinked.fna
 ```
 
-#Redoing the protein file for the viruses after changing the input fna set
-I want to grab the protein files as they were made from VIBRANT/vRhyme because I realized when you translate yourself the fragment viruses that were cut out of scaffolds are off in their numbering and this makes it difficult for mapping back to VIBRANT annotations or any metadata produced by VIBRANT.
+#Redoing the protein file for the viruses after changing the input fna
+set I want to grab the protein files as they were made from
+VIBRANT/vRhyme because I realized when you translate yourself the
+fragment viruses that were cut out of scaffolds are off in their
+numbering and this makes it difficult for mapping back to VIBRANT
+annotations or any metadata produced by VIBRANT.
 
-1. Copy the VIBRANT faa files into dir and only extract unbinned viruses from that file
+1.  Copy the VIBRANT faa files into dir and only extract unbinned
+    viruses from that file
+
 ```{bash, eval = FALSE}
 pwd
 /scratch/langwig/Projects/VentPlumeViruses/VIBRANT_faa
@@ -2371,7 +2837,10 @@ pwd
 cat *faa > VentViruses_prelim.faa
 ```
 
-2. Conveniently, I already have the protein names of the unbinned viruses from the master table parsing in R. Using that to get the list of proteins I need from the file created above.
+2.  Conveniently, I already have the protein names of the unbinned
+    viruses from the master table parsing in R. Using that to get the
+    list of proteins I need from the file created above.
+
 ```{bash, eval = FALSE}
 pwd
 /Users/margueritelangwig/Google Drive/My Drive/PhD_Projects/VentViruses/HydrothermalVent_Viruses/VentVirus_Analysis/output
@@ -2383,7 +2852,8 @@ sed 's/=/_/g' VentViruses_prelim.faa > VentViruses_prelim_renamed.faa
 perl /scratch/langwig/scripts/screen_list_new.pl unbinned_virus_protein_list_final.txt VentViruses_prelim_renamed.faa keep > ../VentViruses_Unbinned.faa
 ```
 
-3. Now get the vRhyme proteins.
+3.  Now get the vRhyme proteins.
+
 ```{bash, eval = FALSE}
 ./copy_files_vRhyme.sh
 
@@ -2395,21 +2865,27 @@ for i in `cat vMAG_5708_list.txt`; do cp $i ../5708_vMAGs/; done
 cat *faa > ../../5708_VentVirus_vMAGs.faa
 ```
 
-4. Make the final file of proteins for vMAGs and vUnbinned
+4.  Make the final file of proteins for vMAGs and vUnbinned
+
 ```{bash, eval = FALSE}
 cat 5708_VentVirus_vMAGs.faa VentViruses_Unbinned.faa > ../Virus_Genomes/faa/49962_VentViruses.faa
 
 sed 's/=/_/g' 49962_VentViruses.faa > 49962_VentViruses_renamed.faa
 ```
+
 595,416 proteins in the 49,962 viruses
 
 ### Unused
+
 Generate scores of vMAGs?
+
 ```{bash, eval = FALSE}
 generate_bin_scores.py -p *faa -o output_scores.txt
 
 generate_bin_scores.py -p ELSC_Bowl_M2_vRhyme_bin_1 
 ```
-Need -i and -n, tab-separated bin membership file (e.g., scaffold \t bin) and number of original scaffolds before binning (binned + unbinned). The redundancy score seems to already be reported in best bins summary file in each VIBRANT folder?
 
-
+Need -i and -n, tab-separated bin membership file (e.g., scaffold
+\t bin) and number of original scaffolds before binning (binned +
+unbinned). The redundancy score seems to already be reported in best
+bins summary file in each VIBRANT folder?

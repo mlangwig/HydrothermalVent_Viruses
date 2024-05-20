@@ -66,7 +66,7 @@ vibrant_best_anno <- vib_annos %>%
 
 ######################################### mmseqs Input ################################################
 mmseqs <- read.csv2(file = "Input/PlumeVent_mmseqs_clusters_49962viruses.tsv", sep = "\t", header = FALSE)
-#595,416 proteins clustered
+#595,416 viral proteins were clustered
 #note that output from mmseqs2 is in long format so repeat proteins in first column
 #mmseqs does not output singletons
 
@@ -80,7 +80,9 @@ mmseqs <- mmseqs %>%
 mmseqs <- mmseqs %>%
   filter(cluster.representative != cluster.member)
 #this should now be number of clusters
-length(unique(mmseqs_dif$cluster.representative)) #74,940
+length(unique(mmseqs$cluster.representative)) #74,960
+#number of proteins in all clusters
+length(unique(mmseqs$cluster.member)) #135,225
 
 #change format to long
 mmseqs_long <- mmseqs %>%
@@ -149,7 +151,7 @@ mmseqs_PD_ids <- mmseqs_long_meta %>%
   unique()
 length(unique(mmseqs_PD_ids$id))
 # 152 clusters that have proteins from plumes and deposits
-# 138 of these are also have proteins from geographically distinct vents
+# 138 of these also have proteins from geographically distinct vents
 
 mmseqs_PD <- mmseqs_long_meta %>%
   filter(id %in% mmseqs_PD_ids$id)
@@ -174,6 +176,7 @@ mmseqs_GD <- mmseqs_long_meta %>%
 # Make a file of PD and GD together
 mmseqs_PD_GD_ids <- rbind(mmseqs_PD_ids, mmseqs_GD_ids) #23,503 clusts
 mmseqs_PD_GD_ids <- unique(mmseqs_PD_GD_ids) #23,365 clusts = 138 clusts same between PD and GD
+
 mmseqs_PD_GD <- mmseqs_long_meta %>%
   filter(id %in% mmseqs_PD_GD_ids$id)
 
@@ -195,8 +198,8 @@ mmseqs_PD_GD_annos <- mmseqs_long_meta_annos %>%
          "protein" = "genome") %>%
   select(c(id, protein, protein_no_vRhyme,PD, Site, anno_id, anno))
 
-write_delim(mmseqs_PD_GD_annos, file = "Output/mmseqs_proteins_PD_GD_annos.tsv",
-            col_names = TRUE, delim = "\t")
+#write_delim(mmseqs_PD_GD_annos, file = "Output/mmseqs_proteins_PD_GD_annos.tsv",
+#            col_names = TRUE, delim = "\t")
 
 tst <- mmseqs_PD_GD_annos %>%
   count(anno)
@@ -240,9 +243,18 @@ mmseqs_PD_GD_counts <- pairwise_count(mmseqs_PD_GD, SiteDetail, id, sort = TRUE)
 #   group_by(id) %>%
 #   filter(any(SiteDetail == "East Pacific Rise") & any(SiteDetail == "Axial Seamount"))
 
-test3 <- mmseqs_PD_GD %>%
+#CHECK TO CONFIRM THAT COUNTS ARE MADE CORRECTLY
+check <- mmseqs_PD_GD %>%
   group_by(id) %>%
-  filter(any(SiteDetail == "Mid-Cayman Rise") & any(SiteDetail == "Brothers Volcano"))
+  filter(all(SiteDetail %in% c("Axial Seamount", "Mid-Cayman Rise"))) %>%
+  ungroup()
+length(unique(check$id)) #19
+
+check <- mmseqs_PD_GD %>%
+  group_by(id) %>%
+  filter(all(SiteDetail %in% c("Brothers Volcano", "Lau Basin Deposit"))) %>%
+  ungroup()
+length(unique(check$id)) #15,874
 
 ################################## donut plot ############################################
 
@@ -346,8 +358,8 @@ p <- ComplexUpset::upset(mmseqs_PD_GD_plot,
       )
 p
 
-ggsave(p, filename = "Output/protein_clust_UpSet.svg", width = 10)
-ggsave(p, filename = "Output/protein_clust_UpSet.png", width = 10)
+#ggsave(p, filename = "Output/protein_clust_UpSet.svg", width = 10)
+#ggsave(p, filename = "Output/protein_clust_UpSet.png", width = 10)
 
 
 ################### unused
