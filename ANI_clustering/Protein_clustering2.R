@@ -256,46 +256,6 @@ check <- mmseqs_PD_GD %>%
   ungroup()
 length(unique(check$id)) #15,874
 
-################################## donut plot ############################################
-
-
-colors <- c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
-            "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#63c2ba", ##499e97
-            "Lau Basin Deposit" = "#3F78C1","Lau Basin Plume" = "#72a0db","Mid-Atlantic Ridge" = "#8c510a",
-            "Mid-Cayman Rise" = "#000000")
-
-#new col for calculating fraction of total
-mmseqs_PD_GD_counts <- mmseqs_PD_GD_counts %>%
-  group_by(item1) %>%
-  mutate(fraction = n/sum(n)) %>%
-  ungroup()
-# Compute the cumulative percentages (top of each rectangle)
-mmseqs_PD_GD_counts <- mmseqs_PD_GD_counts %>%
-  group_by(item1) %>%
-  mutate(ymax = cumsum(fraction),
-         ymin = c(0, head(ymax, n=-1)),
-         labelPosition = (ymax + ymin) / 2,
-         label = paste0(n)) %>%
-  ungroup()
-
-dev.off()
-p <- ggplot(mmseqs_PD_GD_counts, aes(x=2, y=n, fill=item2, ymax=ymax, ymin=ymin)) +
-  geom_bar(position = 'fill', stat = 'identity')  +
-  facet_wrap(~item1) + 
-  geom_text( x=2, aes(y=labelPosition, label=label), size=2.5, color = "white") + 
-  theme_void() +
-  theme(panel.spacing = unit(1.5, "lines")) +
-  xlim(0.5, 2.5) +
-  coord_polar(theta = 'y') + 
-  labs(x=NULL, y=NULL) +
-  scale_fill_manual(values = colors, name = "Site")
-p
-#the spacing of the number text in the donuts is off but good enough, I'm going to fix
-#in Inkscape
-
-#ggsave(p, filename = "Output/protein_clust_donuts.svg", width = 11, height = 6)
-#ggsave(p, filename = "Output/protein_clust_donuts.png")
-
 ######################################## UpSet plot ################################################
 
 #based on tutorial here: https://github.com/const-ae/ggupset
@@ -361,8 +321,82 @@ p
 #ggsave(p, filename = "Output/protein_clust_UpSet.svg", width = 10)
 #ggsave(p, filename = "Output/protein_clust_UpSet.png", width = 10)
 
+################################# Creating a modified bar plot above UpSet ################################################
+
+#values taken straight from UpSet barplot (don't judge me) + col of smallest total number of proteins for that cluster
+df <- data.frame(value=c(15874,1007,900,779,639,610,539,481,463,444,184,154,141,127,119,116,113,91,81,60,
+                         52,40,36,34,32,30,26,22,19,15,15),
+                 total_prots=c(19122,3111,3111,1561,1919,3111,1232,1919,1232,1919,699,397,1919,699,699,
+                               1232,397,699,1919,699,1756,699,1919,1919,397,699,397,699,397,397,397))
+
+df <- df %>%
+  mutate(values_norm = (value/total_prots*100)) %>%
+  mutate(across(where(is.numeric), round, 0)) %>%
+  mutate(order=row_number())
+
+dev.off()
+p2<-ggplot(data=df, aes(x=factor(order),y=values_norm)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=values_norm), vjust=-0.25, size = 6)+
+  scale_y_continuous(limits = c(0,100))+
+  scale_x_discrete(expand = c(0,0))+
+  ylab("Percent of normalized shared protein clusters")+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(size = 14),
+        axis.text.y = element_text(size = 20),
+        axis.ticks.y = element_line(colour = "lightgrey"),
+        panel.background = element_blank(),
+        panel.grid.minor = element_line(color = "lightgrey"), 
+        panel.grid.major = element_line(color = "lightgrey"))
+p2
+
+ggsave(p2, filename = "Output/protein_clust_UpSet_barplot_norm.svg", width = 14, height = 5)
+ggsave(p2, filename = "Output/protein_clust_UpSet_barplot_norm.png", width = 14, height = 5)
 
 ################### unused
+
+################################## donut plot ############################################
+
+
+# colors <- c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
+#             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#63c2ba", ##499e97
+#             "Lau Basin Deposit" = "#3F78C1","Lau Basin Plume" = "#72a0db","Mid-Atlantic Ridge" = "#8c510a",
+#             "Mid-Cayman Rise" = "#000000")
+# 
+# #new col for calculating fraction of total
+# mmseqs_PD_GD_counts <- mmseqs_PD_GD_counts %>%
+#   group_by(item1) %>%
+#   mutate(fraction = n/sum(n)) %>%
+#   ungroup()
+# # Compute the cumulative percentages (top of each rectangle)
+# mmseqs_PD_GD_counts <- mmseqs_PD_GD_counts %>%
+#   group_by(item1) %>%
+#   mutate(ymax = cumsum(fraction),
+#          ymin = c(0, head(ymax, n=-1)),
+#          labelPosition = (ymax + ymin) / 2,
+#          label = paste0(n)) %>%
+#   ungroup()
+# 
+# dev.off()
+# p <- ggplot(mmseqs_PD_GD_counts, aes(x=2, y=n, fill=item2, ymax=ymax, ymin=ymin)) +
+#   geom_bar(position = 'fill', stat = 'identity')  +
+#   facet_wrap(~item1) + 
+#   geom_text( x=2, aes(y=labelPosition, label=label), size=2.5, color = "white") + 
+#   theme_void() +
+#   theme(panel.spacing = unit(1.5, "lines")) +
+#   xlim(0.5, 2.5) +
+#   coord_polar(theta = 'y') + 
+#   labs(x=NULL, y=NULL) +
+#   scale_fill_manual(values = colors, name = "Site")
+# p
+# #the spacing of the number text in the donuts is off but good enough, I'm going to fix
+# #in Inkscape
+# 
+# #ggsave(p, filename = "Output/protein_clust_donuts.svg", width = 11, height = 6)
+# #ggsave(p, filename = "Output/protein_clust_donuts.png")
+
 
 
 # #movies example
@@ -465,5 +499,3 @@ p
 # test4 <- setdiff(test2, test) 
 
 #test3 <- as.data.frame(setdiff(vibrant_best$id, vib_annos$id))
-
-
