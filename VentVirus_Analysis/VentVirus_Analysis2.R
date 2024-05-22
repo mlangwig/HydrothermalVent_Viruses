@@ -178,15 +178,20 @@ master_table <- master_table %>%
 master_table <- vib_type %>%
   right_join(master_table, by = c("vMAG" = "vMAG"))
 
+#add number of virus hallmarks
+master_table <- virus_hallmarks %>%
+  right_join(master_table, by = c("gene" = "vMAG")) %>%
+  rename("vMAG" = "gene")
+
 # write.table(master_table, file = "output/master_table_VentPlumeViruses.tsv", col.names = TRUE,
 #             quote = FALSE, row.names = FALSE, sep = "\t")
 
 #make master table without proteins for accurate counting
 master_table_noProtein <- master_table %>%
-  select(vMAG, type, gene_count:f) %>%
+  select(vMAG:type, gene_count:f) %>%
   unique()
 
-# write.table(master_table_noProtein, file = "output/master_table_VentPlumeViruses_protein.tsv", col.names = TRUE,
+# write.table(master_table_noProtein, file = "output/master_table_VentPlumeViruses_noProtein.tsv", col.names = TRUE,
 #             quote = FALSE, row.names = FALSE, sep = "\t")
 
 #master table no proteins of med-quality and better only

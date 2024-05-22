@@ -198,6 +198,29 @@ mmseqs_PD_GD_annos <- mmseqs_long_meta_annos %>%
          "protein" = "genome") %>%
   select(c(id, protein, protein_no_vRhyme,PD, Site, anno_id, anno))
 
+#column with specific site name for counting
+mmseqs_PD_GD_annos$SiteDetail <- mmseqs_PD_GD_annos$protein
+mmseqs_PD_GD_annos <- mmseqs_PD_GD_annos %>%
+  mutate(SiteDetail = gsub(".*Lau_Basin.*", "Lau Basin Plume", SiteDetail),
+         SiteDetail = gsub(".*ELSC.*", "Lau Basin Deposit", SiteDetail), #not distinguishing Laus here bc PD will get at that
+         SiteDetail = gsub(".*Guaymas_Basin.*", "Guaymas Basin Plume", SiteDetail),
+         SiteDetail = gsub(".*Guaymas_[0-9].*", "Guaymas Basin Deposit", SiteDetail),
+         SiteDetail = gsub(".*Brothers.*", "Brothers Volcano", SiteDetail),
+         SiteDetail = gsub(".*Cayman.*", "Mid-Cayman Rise", SiteDetail), 
+         SiteDetail = gsub(".*EPR.*", "East Pacific Rise", SiteDetail),
+         SiteDetail = gsub(".*Axial.*", "Axial Seamount", SiteDetail),
+         SiteDetail = gsub(".*MAR.*", "Mid-Atlantic Ridge", SiteDetail)
+  )
+
+tst <- mmseqs_PD_GD_annos %>%
+  group_by(id) %>%
+  filter(all(SiteDetail %in% c("Brothers Volcano", "Lau Basin Deposit"))) %>% #keep only those rows that have ONLY Brothers and Lau Deposit
+  ungroup()
+length(unique(tst$id))
+
+tst2 <- tst %>%
+  group_by()
+
 #write_delim(mmseqs_PD_GD_annos, file = "Output/mmseqs_proteins_PD_GD_annos.tsv",
 #            col_names = TRUE, delim = "\t")
 
@@ -255,6 +278,16 @@ check <- mmseqs_PD_GD %>%
   filter(all(SiteDetail %in% c("Brothers Volcano", "Lau Basin Deposit"))) %>%
   ungroup()
 length(unique(check$id)) #15,874
+
+#check for 3 sites occurring together
+# Define the required sites
+required_sites <- c("Brothers Volcano", "Lau Basin Deposit", "Mid-Atlantic Ridge")
+# Filter out rows based on SiteDetail and group by id
+check <- mmseqs_PD_GD %>%
+  group_by(id) %>%
+  filter(setequal(unique(SiteDetail), required_sites)) %>%
+  ungroup()
+length(unique(check$id)) #1,007
 
 ######################################## UpSet plot ################################################
 
