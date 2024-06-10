@@ -11,7 +11,7 @@ library(viridis)
 library(pals)
 library(RColorBrewer)
 library(stringi)
-library(ggbre)
+library(ggbreak)
 
 ######################################### inputs ##############################################
 
@@ -108,8 +108,8 @@ abund_long_norm_iphop$Locat <- gsub(".*MAR.*","Vent", abund_long_norm_iphop$Loca
 
 #filter for viruses with viral hallmark
 abund_long_norm_iphop_vh <- master_table_iphop_filt %>%
-  dplyr::select(vMAG, total_hallmarks, Host.genus)
-  right_join(abund_long_norm_iphop, by = c("Virus" = "vMAG"))
+  dplyr::select(vMAG, total_hallmarks, d:g) %>%
+  right_join(abund_long_norm_iphop, by = c("vMAG" = "Virus"))
 
 #abun_long_iphop <- abun_long_iphop %>% 
 #  filter(str_detect(Locat, "Plume")) #%>%
@@ -347,6 +347,8 @@ abund_long_norm_tax$Virus_Realm <- gsub("Vidaverviricetes","Riboviria", abund_lo
 abund_long_norm_tax$Virus_Realm <- gsub("Polintoviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
 abund_long_norm_tax$Virus_Realm <- gsub("Maveriviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
 
+# write.table(abund_long_norm_tax, file = "output/abund_long_norm_tax.tsv", quote = FALSE,
+#             row.names = FALSE, sep = "\t")
 
 dev.off()
 p <- ggplot(abund_long_norm_tax, aes(y=c, x=Site_Gen))+

@@ -143,7 +143,7 @@ coverm.map <- coverm.filter %>%
   filter(Genome_Site != Read_Site) %>%
   select(c("Genome_Site", "Read_Site", "Genome", "name", "CoverFrac", "Reads"))
 
-## Add the genome sizes and remove >3kb
+## Add the genome sizes and remove <3kb
 coverm.map <- gensize %>%
   dplyr::select(file, sum_len) %>%
   right_join(coverm.map, by = c("file" = "Genome"))
@@ -177,6 +177,9 @@ coverm.map$Read_Site_Type <- gsub(".*ELSC.*","Deposit",coverm.map$Read_Site_Type
 coverm.map$Read_Site_Type <- gsub(".*Guaymas.*","Deposit",coverm.map$Read_Site_Type)
 coverm.map$Read_Site_Type <- gsub(".*EPR.*","Deposit",coverm.map$Read_Site_Type)
 coverm.map$Read_Site_Type <- gsub(".*MAR.*","Deposit",coverm.map$Read_Site_Type)
+
+# write.table(coverm.map, file = "Output/coverm_map.tsv", quote = FALSE, row.names = FALSE,
+#                          col.names = TRUE, sep = "\t")
 
 #subset just read mapping between geo distinct
 coverm.map.gd <- coverm.map %>%

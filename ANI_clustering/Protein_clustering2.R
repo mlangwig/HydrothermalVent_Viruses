@@ -80,7 +80,7 @@ mmseqs <- mmseqs %>%
 mmseqs <- mmseqs %>%
   filter(cluster.representative != cluster.member)
 #this should now be number of clusters
-length(unique(mmseqs$cluster.representative)) #74,960
+length(unique(mmseqs$cluster.representative)) #74,940
 #number of proteins in all clusters
 length(unique(mmseqs$cluster.member)) #135,225
 
@@ -219,7 +219,8 @@ tst <- mmseqs_PD_GD_annos %>%
 length(unique(tst$id))
 
 tst2 <- tst %>%
-  group_by()
+  group_by(anno) %>%
+  count()
 
 #write_delim(mmseqs_PD_GD_annos, file = "Output/mmseqs_proteins_PD_GD_annos.tsv",
 #            col_names = TRUE, delim = "\t")

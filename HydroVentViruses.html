@@ -1648,8 +1648,8 @@ margin-left: 0 !important;
             cluster viral proteins</a></li>
             <li><a href="#run-phrogs-to-get-viral-protein-annotations" id="toc-run-phrogs-to-get-viral-protein-annotations">Run
             PHROGs to get viral protein annotations</a></li>
-            <li><a href="#run-dramv-to-get-viral-protein-annotations" id="toc-run-dramv-to-get-viral-protein-annotations">Run
-            dramv to get viral protein annotations</a></li>
+            <li><a href="#run-dramv-to-get-viral-protein-annotations---49962" id="toc-run-dramv-to-get-viral-protein-annotations---49962">Run
+            dramv to get viral protein annotations - 49,962</a></li>
             <li><a href="#get-total-read-count-for-all-fastq-reads" id="toc-get-total-read-count-for-all-fastq-reads">Get total
             read count for all fastq reads</a></li>
             <li><a href="#get-size-of-assemblies" id="toc-get-size-of-assemblies">Get size of
@@ -3100,8 +3100,8 @@ cp faa files to virserver.</li>
 </ol>
 <pre class="bash"><code>for i in *.txt; do python3 /storage2/scratch/langwig/scripts/hmm_parser.py -i $i -o $i.parsed.txt; done</code></pre>
 <p><strong>Note that some are 0 because did not have trusted
-cutoff</strong>. <strong>Also this did not actually grab best hits as
-expected but organized nicely</strong></p>
+cutoff</strong>. *Also this did not actually grab best hits as expected
+but organized nicely**</p>
 </div>
 <div id="annotating-mags-using-disco" class="section level2">
 <h2>Annotating MAGs using Disco</h2>
@@ -3197,6 +3197,7 @@ nohup virsorter run -i Virus_Genomes/unbinned_vMAGs_1500Ns_PlumeVentViruses_noEc
 <li>Set up so that the viral genomes in a cluster are in separate
 folders.</li>
 </ol>
+<!-- -->
 <ol style="list-style-type: lower-alpha">
 <li>Split virus genome file into individual files (had to rename = to
 _)</li>
@@ -3250,6 +3251,7 @@ done</code></pre>
 <ol start="2" style="list-style-type: decimal">
 <li>Run blastn on viruses</li>
 </ol>
+<!-- -->
 <ol style="list-style-type: lower-alpha">
 <li>Get fnas into separate directories for running blastn</li>
 </ol>
@@ -3344,6 +3346,7 @@ done</code></pre>
 <ol start="3" style="list-style-type: decimal">
 <li>Parse output to get regions of overlap among viruses.</li>
 </ol>
+<!-- -->
 <ol style="list-style-type: lower-alpha">
 <li>I created an R script to read the blast output file and remove self
 to self blasts as well as duplicate comparisons when the first sequence
@@ -3356,7 +3359,8 @@ cat *txt &gt; all_VirusClust_blastn.txt
 Rscript parse_blastn.R</code></pre>
 <ol start="2" style="list-style-type: lower-alpha">
 <li>Take filtered_blastn_results.txt file produced from R script and
-extract coordinates you want to grab.</li>
+extract coordinates you want to grab.<br />
+</li>
 </ol>
 <pre class="bash"><code>cut -f1,7,8 filtered_blastn_results.txt &gt; query_results.txt
 cut -f2,9,10 filtered_blastn_results.txt &gt; subj_results.txt
@@ -3588,33 +3592,42 @@ sed  -i &#39;1i query target  evalue  pident  bits  qcov  tcov  alnlen  qlen  tl
 <p>Import 80 cov and 75 pi file into R, filter for best e value hit when
 multiple hits per sequence.</p>
 </div>
-<div id="run-dramv-to-get-viral-protein-annotations" class="section level1">
-<h1>Run dramv to get viral protein annotations</h1>
+<div id="run-dramv-to-get-viral-protein-annotations---49962" class="section level1">
+<h1>Run dramv to get viral protein annotations - 49,962</h1>
 <ol style="list-style-type: decimal">
 <li>Run Virsorter to get dramv input file - and make sure it processes
 all viruses</li>
 </ol>
-<pre class="bash"><code>nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter -i ../Virus_Genomes/All_PlumeVent_Viruses.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &amp;</code></pre>
+<pre class="bash"><code>nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter/Nlinked_vMAGs_noMinScore_49962 -i ../../Virus_Genomes/49962_final_VentViruses_Nlinked.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &amp;</code></pre>
 <ol start="2" style="list-style-type: decimal">
+<li>Realizing I need to do a run with NON N-LINKED vMAGs for DRAMv. The
+Nlinked is needed if you want to see number of hallmarks per vMAG.</li>
+</ol>
+<pre class="bash"><code>nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter/nonNlinked_49962_forDRAMv -i ../../Virus_Genomes/49962_final_VentViruses.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &amp;</code></pre>
+<ol start="3" style="list-style-type: decimal">
 <li>Run DRAMv</li>
 </ol>
 <pre class="bash"><code>DRAM-setup.py import_config --config_loc /storage2/databases/dram-latest/CONFIG 
 
-nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-affi-contigs-for-dramv_renamed.tab -o annotation --threads 50 &amp;</code></pre>
-<ol start="3" style="list-style-type: decimal">
+mamba activate dram
+
+nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-affi-contigs-for-dramv_renamed.tab -o annotation --threads 90 &amp;
+
+nohup DRAM-v.py annotate -i final-viral-combined-for-dramv.fa -v viral-affi-contigs-for-dramv.tab -o annotation --threads 40 &amp;</code></pre>
+<ol start="4" style="list-style-type: decimal">
 <li>Rename it for parsing</li>
 </ol>
 <pre class="bash"><code>sed &#39;s/__full-cat_[0-9]//g&#39; annotations.tsv &gt; annotations_renamed.tsv</code></pre>
-<ol start="4" style="list-style-type: decimal">
+<ol start="5" style="list-style-type: decimal">
 <li>Grab the GD and PV protein annotations</li>
 </ol>
 <pre class="bash"><code>sed &#39;s/__full-cat_[0-9]//g&#39; annotations.tsv &gt; annotations_renamed.tsv
 
 Rscript subset_GDpd_prots.R</code></pre>
-<ol start="5" style="list-style-type: decimal">
+<ol start="6" style="list-style-type: decimal">
 <li>Try distilling</li>
 </ol>
-<pre class="bash"><code>DRAM-v.py distill -i annotation/ -o distilled</code></pre>
+<pre class="bash"><code>DRAM-v.py distill -i annotation/annotations.tsv -o distilled</code></pre>
 </div>
 <div id="get-total-read-count-for-all-fastq-reads" class="section level1">
 <h1>Get total read count for all fastq reads</h1>

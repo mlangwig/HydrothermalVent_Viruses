@@ -246,18 +246,24 @@ master_table_iphop_filt$Locat <- gsub(".*EPR.*","Deposit", master_table_iphop_fi
 master_table_iphop_filt$Locat <- gsub(".*Guaymas.*","Deposit", master_table_iphop_filt$Locat)
 master_table_iphop_filt$Locat <- gsub(".*MAR.*","Deposit", master_table_iphop_filt$Locat)
 
-master_table_iphop_filt2 <- master_table_iphop_filt %>%
-  filter(str_detect(Locat, "Deposit")) %>%
+master_table_iphop_filt3 <- master_table_iphop_filt %>%
+  filter(str_detect(Locat, "Plume")) #%>%
   #filter(str_detect(Locat, "Plume")) #%>%
-  filter(str_detect(d, "Archaea")) %>%
-  #filter(str_detect(p, "p__Pseudomonadota")) %>%
+  #filter(str_detect(d, "Archaea")) %>%
+  #filter(str_detect(p, "p__Pseudomonadota")) #%>%
   #filter(str_detect(p, "p__Methanobacteriota_B")) #%>%
-  filter(str_detect(p, "p__Thermoplasmatota"))
+  #filter(str_detect(p, "p__Nanoarchaeota"))
   #filter(str_detect(p, "p__Bacteroidota"))
   #filter(str_detect(c, "c__Gammaproteobacteria"))
   #filter(str_detect(c, "c__Alphaproteobacteria"))
   #filter(str_detect(p, "p__Campylobacterota"))
   #filter(str_detect(g, "g__Colwellia"))
+
+#check how many viruses have >1 host prediction
+master_table_iphop_filt3 <- iphop %>%
+  group_by(Virus) %>% 
+  filter(n()>1) #%>%
+length(unique(master_table_iphop_filt3$Virus)) #614 viruses
 
 ####################################### vMAGs >4 seqs #############################################
 
@@ -409,6 +415,9 @@ master_table_iphop$vMAG_Site <- stri_replace_all_regex(master_table_iphop$vMAG_S
 
 master_table_iphop$vMAG_Site <- gsub("*_M1[0-9]","",master_table_iphop$vMAG_Site)
 master_table_iphop$vMAG_Site <- gsub("*_M[0-9]","",master_table_iphop$vMAG_Site)
+
+write.table(master_table_iphop, file = "output/master_table_iphop.tsv", quote = FALSE,
+            row.names = FALSE, sep = "\t")
 
 #get just Proteobacteria to highlight their breakdown
 master_table_iphop_proteos <- master_table_iphop %>%

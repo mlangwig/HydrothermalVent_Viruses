@@ -2148,6 +2148,47 @@ bedtools intersect -a bed_GeoDistinct_VirusClusts.tsv -b bed_PlumeVent_viruses.t
 
 -f 0.50 option for 50% overlap. Or -F?
 
+## Take 2 comparing regions of overlap with final 49,962 set
+
+1. Trying with all the viruses from geo distinct clusters in one file - then can I parse the output for just what I want? Nucleotide-Nucleotide BLAST 2.14.1+
+```{bash, eval = FALSE}
+pwd
+/scratch/langwig/Projects/VentPlumeViruses/skani/blastn_skani_clusts
+
+mamba activate
+
+nano GeoDistinct_clust_viruses.txt
+
+perl /scratch/langwig/scripts/screen_list_new.pl GeoDistinct_clust_viruses.txt /scratch/langwig/Projects/VentPlumeViruses/Virus_Genomes/49962_final_VentViruses_Nlinked.fna keep > GeoDistinct_clust_Viruses.fna
+```
+**If you don't want to do the vRhyme ones manually in the future at the end for adding annotations, don't do the N-linked option, instead using the separate scaffold file**
+
+2. Makeblastdb and run blastn
+```{bash, eval = FALSE}
+makeblastdb -in GeoDistinct_clust_Viruses.fna -out GeoDistinct_clust_Viruses -dbtype nucl
+
+nohup blastn -query GeoDistinct_clust_Viruses.fna -db GeoDistinct_clust_Viruses -out GeoDistinct_clust_Viruses_output.txt -outfmt "6 qseqid sseqid evalue bitscore length pident qstart qend sstart send" -max_target_seqs 2 -max_hsps 1 &
+
+mamba activate R
+Rscript parse_blastn_2.R
+```
+
+3. Get coordinates and run bedtools
+```{bash, eval = FALSE}
+cut -f1,7,8 filtered_GeoDistinctViruses_blastn_results.txt > query_results.txt
+cut -f2,9,10 filtered_GeoDistinctViruses_blastn_results.txt > subj_results.txt
+
+cat query_results.txt subj_results.txt > VirusClust_blastn_bed_coords.txt
+
+bedtools intersect -a VirusClust_blastn_bed_coords.txt -b bed_PlumeVent_viruses.tsv -wa -wb > bedtools_result_GeoDistinct_VirusClusts.txt
+```
+**Remember, bedtools wants coords in the right direction aka 1 10100 instead of 10100 1. If you get the invalid record in file error**
+
+9. Grabbing some missing annotations
+```{bash, eval = FALSE}
+perl /scratch/langwig/scripts/screen_list_new.pl missing_annos_list.txt bed_PlumeVent_viruses.tsv keep > bed_PlumeVent_viruses_missing.tsv
+```
+
 # Running coverm to obtain virus abundance
 
 1.  Get paths to all the reads in one folder using symbolic links
@@ -2414,30 +2455,39 @@ sed  -i '1i query target  evalue  pident  bits  qcov  tcov  alnlen  qlen  tlen' 
 Import 80 cov and 75 pi file into R, filter for best e value hit when
 multiple hits per sequence.
 
-# Run dramv to get viral protein annotations
+# Run dramv to get viral protein annotations - 49,962
 
 1.  Run Virsorter to get dramv input file - and make sure it processes
     all viruses
 
 ```{bash, eval = FALSE}
-nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter -i ../Virus_Genomes/All_PlumeVent_Viruses.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &
+nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter/Nlinked_vMAGs_noMinScore_49962 -i ../../Virus_Genomes/49962_final_VentViruses_Nlinked.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &
 ```
 
-2.  Run DRAMv
+2. Realizing I need to do a run with NON N-LINKED vMAGs for DRAMv. The Nlinked is needed if you want to see number of hallmarks per vMAG.
+```{bash, eval = FALSE}
+nohup virsorter run --prep-for-dramv --min-score 0.0 -w /scratch/langwig/Projects/VentPlumeViruses/Virsorter/nonNlinked_49962_forDRAMv -i ../../Virus_Genomes/49962_final_VentViruses.fna -j 100 --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae --provirus-off --viral-gene-enrich-off all &
+```
+
+3.  Run DRAMv
 
 ```{bash, eval = FALSE}
 DRAM-setup.py import_config --config_loc /storage2/databases/dram-latest/CONFIG 
 
-nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-affi-contigs-for-dramv_renamed.tab -o annotation --threads 50 &
+mamba activate dram
+
+nohup DRAM-v.py annotate -i final-viral-combined-for-dramv_renamed.fa -v viral-affi-contigs-for-dramv_renamed.tab -o annotation --threads 90 &
+
+nohup DRAM-v.py annotate -i final-viral-combined-for-dramv.fa -v viral-affi-contigs-for-dramv.tab -o annotation --threads 40 &
 ```
 
-3.  Rename it for parsing
+4.  Rename it for parsing
 
 ```{bash, eval = FALSE}
 sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
 ```
 
-4.  Grab the GD and PV protein annotations
+5.  Grab the GD and PV protein annotations
 
 ```{bash, eval = FALSE}
 sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
@@ -2445,10 +2495,10 @@ sed 's/__full-cat_[0-9]//g' annotations.tsv > annotations_renamed.tsv
 Rscript subset_GDpd_prots.R
 ```
 
-5.  Try distilling
+6.  Try distilling
 
 ```{bash, eval = FALSE}
-DRAM-v.py distill -i annotation/ -o distilled
+DRAM-v.py distill -i annotation/annotations.tsv -o distilled
 ```
 
 # Get total read count for all fastq reads
