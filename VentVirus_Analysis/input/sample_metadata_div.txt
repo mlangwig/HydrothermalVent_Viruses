@@ -1,25 +1,25 @@
 Site	SRA	Type	General_Site	Hydrothermal_Vent	Latitude_DD	Longitude_DD	Depth_m
-Guaymas_Basin_Plume	SRR3577362	Plume	Guaymas Basin	Guaymas	27.51583333	-111.425	1993
-Cayman_Shallow_Plume_1	SRR2046235	Plume	Mid-Cayman Rise	Mid-Cayman Von Damm	18.37636667	-81.79808333	2041
-Cayman_Shallow_Plume_2	SRR2046236	Plume	Mid-Cayman Rise	Mid-Cayman Von Damm	18.37633333	-81.79806667	2238
-Cayman_Shallow_Plume_3	SRR2046222	Plume	Mid-Cayman Rise	Mid-Cayman Background	18.71668333	-81.78331667	2327
-Cayman_Deep_Plume_1	SRR2046238	Plume	Mid-Cayman Rise	Mid-Cayman Piccard Beebe	18.54650167	-81.71823333	4869
-Cayman_Deep_Plume_2	SRR2046237	Plume	Mid-Cayman Rise	Mid-Cayman Piccard Beebe	18.54655833	-81.71841333	4946
-Cayman_Deep_Plume_3	SRR2046221	Plume	Mid-Cayman Rise	Mid-Cayman Piccard Background	18.71668333	-81.78331667	4950
-Lau_Basin_Abe_Plume_1	SRR1217460	Plume	Lau Basin	Abe/A1	-20.76121472	-176.1905736	1960
+Guaymas_Basin_Plume	SRR3577362	Plume	Guaymas Basin	Guaymas Basin	27.51583333	-111.425	1993
+Cayman_Shallow_Plume_1	SRR2046235	Plume	Mid-Cayman Rise	Von Damm	18.37636667	-81.79808333	2041
+Cayman_Shallow_Plume_2	SRR2046236	Plume	Mid-Cayman Rise	Von Damm	18.37633333	-81.79806667	2238
+Cayman_Shallow_Plume_3	SRR2046222	Plume	Mid-Cayman Rise	Background	18.71668333	-81.78331667	2327
+Cayman_Deep_Plume_1	SRR2046238	Plume	Mid-Cayman Rise	Piccard Beebe	18.54650167	-81.71823333	4869
+Cayman_Deep_Plume_2	SRR2046237	Plume	Mid-Cayman Rise	Piccard Beebe	18.54655833	-81.71841333	4946
+Cayman_Deep_Plume_3	SRR2046221	Plume	Mid-Cayman Rise	Piccard Background	18.71668333	-81.78331667	4950
+Lau_Basin_Abe_Plume_1	SRR1217460	Plume	Lau Basin	Abe	-20.76121472	-176.1905736	1960
 Lau_Basin_Abe_Plume_2	SRR1217463	Plume	Lau Basin	Abe	-22.7612951	-176.1894929	2155
-Lau_Basin_Abe_Plume_3	SRR1217565	Plume	Lau Basin	Abe/A1	-20.76121472	-176.1905736	2159
-Lau_Basin_Kilo_Moana_Plume_1	SRR1217367	Plume	Lau Basin	Kilo Moana/KM1	-20.05382503	-176.1335894	2605
-Lau_Basin_Kilo_Moana_Plume_2	SRR1217459	Plume	Lau Basin	Kilo Moana/KM4	-20.05390333	-176.1333467	2440
-Lau_Basin_Kilo_Moana_Plume_3	SRR1217564	Plume	Lau Basin	Kilo Moana/KM4	-20.05390333	-176.1333467	2639
-Lau_Basin_Kilo_Moana_Plume_4	SRR1217566	Plume	Lau Basin	Kilo Moana/KM1	-20.05410815	-176.1335218	2315
-Lau_Basin_Mariner_Plume_1	SRR1217452	Plume	Lau Basin	Mariner/MA3	-20.18030488	-176.6014404	1890
+Lau_Basin_Abe_Plume_3	SRR1217565	Plume	Lau Basin	Abe	-20.76121472	-176.1905736	2159
+Lau_Basin_Kilo_Moana_Plume_1	SRR1217367	Plume	Lau Basin	Kilo Moana	-20.05382503	-176.1335894	2605
+Lau_Basin_Kilo_Moana_Plume_2	SRR1217459	Plume	Lau Basin	Kilo Moana	-20.05390333	-176.1333467	2440
+Lau_Basin_Kilo_Moana_Plume_3	SRR1217564	Plume	Lau Basin	Kilo Moana	-20.05390333	-176.1333467	2639
+Lau_Basin_Kilo_Moana_Plume_4	SRR1217566	Plume	Lau Basin	Kilo Moana	-20.05410815	-176.1335218	2315
+Lau_Basin_Mariner_Plume_1	SRR1217452	Plume	Lau Basin	Mariner	-20.18030488	-176.6014404	1890
 Lau_Basin_Mariner_Plume_2	SRR1217567	Plume	Lau Basin	Mariner	-20.18005861	-176.6012416	1785
 Lau_Basin_Tahi_Moana_Plume_1	SRR1217461	Plume	Lau Basin	Tahi Moana	-20.68213072	-176.1833634	800
-Lau_Basin_Tahi_Moana_Plume_2	SRR1217465	Plume	Lau Basin	Tahi Moana 1a/SP2	-20.68156833	-176.1823411	2229
-Lau_Basin_Tui_Malila_Plume	SRR1217462	Plume	Lau Basin	Tui Malila/TM1	-21.99001968	-176.5687442	1919
-Axial_Plume	ERR2021511	Plume	Axial Seamount	Axial Seamount Anemone	45.9335667	-130.013667	1500
-Axial_Seawater	ERR2021513	Plume	Axial Seamount	Axial Seamount Background	46.27389	-129.79548	1500
+Lau_Basin_Tahi_Moana_Plume_2	SRR1217465	Plume	Lau Basin	Tahi Moana	-20.68156833	-176.1823411	2229
+Lau_Basin_Tui_Malila_Plume	SRR1217462	Plume	Lau Basin	Tui Malila	-21.99001968	-176.5687442	1919
+Axial_Plume	ERR2021511	Plume	Axial Seamount	Anemone	45.9335667	-130.013667	1500
+Axial_Seawater	ERR2021513	Plume	Axial Seamount	Background	46.27389	-129.79548	1500
 Brothers_UC_S010	SRR10310285	Deposit	Brothers Volcano	S010	-34.88234384	179.0682732	1213.51
 Brothers_UC_S011	SRR10312504	Deposit	Brothers Volcano	S011	-34.88236547	179.0682282	1212.89
 Brothers_UC_S147	SRR10312497	Deposit	Brothers Volcano	S147	-34.882356	179.0682646	1214.18
