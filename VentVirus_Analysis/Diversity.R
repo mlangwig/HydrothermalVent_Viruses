@@ -13,6 +13,7 @@ library(ape)
 library(devtools)
 #install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
 library(pairwiseAdonis)
+library(ggrepel)
 set.seed(81)
 
 #################################################### create input ######################################################
@@ -98,13 +99,18 @@ ntaxa(physeq)
 nsamples(physeq)
 sample_variables(physeq)
 
+#subset input to separate plume and deposit
+physeq_p <- subset_samples(physeq, Type == "Plume")
+physeq_d <- subset_samples(physeq, Type == "Deposit")
+
 # rest based on this guide: https://rpubs.com/lgschaerer/betadiv
 
 #bray cutis ordination
 #ordination
 bray <- ordinate(
   physeq = physeq, #change this to your phyloseq
-  method = "PCoA", 
+  method = "NMDS", #PCoA
+  k = 3,
   distance = "bray" 
 )
 
@@ -116,7 +122,7 @@ dev.off()
 plot_ordination(
   physeq = physeq,                                                          
   ordination = bray) + #,label = "Hydrothermal_Vent"
-  geom_point(aes(color = General_Site, shape = Type), size = 3) + #shape size on NMDS
+  geom_point(aes(color = General_Site, shape = Type), size = 3) + #shape size on NMDS #, shape = Type
   scale_color_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
                             "#8c510a", "#000000")) +
   theme_linedraw() +
@@ -131,9 +137,9 @@ plot_ordination(
     axis.title.x = element_text(size = 15),
     strip.text = element_text(face = "bold", size = 15)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) #+          #fills legend points based on the fill command
-  #facet_wrap(~Type)  
-  
-#have to separate plume and vent to see things
+  #stat_ellipse(type = "norm", linetype = 2) +
+  #stat_ellipse(type = "t")
+  #facet_wrap(~Type)
 
 
 ############################################ phyloseq PERMANOVA ######################################################
