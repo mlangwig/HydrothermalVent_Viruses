@@ -14,7 +14,17 @@ library(devtools)
 #install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
 library(pairwiseAdonis)
 library(ggrepel)
+library(plyr)
 set.seed(81)
+
+######################################## see distribution of abundance data ######################################################
+abund_long_norm_no <- abund_long_norm %>%
+  filter(!(Genome == "Lau_Basin_Tahi_Moana_vRhyme_bin_115"))
+
+dev.off()
+p<-ggplot(abund_long_norm_no, aes(x=value)) + 
+  geom_histogram(color="black", fill="white") #binwidth = .0001, 
+p
 
 #################################################### create input ######################################################
 
@@ -121,7 +131,7 @@ head(sample_data(physeq))
 dev.off()
 plot_ordination(
   physeq = physeq,                                                          
-  ordination = bray) + #,label = "Hydrothermal_Vent"
+  ordination = bray) + #,label = "Hydrothermal_Vent" #bray
   geom_point(aes(color = General_Site, shape = Type), size = 3) + #shape size on NMDS #, shape = Type
   scale_color_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
                             "#8c510a", "#000000")) +
@@ -149,6 +159,53 @@ bray <- phyloseq::distance(physeq, method = "bray")
 #sam <- data.frame(sample_data(physeq))
 #Run PERMANOVA on distances.
 adonis2(bray ~ General_Site*Type*Latitude_DD*Longitude_DD*Depth_m, data = sampledata, permutations = 1000)
+
+#################################### phyloseq loop through all distance metrics ######################################################
+
+#get list of the dist methods
+dist_methods <- unlist(distanceMethodList)
+#remove the ones that require a phylogenetic tree
+dist_methods <- dist_methods[-(1:3)]
+# Remove the user-defined distance
+dist_methods = dist_methods[-which(dist_methods=="ANY")]
+
+#loop through each distance method and save to plot list
+plist <- vector("list", length(dist_methods))
+names(plist) = dist_methods
+for( i in dist_methods ){
+  # Calculate distance matrix
+  iDist <- distance(physeq_p, method=i)
+  # Calculate ordination
+  iMDS  <- ordinate(physeq_p, "MDS", distance=iDist)
+  ## Make plot
+  # Don't carry over previous plot (if error, p will be blank)
+  p <- NULL
+  # Create plot, store as temp variable, p
+  p <- plot_ordination(physeq_p, iMDS, color="General_Site", shape="Type")
+  # Add title to each plot
+  p <- p + ggtitle(paste("MDS using distance method ", i, sep=""))
+  # Save the graphic to file.
+  plist[[i]] = p
+}
+#forgot, need to remove method morisita, chao, and cao because non-integer data
+#and maybe raup because empty species?
+
+#combine and plot
+df = ldply(plist, function(x) x$data)
+names(df)[1] <- "distance"
+p = ggplot(df, aes(Axis.1, Axis.2, color=General_Site, shape=Type))
+p = p + geom_point(size=3, alpha=0.5)
+p = p + facet_wrap(~distance, scales="free")
+p = p + ggtitle("MDS on distinct distance metrics for Vent Virus dataset")
+p
+
+
+
+
+
+
+
+
 
 
 
