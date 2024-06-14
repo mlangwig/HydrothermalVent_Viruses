@@ -15,6 +15,9 @@ library(devtools)
 library(pairwiseAdonis)
 library(ggrepel)
 library(plyr)
+#BiocManager::install("DESeq2", force = TRUE)
+library(DESeq2)
+library(ggrepel)
 set.seed(81)
 
 ######################################## see distribution of abundance data ######################################################
@@ -34,11 +37,20 @@ abund_norm_wide$Site <- gsub("_metaspades_scaffolds.min1000.fasta","", abund_nor
 abund_norm_wide$Site <- gsub("min1000","Plume", abund_norm_wide$Site) 
 abund_norm_wide$Site <- gsub("_scaffolds_Plume","", abund_norm_wide$Site)
 abund_norm_wide$Site <- gsub(".fasta","", abund_norm_wide$Site)  
-  
+
+################ Choose either or of the following two methods of creating OTU matrix
+#creating OTU matrix using normalized abundance (read count divided by total reads of sample*100)  
 abund_norm_wide <- abund_norm_wide %>%  
   select(Genome, Site, abun_norm) %>%
   pivot_wider(names_from = Site, values_from = abun_norm, values_fill = list(abun_norm = 0)) %>%
   filter(!(Genome == "Lau_Basin_Tahi_Moana_vRhyme_bin_115")) #remove bin 115 because we suspect problems with read mapping/read duplication
+
+#creating OTU matrix using raw read count
+abund_norm_wide <- abund_norm_wide %>%  
+  select(Genome, Site, value) %>%
+  pivot_wider(names_from = Site, values_from = value, values_fill = list(value = 0)) %>%
+  filter(!(Genome == "Lau_Basin_Tahi_Moana_vRhyme_bin_115")) #remove bin 115 because we suspect problems with read mapping/read duplication
+################
 
 #convert abund_norm_wide to data_table
 abund_norm_wide <- as.data.table(abund_norm_wide)
@@ -118,25 +130,25 @@ physeq_d <- subset_samples(physeq, Type == "Deposit")
 #bray cutis ordination
 #ordination
 bray <- ordinate(
-  physeq = physeq, #change this to your phyloseq
+  physeq = physeq_d, #change this to your phyloseq
   method = "NMDS", #PCoA
   k = 3,
   distance = "bray" 
 )
 
-head(sample_data(physeq))
+#head(sample_data(physeq))
 
 ###################################### phyloseq plot NMDS ordination ######################################################
 
 dev.off()
 plot_ordination(
-  physeq = physeq,                                                          
+  physeq = physeq_d,                                                          
   ordination = bray) + #,label = "Hydrothermal_Vent" #bray
   geom_point(aes(color = General_Site, shape = Type), size = 3) + #shape size on NMDS #, shape = Type
   scale_color_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
                             "#8c510a", "#000000")) +
   theme_linedraw() +
-  geom_text(mapping = aes(label = Hydrothermal_Vent, hjust = 1, vjust = 1.5), size = 3) +
+  #geom_text(mapping = aes(label = Hydrothermal_Vent, hjust = 1, vjust = 1.5), size = 3) +
   theme(                             
     legend.title = element_blank(),                                          #removes legend title
     #legend.position = "bottom",
@@ -146,7 +158,13 @@ plot_ordination(
     axis.text.x = element_text(size = 10),
     axis.title.x = element_text(size = 15),
     strip.text = element_text(face = "bold", size = 15)) +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) #+          #fills legend points based on the fill command
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +          #fills legend points based on the fill command
+  #expand_limits(x = -2.75) +
+  geom_text_repel(
+    mapping=aes(label=Hydrothermal_Vent),
+    size=4, size=4, box.padding = unit(0.5, "lines"),
+    max.overlaps = 20
+  )
   #stat_ellipse(type = "norm", linetype = 2) +
   #stat_ellipse(type = "t")
   #facet_wrap(~Type)
@@ -162,6 +180,8 @@ adonis2(bray ~ General_Site*Type*Latitude_DD*Longitude_DD*Depth_m, data = sample
 
 #################################### phyloseq loop through all distance metrics ######################################################
 
+#taken from https://joey711.github.io/phyloseq/distance
+
 #get list of the dist methods
 dist_methods <- unlist(distanceMethodList)
 #remove the ones that require a phylogenetic tree
@@ -174,23 +194,24 @@ plist <- vector("list", length(dist_methods))
 names(plist) = dist_methods
 for( i in dist_methods ){
   # Calculate distance matrix
-  iDist <- distance(physeq_p, method=i)
+  iDist <- distance(physeq_d, method=i)
   # Calculate ordination
-  iMDS  <- ordinate(physeq_p, "MDS", distance=iDist)
+  iMDS  <- ordinate(physeq_d, "MDS", distance=iDist)
   ## Make plot
   # Don't carry over previous plot (if error, p will be blank)
   p <- NULL
   # Create plot, store as temp variable, p
-  p <- plot_ordination(physeq_p, iMDS, color="General_Site", shape="Type")
+  p <- plot_ordination(physeq_d, iMDS, color="General_Site", shape="Type")
   # Add title to each plot
   p <- p + ggtitle(paste("MDS using distance method ", i, sep=""))
   # Save the graphic to file.
   plist[[i]] = p
 }
 #forgot, need to remove method morisita, chao, and cao because non-integer data
-#and maybe raup because empty species?
+#and raup because empty species
 
 #combine and plot
+dev.off()
 df = ldply(plist, function(x) x$data)
 names(df)[1] <- "distance"
 p = ggplot(df, aes(Axis.1, Axis.2, color=General_Site, shape=Type))
@@ -199,12 +220,76 @@ p = p + facet_wrap(~distance, scales="free")
 p = p + ggtitle("MDS on distinct distance metrics for Vent Virus dataset")
 p
 
+#betadiver(help=TRUE) to see equations for different betadiver methods
 
 
+#################################### phyloseq with DESeq for DA analyses ######################################################
 
+#taken from https://joey711.github.io/phyloseq-extensions/DESeq2.html
+#choose which variable you want to use as the study design factor
+head(sample_data(physeq))
 
+#add 1 to all counts in OTU matrix bc DESeq cannot handle 0s
+#vmagmat <- vmagmat+1
 
+#actually I realized there is the option sfType="poscounts" or "iterate" to deal with
+#0s present in the data
 
+#Make sure you are using with read count data from coverm - not the normalized
+#abundance
+
+#create OTU and TAX objects
+OTU = otu_table(vmagmat, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat)
+SAMP = sample_data(sampledata)
+
+#create phyloseq object
+physeq = phyloseq(OTU, TAX, SAMP)
+
+#run deseq
+deseq = phyloseq_to_deseq2(physeq, design = ~ General_Site + Type)
+deseq = DESeq(deseq, test="Wald", fitType="parametric", sfType = "poscounts")
+
+#look at results
+res = results(deseq, cooksCutoff = FALSE)
+alpha = 0.01
+sigtab = res[which(res$padj < alpha), ]
+sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(physeq)[rownames(sigtab), ], "matrix"))
+head(sigtab)
+#why are only plume viruses left?
+
+#use this to see what groups were compared to each other
+resultsNames(deseq)
+#I'm not sure why it isn't an exhaustive list of possible combinations?
+
+#then pull out ones of interest to see comparison and log fold changes
+resdf<-as.data.frame(DESeq2::results(deseq, format = "DataFrame", name = "Type_Plume_vs_Deposit"))
+#took this solution from https://www.researchgate.net/post/How-to-interpret-results-of-DESeq2-with-more-than-two-experimental-groups
+
+#clean it up
+sigtab = resdf[which(resdf$padj < alpha), ]
+sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(physeq)[rownames(sigtab), ], "matrix"))
+head(sigtab)
+#looks like highest and lowest log fold change make sense for respective environment and microbial host
+#the virus infects
+
+#plot viruses significantly different between sites
+theme_set(theme_bw())
+scale_fill_discrete <- function(palname = "Set1", ...) {
+  scale_fill_brewer(palette = palname, ...)
+}
+# Realm order
+x = tapply(sigtab$log2FoldChange, sigtab$r, function(x) max(x))
+x = sort(x, TRUE)
+sigtab$r = factor(as.character(sigtab$r), levels=names(x))
+# Family order
+x = tapply(sigtab$log2FoldChange, sigtab$f, function(x) max(x))
+x = sort(x, TRUE)
+sigtab$f = factor(as.character(sigtab$f), levels=names(x))
+
+dev.off()
+ggplot(sigtab, aes(x=f, y=log2FoldChange, color=r)) + geom_point(size=6) + 
+  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
 
 
 
