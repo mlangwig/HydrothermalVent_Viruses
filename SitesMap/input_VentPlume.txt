@@ -15,8 +15,8 @@ Vent	Brothers volcano	-34.8579	179.0519
 Vent	Brothers volcano	-34.8615	179.0573
 Vent	Brothers volcano	-34.8611	179.0577
 Vent	Brothers volcano	-34.8621	179.0574
-Vent	Brothers volcano	-34.8626	179.0581
-Vent	Brothers volcano	-34.8616	179.0572
+Diffuse Flow	Brothers volcano	-34.8626	179.0581
+Diffuse Flow	Brothers volcano	-34.8616	179.0572
 Vent	Lau Basin	-21.4447	-176.2579
 Vent	Lau Basin	-21.4492	-176.2599
 Vent	Lau Basin	-20.761	-176.1909

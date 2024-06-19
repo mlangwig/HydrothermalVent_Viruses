@@ -72,6 +72,9 @@ abund_long_norm <- abund_long_norm %>%
   filter(Type == "Read.Count")
   #filter(Type == "Relative.Abundance....")
 
+write.table(abund_long_norm, file = "output/abund_long_norm.tsv", quote = FALSE,
+            row.names = FALSE, sep = "\t")
+
 # ### with Patricia
 # abund_long_norm_Lau_TM <- abund_long_norm %>%
 #   filter(Site == "Lau_Basin_Tahi_Moana_min1000_2")
@@ -284,18 +287,21 @@ abund_long_norm_tax$Site_Gen <- stri_replace_all_regex(abund_long_norm_tax$Site_
 
 abund_long_norm_tax$Site_Gen <- gsub("*_M1[0-9]","",abund_long_norm_tax$Site_Gen)
 abund_long_norm_tax$Site_Gen <- gsub("*_M[0-9]","",abund_long_norm_tax$Site_Gen)
+#change Bowl to Mariner because these are the same site
+abund_long_norm_tax$Site_Gen <- gsub("ELSC_Bowl","ELSC_Mariner",abund_long_norm_tax$Site_Gen)
 
+#transform for plotting
 abund_long_norm_tax <- abund_long_norm_tax %>%
-  group_by(Site_Gen, c) %>%
-  summarise(abun_norm = sum(abun_norm)) %>%
-  ungroup() %>%
-  mutate(log_n = log(abun_norm)) %>% #create log transformed abundance
-  mutate(log_n_plus1 = log(abun_norm+1)) %>% #add 1 to log transformed #log_n+1
-  mutate(c = gsub("c__", "", c)) %>% #remove c__
-  mutate(c = sub("^$", "Unknown", c)) %>% #replace blanks with unknown
-  mutate(Site_Gen = gsub("_", " ", Site_Gen)) %>% #remove underscore from site names
-  mutate(Site_Gen = gsub("Guaymas Basin", "Guaymas Basin Plume", Site_Gen)) %>%
-  mutate(Site_Gen = gsub(" V2", "", Site_Gen))
+  dplyr::group_by(Site_Gen, c) %>%
+  dplyr::summarise(abun_norm = sum(abun_norm)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(log_n = log(abun_norm)) %>% #create log transformed abundance
+  dplyr::mutate(log_n_plus1 = log(abun_norm+1)) %>% #add 1 to log transformed #log_n+1
+  dplyr::mutate(c = gsub("c__", "", c)) %>% #remove c__
+  dplyr::mutate(c = sub("^$", "Unknown", c)) %>% #replace blanks with unknown
+  dplyr::mutate(Site_Gen = gsub("_", " ", Site_Gen)) %>% #remove underscore from site names
+  dplyr::mutate(Site_Gen = gsub("Guaymas Basin", "Guaymas Basin Plume", Site_Gen)) %>%
+  dplyr::mutate(Site_Gen = gsub(" V2", "", Site_Gen))
   
 #set order of Sites on x axis
 abund_long_norm_tax$Site_Gen <- factor(abund_long_norm_tax$Site_Gen, 
@@ -449,8 +455,8 @@ abund_MAGs_long_norm_gtdb <- gtdb %>%
 
 #select only phylum and class taxonomy
 #abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% select(c("user_genome", "Site", "Reads", d:s,"abun_norm"))
-abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% 
-  filter(str_detect(c, "c__Gammaproteobacteria") | str_detect(p, "p__Campylobacterota"))
+# abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% 
+#   filter(str_detect(c, "c__Gammaproteobacteria") | str_detect(p, "p__Campylobacterota"))
 
 abund_MAGs_long_norm_gtdb$Site <- gsub("_metaspades_scaffolds.min1000.fasta","", abund_MAGs_long_norm_gtdb$Site) 
 abund_MAGs_long_norm_gtdb$Site <- gsub("min1000","Plume", abund_MAGs_long_norm_gtdb$Site) 
@@ -466,6 +472,12 @@ abund_MAGs_long_norm_gtdb$Locat <- gsub(".*ELSC.*","Vent", abund_MAGs_long_norm_
 abund_MAGs_long_norm_gtdb$Locat <- gsub(".*EPR.*","Vent", abund_MAGs_long_norm_gtdb$Locat)
 abund_MAGs_long_norm_gtdb$Locat <- gsub(".*Guaymas.*","Vent", abund_MAGs_long_norm_gtdb$Locat)
 abund_MAGs_long_norm_gtdb$Locat <- gsub(".*MAR.*","Vent", abund_MAGs_long_norm_gtdb$Locat)
+
+abund_MAGs_long_norm_gtdb_sum <- abund_MAGs_long_norm_gtdb %>%
+  group_by(Site, p, Locat) %>% 
+  summarise(value=sum(as.numeric(abun_norm))) %>% #summing the group
+  #filter(grepl("c__Gammaproteobacteria|p__Campylobacterota", Taxa)) %>% #only grab Gamma and Campylo
+  ungroup()
 
 ############################ Sum abundance by predicted host and site #############################
 

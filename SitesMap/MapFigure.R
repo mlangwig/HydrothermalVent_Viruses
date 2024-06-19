@@ -41,6 +41,7 @@ overview <- mp +
   scale_color_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
                               "#8c510a", "#000000")) + #choose colors of sites
   #scale_size(limits = c(2, 29), breaks = c(2, 10, 20, 27, 28)) +
+  scale_shape_manual(values = c(15,16,17)) +
   theme_gray() +
   labs(x= "Longitude", y = "Latitude") + #Lat and Long labels
   guides(color = guide_legend(title = "Site")) + #change legend title
