@@ -315,7 +315,7 @@ abund_long_norm_tax$Site_Gen <- factor(abund_long_norm_tax$Site_Gen,
                                                 "Brothers Diffuse", "Brothers LC",
                                                 "Brothers NWCA", "Brothers NWCB",
                                                 "Brothers UC",
-                                                "ELSC Abe", "ELSC Bowl",
+                                                "ELSC Abe",
                                                 "ELSC Mariner", "ELSC Tui Malila",
                                                 "ELSC Vai Lili",
                                                 "EPR 4281-140", "EPR PIR-30",
@@ -352,6 +352,10 @@ abund_long_norm_tax$Virus_Realm <- gsub("Resentoviricetes","Riboviria", abund_lo
 abund_long_norm_tax$Virus_Realm <- gsub("Vidaverviricetes","Riboviria", abund_long_norm_tax$Virus_Realm)
 abund_long_norm_tax$Virus_Realm <- gsub("Polintoviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
 abund_long_norm_tax$Virus_Realm <- gsub("Maveriviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+
+#Change ELSC to Lau Basin for clarity
+abund_long_norm_tax$Site_Gen <- gsub("ELSC","Lau Basin", abund_long_norm_tax$Site_Gen)
+abund_long_norm_tax$Site_Gen <- gsub("Abe","ABE", abund_long_norm_tax$Site_Gen)
 
 # write.table(abund_long_norm_tax, file = "output/abund_long_norm_tax.tsv", quote = FALSE,
 #             row.names = FALSE, sep = "\t")

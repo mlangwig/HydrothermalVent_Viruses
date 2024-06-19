@@ -49,7 +49,10 @@ overview <- mp +
   theme(axis.text = element_text(size = 10), 
         axis.title = element_text(size = 12),
         legend.key=element_rect(fill="white"),
-        legend.title = element_blank())
+        legend.title = element_blank(),
+        panel.border = element_rect(color = "black", 
+                                    fill = NA, 
+                                    linewidth = .5))
 overview
 
 ggsave(overview, filename = "Overview_Map_PlumeVent.png", width = 12, height = 6)
