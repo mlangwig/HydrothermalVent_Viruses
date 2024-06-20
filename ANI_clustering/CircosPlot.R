@@ -10,6 +10,7 @@ library(dplyr)
 #sort ani_long in alphabetical order to avoid headaches
 #ani_long_meta is just metadata version needed for Circlize
 ani_long_meta <- ani_long_metadata %>%
+  mutate(Site = str_replace(Site, "ELSC_Bowl", "ELSC_Mariner")) %>%
   group_by(id) %>%
   arrange(Site, .by_group = T)
 
@@ -24,6 +25,8 @@ ani_long_meta <- ani_long_meta %>%
   filter(n_distinct(Site) > 1)
 
 length(unique(ani_long_meta$id))
+# REDO COUNT HERE
+#482 is number of clusters with geo distinct (65) + intra vent related viruses ()
 #527 is number of clusters with geo distinct (65) + intra vent related viruses (462)
 
 #create test for all
@@ -86,7 +89,7 @@ for (i in seq_len(nrow(t.mat))) {
     
     # Check if the prefixes are not identical and the value is greater than 0
     if (row_prefix != col_prefix && t.mat[i, j] > 0) {
-      result_matrix[i, j] <- "red"
+      result_matrix[i, j] <- "plum3"
     }
   }
 }
@@ -149,7 +152,7 @@ group2 <- setNames(as.character(group$group), group$vent)
 
 #set colors
 grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
-             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#499e97",
+             "Guaymas Basin Deposit" = "#28827A", "Guaymas Basin Plume" = "#63c2ba",
              "Lau Basin Plume" = "#3F78C1", "Lau Basin Deposit" = "#72a0db",
              "Mid-Atlantic Ridge" = "#8c510a", "Mid-Cayman Rise" = "#000000",
              #distinct vent locations above
@@ -157,7 +160,7 @@ grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East
              "4561" = "#28827A", "4571-419" = "#28827A", 
              #Guaymas deposit
              "D Mariner" = "#72a0db", "D Abe" = "#72a0db", "D Vai Lili V2" = "#72a0db", 
-             "D Tui Malila" = "#72a0db", "D Bowl" = "#72a0db",
+             "D Tui Malila" = "#72a0db",
              #Lau deposit
              "Deep" = "#000000", "Shallow" = "#000000", 
              #MCR
@@ -173,7 +176,7 @@ grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East
              #Axial Seamount
              "PIR-30" = "#CE9A28", 
              #EPR
-             "P Guaymas" = "#499e97" 
+             "P Guaymas" = "#63c2ba" 
              #Guaymas plume
 ) #specify colors of sites/outer ring
 
@@ -182,7 +185,7 @@ col_fun = "grey" #specify color of links between them
 #reset before running
 dev.off()
 circos.clear()
-svg("Output/Circos_skani_gd_iv_3kb_49962.svg")
+svg("Output/Circos_skani_gd_iv_3kb_49962_06.20.24.svg")
 #set font size
 par(cex = 1.8, mar = c(0, 0, 0, 0))
 #set gaps between blocks
@@ -199,7 +202,7 @@ chordDiagram(t.mat_test,
              transparency = 0.3,
              symmetric = TRUE,
              big.gap = 6,
-             col = col_fun,
+             #col = col_fun,
              preAllocateTracks = list(
                track.height = mm_h(6),
                track.margin = c(mm_h(1), 0)
@@ -224,7 +227,7 @@ highlight.sector(sector.index = c("P Abe", "P Kilo Moana",
                  text = "Lau Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
-                                  "D Bowl", "D Abe",
+                                  "D Abe",
                                   "D Vai Lili V2"), track.index = 1, col = "#72a0db", 
                  text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
@@ -236,7 +239,7 @@ highlight.sector(sector.index = c("4561", "4571-419",
                                   "4559-240"), track.index = 1, col = "#28827A", 
                  text = "Guaymas Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("P Guaymas"), track.index = 1, col = "#499e97", 
+highlight.sector(sector.index = c("P Guaymas"), track.index = 1, col = "#63c2ba", 
                  text = "Guaymas Basin Plume", cex = 0.5, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
 highlight.sector(sector.index = c("Deep", "Shallow"), track.index = 1, col = "#000000", 
