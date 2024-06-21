@@ -266,7 +266,7 @@ plot_v <- abund_long_norm_iphop_p %>%
 coord_flip()
 plot_v
 
-# ggsave("output/coverm_CampGamma_normAbun.png", plot,
+# ggsave("output/coverm_CampGamma_normAbun_virus.svg", plot, #coverm_CampGamma_normAbun.png
 #        height = 12, width = 15,
 #        bg = "transparent")
 
@@ -965,12 +965,206 @@ plot_mp
 #        height = 10, width = 20)
 #height = 12, width = 15,
 
-dev.off()
-ggarrange(plot_md, plot_mp, plot_vd, plot_vp, ncol = 2, nrow = 2) 
+# dev.off()
+# ggarrange(plot_md, plot_mp, plot_vd, plot_vp, ncol = 2, nrow = 2) 
 
+#patch them together
 library(patchwork)
-(plot_md | plot_mp) / (plot_vd | plot_vp)
+dev.off()
+p <- (plot_md | plot_mp) / (plot_vd | plot_vp)
+p
 
+# ggsave("output/Figure4_Abundance.svg", p,
+#        bg = "transparent", height = 10, width = 15)
+
+
+############################## Final final Figure 4 plot after many iterations ################################
+
+#why has it taken me so long to get here
+
+abund_plot$Site <- gsub("ELSC","Lau Basin Deposit",abund_plot$Site)
+abund_plot$Site <- gsub("Abe","ABE",abund_plot$Site) 
+
+abund_plot_v <- abund_plot %>%
+  filter(Type == "Virus")
+
+#set order of x axis 
+abund_plot_v$Site <- factor(abund_plot_v$Site, 
+                                       levels=c("Axial Plume", "MAR Rainbow 354-166",
+                                                "Cayman Shallow Plume 1", "Lau Basin Kilo Moana Plume 3",
+                                                "Cayman Shallow Plume 3", "Cayman Shallow Plume 2",
+                                                "Lau Basin Tahi Moana Plume 1", "Lau Basin ABE Plume 1",
+                                                "Brothers NWCB S139",
+                                                "Cayman Deep Plume 2", "Lau Basin Kilo Moana Plume 2",
+                                                "Brothers NWCB S012",
+                                                "Cayman Deep Plume 3", "Lau Basin Mariner Plume 1",
+                                                "Cayman Deep Plume 1", "Brothers NWCB S140",
+                                                "Lau Basin Kilo Moana Plume 1",
+                                                "Brothers NWCB S146", 
+                                                "Lau Basin Deposit Tui Malila 134-614", "Brothers NWCB S141",
+                                                "Lau Basin ABE Plume 3", "EPR 4281-140",
+                                                "Lau Basin Deposit ABE A3", "MAR Lucky 356-308",
+                                                "Lau Basin Mariner Plume 2", "Axial Seawater",
+                                                "Guaymas Basin Plume", "Lau Basin Tahi Moana Plume 2",
+                                                "Lau Basin Kilo Moana Plume 4", 
+                                                "Lau Basin Deposit ABE 128-326",
+                                                "EPR PIR-30", "Lau Basin Deposit Vai Lili V2",
+                                                "Lau Basin Tui Malila Plume", "Lau Basin ABE Plume 2", 
+                                                #end Gamma
+                                                "Brothers Diffuse S015", "Brothers Diffuse S009",
+                                                "MAR Lucky 356-284", "Brothers NWCA S143",
+                                                "Lau Basin Deposit ABE A1", 
+                                                "Brothers NWCA S144", "Lau Basin Deposit Tui Malila T2",
+                                                "Lau Basin Deposit Tui Malila T11", "Brothers LC S014",
+                                                "MAR Rainbow 355-202",
+                                                "Guaymas 4559-240", "Lau Basin Deposit Tui Malila T10",
+                                                "Brothers LC S016", "Guaymas 4571-419",
+                                                "Lau Basin Deposit Mariner 131-447", "Lau Basin Deposit Mariner M17",
+                                                "Lau Basin Deposit Mariner M2", "Brothers NWCA S013",
+                                                "Brothers UC S147", "Lau Basin Deposit Tui Malila 132-544",
+                                                "Lau Basin Deposit Mariner M10", "Brothers NWCA S017",
+                                                "Lau Basin Deposit Mariner M1",
+                                                "Guaymas 4561-380","Brothers UC S010",
+                                                "Brothers NWCA S145",
+                                                "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
+
+
+####################### Stacked bar plot of Gamma and Campylo-infecting viral abundance ################################
+## Shows functional redundancy of viruses infecting these hosts
+
+#factor
+level_order <- c('Gammaproteobacteria', 'Campylobacterota') 
+
+####The following produces Figure X, which was modified in Biorender
+dev.off()
+plot_v <- abund_plot_v %>%
+  ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
+  geom_bar(stat = "identity") +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Virus Abundance", y = "Site",
+       fill = "") +
+  guides(fill="none") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.major.y = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank(),
+        axis.title=element_text(size=14),
+        axis.text=element_text(size=12),
+        strip.text.x = element_text(size = 12),
+        strip.background.x = element_rect(fill="white"),
+        legend.text=element_text(size=10),
+        legend.title=element_text(size=12),
+        plot.background = element_blank(),
+        panel.border = element_blank()) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_x_continuous(expand = c(0, 0), position = "top") + #turn this on to make it look aligned with ticks
+  #geom_hline(yintercept = 21.5) +
+  # annotate(geom="text", x=6, y=30, label="Plume",
+  #          color="black") +
+  #ggtitle("Viral Abundance") + #Change for top X grabbed
+  #facet_wrap(.~Type, strip.position = "bottom") +
+  scale_y_discrete(limits=rev) #+
+  #coord_flip()
+plot_v
+
+################## microbial plot backwards scale
+
+abund_plot_m <- abund_plot %>%
+  filter(Type == "Microbe")
+
+#set order of x axis 
+abund_plot_m$Site <- factor(abund_plot_m$Site, 
+                            levels=c("Axial Plume", "MAR Rainbow 354-166",
+                                     "Cayman Shallow Plume 1", "Lau Basin Kilo Moana Plume 3",
+                                     "Cayman Shallow Plume 3", "Cayman Shallow Plume 2",
+                                     "Lau Basin Tahi Moana Plume 1", "Lau Basin ABE Plume 1",
+                                     "Brothers NWCB S139",
+                                     "Cayman Deep Plume 2", "Lau Basin Kilo Moana Plume 2",
+                                     "Brothers NWCB S012",
+                                     "Cayman Deep Plume 3", "Lau Basin Mariner Plume 1",
+                                     "Cayman Deep Plume 1", "Brothers NWCB S140",
+                                     "Lau Basin Kilo Moana Plume 1",
+                                     "Brothers NWCB S146", 
+                                     "Lau Basin Deposit Tui Malila 134-614", "Brothers NWCB S141",
+                                     "Lau Basin ABE Plume 3", "EPR 4281-140",
+                                     "Lau Basin Deposit ABE A3", "MAR Lucky 356-308",
+                                     "Lau Basin Mariner Plume 2", "Axial Seawater",
+                                     "Guaymas Basin Plume", "Lau Basin Tahi Moana Plume 2",
+                                     "Lau Basin Kilo Moana Plume 4", 
+                                     "Lau Basin Deposit ABE 128-326",
+                                     "EPR PIR-30", "Lau Basin Deposit Vai Lili V2",
+                                     "Lau Basin Tui Malila Plume", "Lau Basin ABE Plume 2", 
+                                     #end Gamma
+                                     "Brothers Diffuse S015", "Brothers Diffuse S009",
+                                     "MAR Lucky 356-284", "Brothers NWCA S143",
+                                     "Lau Basin Deposit ABE A1", 
+                                     "Brothers NWCA S144", "Lau Basin Deposit Tui Malila T2",
+                                     "Lau Basin Deposit Tui Malila T11", "Brothers LC S014",
+                                     "MAR Rainbow 355-202",
+                                     "Guaymas 4559-240", "Lau Basin Deposit Tui Malila T10",
+                                     "Brothers LC S016", "Guaymas 4571-419",
+                                     "Lau Basin Deposit Mariner 131-447", "Lau Basin Deposit Mariner M17",
+                                     "Lau Basin Deposit Mariner M2", "Brothers NWCA S013",
+                                     "Brothers UC S147", "Lau Basin Deposit Tui Malila 132-544",
+                                     "Lau Basin Deposit Mariner M10", "Brothers NWCA S017",
+                                     "Lau Basin Deposit Mariner M1",
+                                     "Guaymas 4561-380","Brothers UC S010",
+                                     "Brothers NWCA S145",
+                                     "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
+
+#factor
+level_order <- c('Gammaproteobacteria', 'Campylobacterota') 
+
+shape_mapping <- c("Plume" = 16, "Deposit" = 17) 
+
+dev.off()
+plot_m <- abund_plot_m %>%
+  ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
+  geom_bar(stat = "identity") +
+  #geom_point(position = position_fill(vjust = -5), size = 5) +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Microbial Abundance", y = "",
+       fill = "", shape = "") +
+  guides(fill=guide_legend(override.aes = list(size=8, shape = NA)),
+         shape=guide_legend(override.aes = list(size=8))) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        #panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.grid.major.y = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank(),
+        axis.title=element_text(size=14),
+        axis.text = element_text(size = 12),
+        axis.text.y=element_blank(),
+        axis.ticks.y = element_blank(),
+        strip.text.x = element_text(size = 12),
+        strip.background.x = element_rect(fill="white"),
+        legend.text=element_text(size=10),
+        legend.title=element_text(size=12),
+        plot.background = element_blank(),
+        panel.border = element_blank()) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_x_reverse(expand = c(0, 0), limits = c(125,0), position = "top") + #turn this on to make it look aligned with ticks
+  scale_y_discrete(limits=rev) +
+  geom_point(aes(x = 122, shape = Locat), size = 3) + # Add shapes
+  scale_shape_manual(values = shape_mapping)  # Map shapes to Locat
+#coord_flip()
+plot_m
+
+#patchwork
+dev.off()
+p <- (plot_v | plot_m)
+p
+
+ggsave("output/Figure4_Abundance_symbols.svg", p,
+       bg = "transparent", height = 10, width = 13)
 
 
 
