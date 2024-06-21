@@ -12,6 +12,10 @@ library(pals)
 library(RColorBrewer)
 library(stringi)
 library(ggbreak)
+if(!require(devtools)) install.packages("devtools")
+devtools::install_github("kassambara/ggpubr")
+library(ggpubr)
+library(gridExtra)
 
 ######################################### inputs ##############################################
 
@@ -577,12 +581,10 @@ plot_m <- abund_MAGs_long_norm_gtdb_p %>%
                        end = 0) +
   #scale_fill_manual(values = col_vector) +
   labs(x = "Microbial MAG Abundance", #y = "Site",
-       fill = "Microbial taxonomy") +
+       fill = "") +
   guides(fill=guide_legend(override.aes = list(size=8))) +
   theme_bw() +
   theme(#axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
-        legend.background = element_rect(color = "white"),
-        legend.box.background = element_blank(), #element_rect(fill = "transparent")
         panel.background = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -613,7 +615,7 @@ plot_m
 #        height = 12, width = 15,
 #        bg = "transparent")
 
-####################### Attempt to plot bar plot of Gamma and Campylo abundance with viruses and MAGs ################################
+####################### Bar plot of Gamma and Campylo abundance of viruses and MAGs in one plot ################################
 
 #add column to plotting tables for microbe vs virus
 abund_MAGs_long_norm_gtdb_p <- abund_MAGs_long_norm_gtdb_p %>%
@@ -623,18 +625,356 @@ abund_long_norm_iphop_p <- abund_long_norm_iphop_p %>%
 
 abund_plot <- rbind(abund_MAGs_long_norm_gtdb_p, abund_long_norm_iphop_p)
 
+# #make MAG values negative arbitrarily for diverging
+# abund_plot <- abund_plot %>%
+#   mutate(value = if_else(Type == "Microbe", -value, value))
+
+########################################### make virus deposit and diffuse flow #########################################
+
+abund_plot_vd <- abund_plot %>%
+  filter(Locat == "Deposit",
+         Type == "Virus")
+#set order of x axis 
+abund_plot_vd$Site <- factor(abund_plot_vd$Site, 
+                                       levels=c("MAR Rainbow 354-166",
+                                                "Brothers NWCB S139",
+                                                "Brothers NWCB S012",
+                                                "Brothers NWCB S140",
+                                                "Brothers NWCB S146", 
+                                                "ELSC Tui Malila 134-614", "Brothers NWCB S141",
+                                                "EPR 4281-140",
+                                                "ELSC Abe A3", "MAR Lucky 356-308",
+                                                "ELSC Abe 128-326",
+                                                "EPR PIR-30", "ELSC Vai Lili V2", 
+                                                #end Gamma
+                                                "Brothers Diffuse S015", "Brothers Diffuse S009",
+                                                "MAR Lucky 356-284", "Brothers NWCA S143",
+                                                "ELSC Abe A1", 
+                                                "Brothers NWCA S144", "ELSC Tui Malila T2",
+                                                "ELSC Tui Malila T11", "Brothers LC S014",
+                                                "MAR Rainbow 355-202",
+                                                "Guaymas 4559-240", "ELSC Tui Malila T10",
+                                                "Brothers LC S016", "Guaymas 4571-419",
+                                                "ELSC Mariner 131-447", "ELSC Mariner M17",
+                                                "ELSC Mariner M2", "Brothers NWCA S013",
+                                                "Brothers UC S147", "ELSC Tui Malila 132-544",
+                                                "ELSC Mariner M10", "Brothers NWCA S017",
+                                                "ELSC Mariner M1",
+                                                "Guaymas 4561-380","Brothers UC S010",
+                                                "Brothers NWCA S145",
+                                                "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
+
+#factor
+level_order <- c('Gammaproteobacteria', 'Campylobacterota') 
+
+#change facet label
+facet_label <- c(`Deposit` = "Deposit and Diffuse Flow")
+
+#plot
+dev.off()
+plot_vd <- abund_plot_vd %>%
+  ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
+  geom_bar(stat = "identity") +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Virus Abundance", y = "Site",
+       fill = "") +
+  guides(fill = "none") + #fill=guide_legend(override.aes = list(size=8))
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+        #legend.background = element_rect(color = "white"),
+        #legend.box.background = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank(),
+        axis.title=element_text(size=14),
+        axis.text=element_text(size=12),
+        strip.text.x = element_text(size = 12),
+        strip.background.x = element_rect(fill="white"),
+        #legend.text=element_text(size=10),
+        #legend.title=element_text(size=12),
+        plot.background = element_blank(),
+        panel.border = element_blank()) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  #geom_hline(yintercept = 21.5) +
+  # annotate(geom="text", x=6, y=30, label="Plume",
+  #          color="black") +
+  #ggtitle("Viral Abundance") + #Change for top X grabbed
+  facet_wrap(.~Locat, strip.position = "bottom", labeller = as_labeller(facet_label)) +
+  scale_y_discrete(limits=rev) +
+  coord_flip()
+plot_vd
+
+######################################## end virus deposit and diffuse flow ##################################################
+
+
+################################################### make virus  plume #######################################################
+abund_plot_vp <- abund_plot %>%
+  filter(Locat == "Plume",
+         Type == "Virus")
+#set order of x axis 
+abund_plot_vp$Site <- abund_plot_vp$Site <- factor(abund_plot_vp$Site, 
+                                                             levels=c("Axial Plume",
+                                                                      "Cayman Shallow Plume 1", "Lau Basin Kilo Moana Plume 3",
+                                                                      "Cayman Shallow Plume 3", "Cayman Shallow Plume 2",
+                                                                      "Lau Basin Tahi Moana Plume 1", "Lau Basin Abe Plume 1",
+                                                                      "Cayman Deep Plume 2", "Lau Basin Kilo Moana Plume 2",
+                                                                      "Cayman Deep Plume 3", "Lau Basin Mariner Plume 1",
+                                                                      "Cayman Deep Plume 1",
+                                                                      "Lau Basin Kilo Moana Plume 1",
+                                                                      "Lau Basin Abe Plume 3",
+                                                                      "Lau Basin Mariner Plume 2", "Axial Seawater",
+                                                                      "Guaymas Basin Plume", "Lau Basin Tahi Moana Plume 2",
+                                                                      "Lau Basin Kilo Moana Plume 4", 
+                                                                      "Lau Basin Tui Malila Plume", "Lau Basin Abe Plume 2")) # start Camp lowest to highest 
+
+#factor
+level_order <- c('Gammaproteobacteria', 'Campylobacterota') 
+
+####The following produces Figure X, which was modified in Biorender
+dev.off()
+plot_vp <- abund_plot_vp %>%
+  ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
+  geom_bar(stat = "identity") +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "", y = "Site",
+       fill = "") +
+  guides(fill="none") + #guide_legend(override.aes = list(size=8))
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.background = element_rect(color = "white"),
+        legend.box.background = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.grid.minor = element_blank(),
+        axis.title=element_text(size=14),
+        axis.text=element_text(size=12),
+        strip.text.x = element_text(size = 12),
+        strip.background.x = element_rect(fill="white"),
+        legend.text=element_text(size=10),
+        legend.title=element_text(size=12),
+        plot.background = element_blank(),
+        panel.border = element_blank()) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  scale_x_continuous(expand = c(0, 0), breaks = seq(from = 0, to = 2.5, by = .5), limits = c(0,2.5)) + #turn this on to make it look aligned with ticks
+  #geom_hline(yintercept = 21.5) +
+  # annotate(geom="text", x=6, y=30, label="Plume",
+  #          color="black") +
+  #ggtitle("Viral Abundance") + #Change for top X grabbed
+  facet_wrap(.~Locat, strip.position = "bottom") +
+  scale_y_discrete(limits=rev) +
+  coord_flip()
+plot_vp
+
+################################################ end virus plume ############################################################
+
+################################# make microbial MAGs just deposit and diffuse flow #########################################
+abund_plot_md <- abund_plot %>%
+  filter(Locat == "Deposit",
+         Type == "Microbe")
+
+#set order of x axis 
+abund_plot_md$Site <- factor(abund_plot_md$Site, 
+                             levels=c("MAR Rainbow 354-166",
+                                      "Brothers NWCB S139",
+                                      "Brothers NWCB S012",
+                                      "Brothers NWCB S140",
+                                      "Brothers NWCB S146", 
+                                      "ELSC Tui Malila 134-614", "Brothers NWCB S141",
+                                      "EPR 4281-140",
+                                      "ELSC Abe A3", "MAR Lucky 356-308",
+                                      "ELSC Abe 128-326",
+                                      "EPR PIR-30", "ELSC Vai Lili V2", 
+                                      #end Gamma
+                                      "Brothers Diffuse S015", "Brothers Diffuse S009",
+                                      "MAR Lucky 356-284", "Brothers NWCA S143",
+                                      "ELSC Abe A1", 
+                                      "Brothers NWCA S144", "ELSC Tui Malila T2",
+                                      "ELSC Tui Malila T11", "Brothers LC S014",
+                                      "MAR Rainbow 355-202",
+                                      "Guaymas 4559-240", "ELSC Tui Malila T10",
+                                      "Brothers LC S016", "Guaymas 4571-419",
+                                      "ELSC Mariner 131-447", "ELSC Mariner M17",
+                                      "ELSC Mariner M2", "Brothers NWCA S013",
+                                      "Brothers UC S147", "ELSC Tui Malila 132-544",
+                                      "ELSC Mariner M10", "Brothers NWCA S017",
+                                      "ELSC Mariner M1",
+                                      "Guaymas 4561-380","Brothers UC S010",
+                                      "Brothers NWCA S145",
+                                      "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
+
+#factor
+level_order <- c('Gammaproteobacteria', 'Campylobacterota') 
+
+#change facet label
+facet_label <- c(`Deposit` = "Deposit and Diffuse Flow")
+
+####The following produces Figure X, which was modified in Biorender
+dev.off()
+plot_md <- abund_plot_md %>%
+  ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
+  geom_bar(stat = "identity") +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "Microbial MAG Abundance", #y = "Site",
+       fill = "") +
+  guides(fill="none") +
+  theme_bw() +
+  theme(#axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_line(linetype = "dashed"),
+    panel.border = element_blank(),
+    axis.title=element_text(size=14),
+    axis.title.x = element_blank(),
+    axis.text=element_text(size=12),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    strip.text.x = element_blank(), # element_text(size = 12)
+    legend.text=element_text(size=10),
+    legend.title=element_text(size=12),
+    plot.background = element_blank()) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  #scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  #geom_hline(yintercept = 21.5) +
+  # annotate(geom="text", x=6, y=30, label="Plume",
+  #          color="black") +
+  #ggtitle("Viral Abundance") + #Change for top X grabbed
+  facet_wrap(.~Locat) +
+  scale_y_discrete(limits=rev) +
+  scale_x_reverse(expand = c(0, 0)) +
+  coord_flip()
+plot_md
+
+################################################ end MAG deposit ############################################################
+
+################################# make microbial MAGs just Plume #########################################
+
+abund_plot_mp <- abund_plot %>%
+  filter(Locat == "Plume",
+         Type == "Microbe")
+
+#set order of x axis 
+abund_plot_mp$Site <- factor(abund_plot_mp$Site, 
+                             levels=c("Axial Plume",
+                                      "Cayman Shallow Plume 1", "Lau Basin Kilo Moana Plume 3",
+                                      "Cayman Shallow Plume 3", "Cayman Shallow Plume 2",
+                                      "Lau Basin Tahi Moana Plume 1", "Lau Basin Abe Plume 1",
+                                      "Cayman Deep Plume 2", "Lau Basin Kilo Moana Plume 2",
+                                      "Cayman Deep Plume 3", "Lau Basin Mariner Plume 1",
+                                      "Cayman Deep Plume 1",
+                                      "Lau Basin Kilo Moana Plume 1",
+                                      "Lau Basin Abe Plume 3",
+                                      "Lau Basin Mariner Plume 2", "Axial Seawater",
+                                      "Guaymas Basin Plume", "Lau Basin Tahi Moana Plume 2",
+                                      "Lau Basin Kilo Moana Plume 4", 
+                                      "Lau Basin Tui Malila Plume", "Lau Basin Abe Plume 2")) # start Camp lowest to highest 
+
 #make MAG values negative arbitrarily for diverging
-abund_plot <- abund_plot %>%
+abund_plot_mp <- abund_plot_mp %>%
   mutate(value = if_else(Type == "Microbe", -value, value))
 
+#come to find out scale_x_reverse and coord_cartesian hate each other making it difficult to reverse the axis
+#and change the limits. Found this solution at: https://github.com/tidyverse/ggplot2/issues/4021
+
+#Hack to get the x axis limits changed AND use scale_x_reverse
+library(scales)
+scale_x_continuous2 <- function(..., rescaler) {
+  x <- scale_x_continuous(...)
+  x$rescaler <- rescaler
+  x
+}
+# The default `to` argument of the `rescale()` function is `c(0, 1)`.
+# Here, we reverse that.
+invert_scale <- function(x, to = c(1, 0), from = range(x)) {
+  rescale(x, to, from)
+}
+
+#plot
+dev.off()
+plot_mp <- abund_plot_mp %>%
+  ggplot(aes(x = value, y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
+  geom_bar(stat = "identity") +
+  scale_fill_viridis_d(begin = .5,
+                       end = 0) +
+  #scale_fill_manual(values = col_vector) +
+  labs(x = "", #y = "Site",
+       fill = "") +
+  guides(fill="none") +
+  theme_bw() +
+  theme(#axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_line(linetype = "dashed"),
+    panel.border = element_blank(),
+    axis.title=element_text(size=14),
+    axis.title.x = element_blank(),
+    axis.text=element_text(size=12),
+    axis.text.x = element_blank(), #here to get site names back
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.text.x = element_blank(), # element_text(size = 12)
+    legend.text=element_text(size=10),
+    legend.title=element_text(size=12),
+    plot.background = element_blank()) +
+  #panel.border = element_blank()) + #turn this off to get the outline back)
+  #scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  #geom_hline(yintercept = 21.5) +
+  # annotate(geom="text", x=6, y=30, label="Plume",
+  #          color="black") +
+  #ggtitle("Viral Abundance") + #Change for top X grabbed
+  facet_wrap(.~Locat) +
+  scale_y_discrete(limits=rev) +
+  #scale_x_reverse(expand = c(0,0)) +
+  scale_x_continuous2(expand = c(0, 0), 
+                      breaks = seq(from = 0, to = 125, by = 25), 
+                      limits = c(0,125),
+                      rescaler = invert_scale) +
+  coord_cartesian(xlim = c(0,125)) +
+  coord_flip()
+plot_mp
+
+
+################################################ end MAG plume ############################################################
+
+################################################## arrange plots ############################################################
+
 #arrange plots on top of each other
-library(gridExtra)
 
-p <- grid.arrange(arrangeGrob(plot_m, plot_v, ncol = 1))
+#p <- grid.arrange(arrangeGrob(plot_m, plot_v, ncol = 1))
+
+# dev.off()
+# p <- grid.arrange(
+#   arrangeGrob(plot_vd, plot_vp, nrow = 1)
+#   )
+# 
+# ggsave("output/Figure4_Abundance.png", p,
+#        bg = "transparent",
+#        height = 10, width = 20)
+#height = 12, width = 15,
+
+dev.off()
+ggarrange(plot_md, plot_mp, plot_vd, plot_vp, ncol = 2, nrow = 2) 
+
+library(patchwork)
+(plot_md | plot_mp) / (plot_vd | plot_vp)
 
 
-# ggsave("output/coverm_MAG_CampGamma_normAbun.png", plot,
-#        height = 12, width = 15,
-#        bg = "transparent")
+
+
+
+
 
 
