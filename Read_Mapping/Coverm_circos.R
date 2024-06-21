@@ -56,6 +56,9 @@ coverm_rc$Genome_Site <- gsub("*_M[0-9]","",coverm_rc$Genome_Site)
 coverm_rc <- coverm_rc %>%
   select(Genome_Site, everything())
 
+#change Bowl to Mariner because they are one and the same
+coverm_rc$Genome_Site <- gsub("ELSC_Bowl","ELSC_Mariner",coverm_rc$Genome_Site)
+
 #convert to numeric
 # Identify columns ending with "Covered.Fraction"
 fraction_columns <- grep("Covered\\.Fraction$", names(coverm_rc), value = TRUE)
@@ -87,6 +90,7 @@ abun_names$V1 <- gsub("*_M[0-9]","",abun_names$V1)
 abun_names$V1 <- gsub("*_[0-9][0-9][0-9]-[0-9][0-9][0-9]","",abun_names$V1)
 abun_names$V1 <- gsub("*-380","",abun_names$V1)
 abun_names$V1 <- gsub("*-384","",abun_names$V1)
+abun_names$V1 <- gsub("ELSC_Bowl","ELSC_Mariner",abun_names$V1)
 
 #write_delim(abun_names, file = "Output/read_name_mapping.tsv", delim = "\t")
 
@@ -231,13 +235,15 @@ for (i in seq_len(nrow(t.sym))) {
     
     # Check if the prefixes are not identical and the value is greater than 0
     if (row_prefix != col_prefix && t.sym[i, j] > 0) {
-      result_matrix[i, j] <- "red"
+      result_matrix[i, j] <- "plum3" #was red
     }
   }
 }
+#PLUM3 = DIFFERENT SITES
 
 #change plume deposit matches to different color
-result_matrix["Guaymas_Basin", "ELSC_Bowl"] <- "blue"
+result_matrix["Guaymas_Basin", "Guaymas_4561"] <- "palegreen3" #was blue
+#PLAEGREEN3 = DEPOSIT/DIFFUSE TO PLUME
 
 # Print the result
 #print(result_matrix)
@@ -290,29 +296,16 @@ colnames(m.connect_test) <- paste(group$vent)
 rownames(result_matrix) <- paste(group$vent)
 colnames(result_matrix) <- paste(group$vent)
 
-result_matrix_b <- result_matrix
-df <- result_matrix
-#change deposit and plume match ups to blue color
-### following code segment written by ChatGPT
-# Iterate over the columns
-# Iterate over the columns
-for (row_name in rownames(df)) {
-  # Check if the row starts with "P" or "D"
-  if (startsWith(row_name, "P") || startsWith(row_name, "D")) {
-    # Iterate over the columns
-    for (col_name in colnames(df)) {
-      # Check if the column starts with "P" or "D"
-      if (startsWith(col_name, "P") || startsWith(col_name, "D")) {
-        # Check if the value is "red"
-        if (df[row_name, col_name] == "red") {
-          # Check if both row and column start with different letters
-          if ((startsWith(row_name, "P") && startsWith(col_name, "D")) ||
-              (startsWith(row_name, "D") && startsWith(col_name, "P"))) {
-            # Change the value to "blue"
-            df[row_name, col_name] <- "blue"
-          }
-        }
-      }
+# Iterate over rows and columns
+for (i in seq_len(nrow(result_matrix))) {
+  for (j in seq_len(ncol(result_matrix))) {
+    row_name <- rownames(result_matrix)[i]
+    col_name <- colnames(result_matrix)[j]
+    if (startsWith(row_name, "P") && startsWith(col_name, "D") && result_matrix[i, j] == "plum3") {
+      result_matrix[i, j] <- "palegreen3"
+    }
+    if (startsWith(row_name, "D") && startsWith(col_name, "P") && result_matrix[i, j] == "plum3") {
+      result_matrix[i, j] <- "palegreen3"
     }
   }
 }
@@ -334,7 +327,7 @@ grid.col = c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East
              "D 4561" = "#28827A", "D 4571-419" = "#28827A", 
              #Guaymas deposit
              "D Mariner" = "#3F78C1", "D Abe" = "#3F78C1", "D Vai Lili V2" = "#3F78C1", 
-             "D Tui Malila" = "#3F78C1", "D Bowl" = "#3F78C1",
+             "D Tui Malila" = "#3F78C1",
              #Lau deposit
              "P Deep" = "#000000", "P Shallow" = "#000000", 
              #MCR
@@ -359,7 +352,7 @@ col_fun = "grey" #specify color of links between them
 #reset before running
 dev.off()
 circos.clear()
-svg("Output/Circos_coverm_gd_iv_3kb_70mincov_49962.svg")
+svg("Output/Circos_coverm_gd_iv_3kb_70mincov_49962_06.19.24.svg")
 #set font size
 par(cex = 1.8, mar = c(0, 0, 0, 0))
 #set gaps between blocks
@@ -372,12 +365,12 @@ chordDiagram(m.connect_test,
              annotationTrack = c("grid"),
              annotationTrackHeight = c(.06, .06),
              #link.border = "black",
-             link.border = df, #result_matrix
+             link.border = result_matrix, #df
              link.sort = FALSE,
              transparency = 0.3,
              symmetric = TRUE,
              big.gap = 8,
-             col = col_fun,
+             #col = col_fun,
              preAllocateTracks = list(
                track.height = mm_h(6),
                track.margin = c(mm_h(1), 0)
@@ -401,8 +394,7 @@ highlight.sector(sector.index = c("P Abe", "P Kilo Moana",
                                   "P Tui Malila"), track.index = 1, col = "#72a0db", 
                  text = "Lau Basin Plume", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
-highlight.sector(sector.index = c("D Mariner", "D Tui Malila",
-                                  "D Bowl", "D Abe",
+highlight.sector(sector.index = c("D Mariner", "D Tui Malila", "D Abe",
                                   "D Vai Lili V2"), track.index = 1, col = "#3F78C1", 
                  text = "Lau Basin Deposit", cex = 0.8, text.col = "white", niceFacing = TRUE,
                  facing = "bending")
@@ -1109,6 +1101,32 @@ dev.off()
 
 
 
+# result_matrix_b <- result_matrix
+# df <- result_matrix
+# #change deposit and plume match ups to blue color
+# ### following code segment written by ChatGPT
+# # Iterate over the columns
+# # Iterate over the columns
+# for (row_name in rownames(df)) {
+#   # Check if the row starts with "P" or "D"
+#   if (startsWith(row_name, "P") || startsWith(row_name, "D")) {
+#     # Iterate over the columns
+#     for (col_name in colnames(df)) {
+#       # Check if the column starts with "P" or "D"
+#       if (startsWith(col_name, "P") || startsWith(col_name, "D")) {
+#         # Check if the value is "red"
+#         if (df[row_name, col_name] == "plum3") {
+#           # Check if both row and column start with different letters
+#           if ((startsWith(row_name, "P") && startsWith(col_name, "D")) ||
+#               (startsWith(row_name, "D") && startsWith(col_name, "P"))) {
+#             # Change the value to "blue"
+#             df[row_name, col_name] <- "palegreen3"
+#           }
+#         }
+#       }
+#     }
+#   }
+# }
 
 
 

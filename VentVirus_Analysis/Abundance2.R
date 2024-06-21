@@ -25,8 +25,8 @@ read_length$file <- gsub("-",".",read_length$file) #replace symbol
 #metadata to map site names to reads
 abun_names <- read.delim2(file = "input/AssembliesToReads_Mapping.txt", header = FALSE)
 abun_names <- abun_names %>%
-  rename("Site" = "V1") %>%
-  rename("Reads" = "V2")
+  dplyr::rename("Site" = "V1") %>%
+  dplyr::rename("Reads" = "V2")
 abun_names$Reads <- gsub("-",".",abun_names$Reads) #replace symbol
 
 ######################################### parse ##############################################
@@ -62,7 +62,7 @@ abund_long_cov <- abund_long %>%
 abund_long_cov <- read_length %>%
   dplyr::select(c("file", "num_seqs")) %>%
   right_join(abund_long_cov, by = c("file" = "Reads")) %>%
-  rename("Reads" = "file")
+  dplyr::rename("Reads" = "file")
 abund_long_cov$value <- as.numeric(abund_long_cov$value)
 
 #divide read count by number of reads *100
@@ -72,8 +72,8 @@ abund_long_norm <- abund_long_norm %>%
   filter(Type == "Read.Count")
   #filter(Type == "Relative.Abundance....")
 
-write.table(abund_long_norm, file = "output/abund_long_norm.tsv", quote = FALSE,
-            row.names = FALSE, sep = "\t")
+# write.table(abund_long_norm, file = "output/abund_long_norm.tsv", quote = FALSE,
+#             row.names = FALSE, sep = "\t")
 
 # ### with Patricia
 # abund_long_norm_Lau_TM <- abund_long_norm %>%
@@ -96,8 +96,10 @@ abund_long_norm_iphop <- abund_long_norm_iphop %>%
 #  filter(str_detect(c, "c__Gammaproteobacteria"))
 
 abund_long_norm_iphop$Site <- gsub("min1000","Plume", abund_long_norm_iphop$Site) 
-abund_long_norm_iphop$Site <- gsub("_scaffolds_Plume","", abund_long_norm_iphop$Site) 
-#abun_long_iphop_p$Site <- gsub("Seawater_scaffolds_Plume","Seawater", abun_long_iphop_p$Site) 
+abund_long_norm_iphop$Site <- gsub("_metaspades_scaffolds.Plume.fasta","", abund_long_norm_iphop$Site) 
+abund_long_norm_iphop$Site <- gsub("_scaffolds_Plume","", abund_long_norm_iphop$Site)
+abund_long_norm_iphop$Site <- gsub(".fasta","", abund_long_norm_iphop$Site)
+abund_long_norm_iphop$Site <- gsub("Bowl","Mariner", abund_long_norm_iphop$Site)
 
 #add column for plume vs vent
 abund_long_norm_iphop$Locat <- abund_long_norm_iphop$Site
@@ -121,12 +123,12 @@ abund_long_norm_iphop_vh <- master_table_iphop_filt %>%
 # #for Proteobacteria keep class, everything else, keep phylum
 abund_long_proteo <- abund_long_norm_iphop %>% filter(grepl("p__Pseudomonadota", p))
 abund_long_proteo <- abund_long_proteo %>% select(-c("p"))
-abund_long_proteo <- abund_long_proteo %>% rename("Taxa" = "c")
+abund_long_proteo <- abund_long_proteo %>% dplyr::rename("Taxa" = "c")
 abund_long_proteo <- abund_long_proteo %>% select(c("Virus","Taxa","Site","abun_norm", "Locat"))
 
 abund_long_norm_iphop <- abund_long_norm_iphop %>% filter(!grepl("p__Pseudomonadota", p))
 abund_long_norm_iphop <- abund_long_norm_iphop %>% select(-c("c"))
-abund_long_norm_iphop <- abund_long_norm_iphop %>% rename("Taxa" = "p")
+abund_long_norm_iphop <- abund_long_norm_iphop %>% dplyr::rename("Taxa" = "p")
 abund_long_norm_iphop <- abund_long_norm_iphop %>% select(c("Virus","Taxa","Site","abun_norm", "Locat"))
 #put the data frames back together
 abund_long_norm_iphop <- rbind(abund_long_norm_iphop, abund_long_proteo)
@@ -134,8 +136,8 @@ abund_long_norm_iphop <- rbind(abund_long_norm_iphop, abund_long_proteo)
 ############################ Sum abundance by predicted host and site #############################
 
 abund_long_norm_iphop_p <- abund_long_norm_iphop %>%
-  group_by(Site, Taxa, Locat) %>% 
-  summarise(value=sum(as.numeric(abun_norm))) %>% #summing the group
+  dplyr::group_by(Site, Taxa, Locat) %>% 
+  dplyr::summarise(value=sum(as.numeric(abun_norm))) %>% #summing the group
   #filter(grepl("c__Gammaproteobacteria|p__Campylobacterota", Taxa)) %>% #only grab Gamma and Campylo
   ungroup()
 
@@ -200,10 +202,10 @@ abund_long_norm_iphop_p$Site <- factor(abund_long_norm_iphop_p$Site,
                                                 "Guaymas 4559-240", "ELSC Tui Malila T10",
                                                 "Brothers LC S016", "Guaymas 4571-419",
                                                 "ELSC Mariner 131-447", "ELSC Mariner M17",
-                                                "ELSC Bowl M2", "Brothers NWCA S013",
+                                                "ELSC Mariner M2", "Brothers NWCA S013",
                                                 "Brothers UC S147", "ELSC Tui Malila 132-544",
                                                 "ELSC Mariner M10", "Brothers NWCA S017",
-                                                "ELSC Bowl M1",
+                                                "ELSC Mariner M1",
                                                 "Guaymas 4561-380","Brothers UC S010",
                                                 "Brothers NWCA S145",
                                                 "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
@@ -224,42 +226,45 @@ level_order <- c('Gammaproteobacteria', 'Campylobacterota')
 
 ####The following produces Figure X, which was modified in Biorender
 dev.off()
-plot <- abund_long_norm_iphop_p %>%
+plot_v <- abund_long_norm_iphop_p %>%
   ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
   geom_bar(stat = "identity") +
   scale_fill_viridis_d(begin = .5,
                        end = 0) +
   #scale_fill_manual(values = col_vector) +
   labs(x = "Virus Abundance", y = "Site",
-       fill = "Predicted microbial host") +
+       fill = "") +
   guides(fill=guide_legend(override.aes = list(size=8))) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
         legend.background = element_rect(color = "white"),
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.background = element_rect(fill = "transparent"),
+        legend.box.background = element_blank(),
+        panel.background = element_blank(),
         panel.grid.major = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
         panel.grid.minor = element_blank(),
         axis.title=element_text(size=14),
         axis.text=element_text(size=12),
         strip.text.x = element_text(size = 12),
+        strip.background.x = element_rect(fill="white"),
         legend.text=element_text(size=10),
         legend.title=element_text(size=12),
-        plot.background = element_rect(fill = "transparent", color = NA)) +
+        plot.background = element_blank(),
+        panel.border = element_blank()) +
   #panel.border = element_blank()) + #turn this off to get the outline back)
   scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
   #geom_hline(yintercept = 21.5) +
   # annotate(geom="text", x=6, y=30, label="Plume",
   #          color="black") +
   #ggtitle("Viral Abundance") + #Change for top X grabbed
-  facet_wrap(.~Locat) +
-  scale_y_discrete(limits=rev)
-#coord_flip()
-plot
+  facet_wrap(.~Locat, strip.position = "bottom") +
+  scale_y_discrete(limits=rev) +
+coord_flip()
+plot_v
 
-ggsave("output/coverm_CampGamma_normAbun.png", plot,
-       height = 12, width = 15,
-       bg = "transparent")
+# ggsave("output/coverm_CampGamma_normAbun.png", plot,
+#        height = 12, width = 15,
+#        bg = "transparent")
 
 ############################## Bubble plot of virus abundance summed by taxa by site ################################
 ## Shows distribution of different viral taxa at different sites
@@ -442,7 +447,7 @@ abund_MAGs_long_cov <- abund_MAGs_long %>%
 abund_MAGs_long_cov <- read_length %>%
   dplyr::select(c("file", "num_seqs")) %>%
   right_join(abund_MAGs_long_cov, by = c("file" = "Reads")) %>%
-  rename("Reads" = "file")
+  dplyr::rename("Reads" = "file")
 abund_MAGs_long_cov$value <- as.numeric(abund_MAGs_long_cov$value)
 
 #divide read count by number of reads *100
@@ -465,6 +470,8 @@ abund_MAGs_long_norm_gtdb <- gtdb %>%
 abund_MAGs_long_norm_gtdb$Site <- gsub("_metaspades_scaffolds.min1000.fasta","", abund_MAGs_long_norm_gtdb$Site) 
 abund_MAGs_long_norm_gtdb$Site <- gsub("min1000","Plume", abund_MAGs_long_norm_gtdb$Site) 
 abund_MAGs_long_norm_gtdb$Site <- gsub("_scaffolds_Plume","", abund_MAGs_long_norm_gtdb$Site) 
+abund_MAGs_long_norm_gtdb$Site <- gsub(".fasta","", abund_MAGs_long_norm_gtdb$Site) 
+abund_MAGs_long_norm_gtdb$Site <- gsub("Bowl","Mariner", abund_MAGs_long_norm_gtdb$Site) 
 
 #add column for plume vs vent
 abund_MAGs_long_norm_gtdb$Locat <- abund_MAGs_long_norm_gtdb$Site
@@ -478,8 +485,8 @@ abund_MAGs_long_norm_gtdb$Locat <- gsub(".*Guaymas.*","Vent", abund_MAGs_long_no
 abund_MAGs_long_norm_gtdb$Locat <- gsub(".*MAR.*","Vent", abund_MAGs_long_norm_gtdb$Locat)
 
 abund_MAGs_long_norm_gtdb_sum <- abund_MAGs_long_norm_gtdb %>%
-  group_by(Site, p, Locat) %>% 
-  summarise(value=sum(as.numeric(abun_norm))) %>% #summing the group
+  dplyr::group_by(Site, p, Locat) %>% 
+  dplyr::summarise(value=sum(as.numeric(abun_norm))) %>% #summing the group
   #filter(grepl("c__Gammaproteobacteria|p__Campylobacterota", Taxa)) %>% #only grab Gamma and Campylo
   ungroup()
 
@@ -488,20 +495,20 @@ abund_MAGs_long_norm_gtdb_sum <- abund_MAGs_long_norm_gtdb %>%
 #for Proteobacteria/Pseudomonadota keep class, everything else, keep phylum
 abund_MAGs_long_proteo <- abund_MAGs_long_norm_gtdb %>% filter(grepl("p__Pseudomonadota", p))
 abund_MAGs_long_proteo <- abund_MAGs_long_proteo %>% select(-c("p"))
-abund_MAGs_long_proteo <- abund_MAGs_long_proteo %>% rename("Taxa" = "c")
+abund_MAGs_long_proteo <- abund_MAGs_long_proteo %>% dplyr::rename("Taxa" = "c")
 abund_MAGs_long_proteo <- abund_MAGs_long_proteo %>% select(c("user_genome","Taxa","Site","abun_norm", "Locat"))
 
 abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% filter(!grepl("p__Pseudomonadota", p))
 abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% select(-c("c"))
-abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% rename("Taxa" = "p")
+abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% dplyr::rename("Taxa" = "p")
 abund_MAGs_long_norm_gtdb <- abund_MAGs_long_norm_gtdb %>% select(c("user_genome","Taxa","Site","abun_norm", "Locat"))
 #put the data frames back together
 abund_MAGs_long_norm_gtdb <- rbind(abund_MAGs_long_norm_gtdb, abund_MAGs_long_proteo)
 
 abund_MAGs_long_norm_gtdb_p <- abund_MAGs_long_norm_gtdb %>%
-  group_by(Site, Taxa, Locat) %>% 
-  summarise(value=sum(as.numeric(abun_norm))) %>% #summing the group
-  #filter(grepl("c__Gammaproteobacteria|p__Campylobacterota", Taxa)) %>% #only grab Gamma and Campylo
+  dplyr::group_by(Site, Taxa, Locat) %>% 
+  dplyr::summarise(value=sum(as.numeric(abun_norm))) %>% #summing the group
+  filter(grepl("c__Gammaproteobacteria|p__Campylobacterota", Taxa)) %>% #only grab Gamma and Campylo
   ungroup()
 
 # tst <- abund_MAGs_long_norm_gtdb %>%
@@ -545,10 +552,10 @@ abund_MAGs_long_norm_gtdb_p$Site <- factor(abund_MAGs_long_norm_gtdb_p$Site,
                                                 "Guaymas 4559-240", "ELSC Tui Malila T10",
                                                 "Brothers LC S016", "Guaymas 4571-419",
                                                 "ELSC Mariner 131-447", "ELSC Mariner M17",
-                                                "ELSC Bowl M2", "Brothers NWCA S013",
+                                                "ELSC Mariner M2", "Brothers NWCA S013",
                                                 "Brothers UC S147", "ELSC Tui Malila 132-544",
                                                 "ELSC Mariner M10", "Brothers NWCA S017",
-                                                "ELSC Bowl M1",
+                                                "ELSC Mariner M1",
                                                 "Guaymas 4561-380","Brothers UC S010",
                                                 "Brothers NWCA S145",
                                                 "Brothers UC S011","Brothers NWCA S142","Guaymas 4561-384")) # start Camp lowest to highest 
@@ -563,42 +570,71 @@ level_order <- c('Gammaproteobacteria', 'Campylobacterota')
 
 ####The following produces Figure X, which was modified in Biorender
 dev.off()
-plot <- abund_MAGs_long_norm_gtdb_p %>%
+plot_m <- abund_MAGs_long_norm_gtdb_p %>%
   ggplot(aes(x = as.numeric(value), y = Site, fill = factor(Taxa, levels = c(level_order)))) + #y = reorder(Site, value, sum) | factor(checkv_quality, levels = level_order)
   geom_bar(stat = "identity") +
   scale_fill_viridis_d(begin = .5,
                        end = 0) +
   #scale_fill_manual(values = col_vector) +
-  labs(x = "Microbial MAG Abundance", y = "Site",
+  labs(x = "Microbial MAG Abundance", #y = "Site",
        fill = "Microbial taxonomy") +
   guides(fill=guide_legend(override.aes = list(size=8))) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+  theme(#axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
         legend.background = element_rect(color = "white"),
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.background = element_rect(fill = "transparent"),
+        legend.box.background = element_blank(), #element_rect(fill = "transparent")
+        panel.background = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(linetype = "dashed"),
+        panel.border = element_blank(),
         axis.title=element_text(size=14),
+        axis.title.x = element_blank(),
         axis.text=element_text(size=12),
-        strip.text.x = element_text(size = 12),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.text.x = element_blank(), # element_text(size = 12)
         legend.text=element_text(size=10),
         legend.title=element_text(size=12),
-        plot.background = element_rect(fill = "transparent", color = NA)) +
+        plot.background = element_blank()) +
   #panel.border = element_blank()) + #turn this off to get the outline back)
-  scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
+  #scale_x_continuous(expand = c(0, 0)) + #turn this on to make it look aligned with ticks
   #geom_hline(yintercept = 21.5) +
   # annotate(geom="text", x=6, y=30, label="Plume",
   #          color="black") +
   #ggtitle("Viral Abundance") + #Change for top X grabbed
   facet_wrap(.~Locat) +
-  scale_y_discrete(limits=rev)
-#coord_flip()
-plot
+  scale_y_discrete(limits=rev) +
+  scale_x_reverse(expand = c(0, 0)) +
+coord_flip()
+plot_m
 
-ggsave("output/coverm_MAG_CampGamma_normAbun.png", plot,
-       height = 12, width = 15,
-       bg = "transparent")
+# ggsave("output/coverm_MAG_CampGamma_normAbun.png", plot,
+#        height = 12, width = 15,
+#        bg = "transparent")
 
+####################### Attempt to plot bar plot of Gamma and Campylo abundance with viruses and MAGs ################################
+
+#add column to plotting tables for microbe vs virus
+abund_MAGs_long_norm_gtdb_p <- abund_MAGs_long_norm_gtdb_p %>%
+  mutate(Type = "Microbe")
+abund_long_norm_iphop_p <- abund_long_norm_iphop_p %>%
+  mutate(Type = "Virus")
+
+abund_plot <- rbind(abund_MAGs_long_norm_gtdb_p, abund_long_norm_iphop_p)
+
+#make MAG values negative arbitrarily for diverging
+abund_plot <- abund_plot %>%
+  mutate(value = if_else(Type == "Microbe", -value, value))
+
+#arrange plots on top of each other
+library(gridExtra)
+
+p <- grid.arrange(arrangeGrob(plot_m, plot_v, ncol = 1))
+
+
+# ggsave("output/coverm_MAG_CampGamma_normAbun.png", plot,
+#        height = 12, width = 15,
+#        bg = "transparent")
 
 

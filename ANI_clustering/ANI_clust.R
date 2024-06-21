@@ -83,7 +83,7 @@ metadata <- metadata %>%
 #add id number to rows
 mcl_clusters <- mcl_clusters %>% mutate(id = row_number())
 #melt by id
-mcl_clusters <- melt(mcl_clusters, id.vars = "id")
+mcl_clusters <- reshape2::melt(mcl_clusters, id.vars = "id")
 #drop variable column
 mcl_clusters <- select(mcl_clusters, -variable)
 #remove NAs introduced after melting
@@ -254,6 +254,9 @@ ani_long_metadata$Site_gen <- gsub(".*MAR.*","Mid_Atlantic_Ridge",ani_long_metad
 ani_long_metadata$Site_gen <- gsub(".*EPR.*","EPR",ani_long_metadata$Site_gen)
 ani_long_metadata$Site_gen <- gsub(".*Axial.*","Axial_Seamount",ani_long_metadata$Site_gen) 
 
+# write.table(ani_long_metadata, file = "Output/ani_metadata.tsv", quote = FALSE, row.names = FALSE,
+#             col.names = TRUE, sep = "\t")
+
 #count occurrences of Site
 temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site_gen)
 #see if any cluster now occurs twice
@@ -267,13 +270,23 @@ ani_long_meta_gd <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 length(unique(ani_long_meta_gd$vMAG))
 #152 viruses in clusters from geo distinct locations
 
+#separate tax on meta gd so can count with table
+ani_long_meta_gd <- ani_long_meta_gd %>%
+  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";")
+
+tst <- ani_long_meta_iv %>%
+  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";") %>%
+  drop_na(p) #%>%
+  filter(d == "d__Archaea") %>%
+  drop_na(r)
+
 #remove undetermined from ani_long_meta_gd
 # test <- ani_long_meta_gd %>% filter(checkv_quality != "Not-determined")
 # ani_long_meta_gd <- ani_long_meta_gd %>% filter(taxonomy != "NA") %>%
 #   filter(taxonomy != "Unclassified")
 
-write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
-            col.names = TRUE, sep = "\t")
+# write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
+#             col.names = TRUE, sep = "\t")
 
 ############################ visualize counts across sites ###########################
 temp_count$id <- as.character(temp_count$id)

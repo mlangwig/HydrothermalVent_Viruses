@@ -134,12 +134,18 @@ mmseqs_long_meta <- mmseqs_long_meta %>%
          Site = gsub(".*Axial.*","Axial", Site)
   )
 
+# write.table(mmseqs_long_meta, file = "Output/mmseqs_long_meta.tsv", quote = FALSE, row.names = FALSE,
+#                          col.names = TRUE, sep = "\t")
+
 #add VIBRANT annotations to mmseqs meta
 vibrant_best_anno <- vibrant_best_anno %>%
   rename("anno_id" = "id")
 mmseqs_long_meta_annos <- vibrant_best_anno %>%
   right_join(mmseqs_long_meta, by = c("protein" = "genome_vRhyme")) %>%
   drop_na()
+
+# write.table(mmseqs_long_meta_annos, file = "Output/mmseqs_long_meta_annos.tsv", quote = FALSE, row.names = FALSE,
+#                          col.names = TRUE, sep = "\t")
 
 # Find which clusters have proteins from Plume vs Deposit
 mmseqs_PD_ids <- mmseqs_long_meta %>%
