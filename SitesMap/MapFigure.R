@@ -26,7 +26,8 @@ input$Longitude<-as.numeric(input$Longitude)
 
 #change vent to deposit
 input <- input %>%
-  mutate(Site = str_replace(Site, "Vent", "Deposit"))
+  mutate(Site = str_replace(Site, "Vent", "Deposit")) %>%
+  mutate(Site2 = str_replace(Site2, "volcano", "Volcano"))
 
 #color scheme
 #mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols)

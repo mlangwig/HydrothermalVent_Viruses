@@ -379,11 +379,15 @@ p <- ggplot(abund_long_norm_tax, aes(y=c, x=Site_Gen))+
                         guide = "legend")+
   theme_bw()+
   theme(strip.background = element_blank(),
-        strip.text.y = element_text(angle=-90),
+        strip.text.y = element_text(angle=-90, size = 14),
+        strip.text.x = element_text(size = 14),
         #panel.grid = element_blank(),
-        axis.text.x = element_text(angle=45, hjust=-.025),
-        text = element_text(color="black"),
+        axis.text.x = element_text(angle=45, hjust=-.025, size = 12),
+        axis.text.y = element_text(size = 14),
+        text = element_text(color="black", size = 14),
         legend.position="right",
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14),
         strip.placement = "outside",
         panel.spacing.x = unit(0, "lines"),
         panel.grid.major.y = element_line(linetype = "dashed"),
@@ -401,8 +405,8 @@ p <- ggplot(abund_long_norm_tax, aes(y=c, x=Site_Gen))+
 p  
 
 
-ggsave("output/VirusAbundance_byTaxa2.png", p, dpi = 500, width = 12, height = 7) #, width = 12, height = 6,
-ggsave("output/VirusAbundance_byTaxa2.pdf", p, dpi = 500, width = 12, height = 7)
+ggsave("output/Figure2B_VirusAbundance_byTaxa2.png", p, dpi = 500, width = 15, height = 8) #, width = 12, height = 6,
+ggsave("output/Figure2B_VirusAbundance_byTaxa2.pdf", p, dpi = 500, width = 12, height = 7)
 
 
 ########################## Compiling and parsing microbial MAG CoverM abundance ############################
