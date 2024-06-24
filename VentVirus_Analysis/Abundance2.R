@@ -1164,7 +1164,7 @@ p <- (plot_v | plot_m)
 p
 
 ggsave("output/Figure4_Abundance_symbols.svg", p,
-       bg = "transparent", height = 10, width = 13)
+       bg = "transparent", height = 13, width = 14)
 
 
 

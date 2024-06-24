@@ -13,6 +13,7 @@ library(RColorBrewer)
 library(pals)
 library(sf)
 library(dplyr)
+library(stringr)
 
 # read in shape file
 #sf_map <- st_read("data/water_bodies_carto.shp") #read in shape file. Pay attention to CRS for coordinate system
@@ -23,9 +24,13 @@ input$Latitude<-as.numeric(input$Latitude)
 input$Longitude<-as.numeric(input$Longitude)
 #BR$AvgSalinity<-as.numeric(BR$AvgSalinity)
 
+#change vent to deposit
+input <- input %>%
+  mutate(Site = str_replace(Site, "Vent", "Deposit"))
+
 #color scheme
 #mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols)
-mycolors <- pals::kelly(n=7)
+#mycolors <- pals::kelly(n=7)
 
 # map = shape file...extension .shp
 # raster = salinity...extension .geotiff
@@ -41,15 +46,17 @@ overview <- mp +
   scale_color_manual(values=c("#4F508C","#B56478","#CE9A28","#28827A", "#3F78C1",
                               "#8c510a", "#000000")) + #choose colors of sites
   #scale_size(limits = c(2, 29), breaks = c(2, 10, 20, 27, 28)) +
-  scale_shape_manual(values = c(15,16,17)) +
+  scale_shape_manual(values = c('Diffuse Flow'=15,'Plume'=16,'Deposit'=17)) +
   theme_gray() +
   labs(x= "Longitude", y = "Latitude") + #Lat and Long labels
-  guides(color = guide_legend(title = "Site")) + #change legend title
+  guides(color = guide_legend(override.aes = list(size = 5)),
+         shape = guide_legend(override.aes = list(size = 5))) + #change legend title
   #coord_cartesian(xlim=c(-123,-121.5),ylim=c(37,38.5)) + #set limits of map
-  theme(axis.text = element_text(size = 10), 
-        axis.title = element_text(size = 12),
+  theme(axis.text = element_text(size = 14), 
+        axis.title = element_text(size = 14),
         legend.key=element_rect(fill="white"),
-        legend.title = element_blank(),
+        legend.title = element_blank(), #change legend title
+        legend.text = element_text(size =14),
         panel.border = element_rect(color = "black", 
                                     fill = NA, 
                                     linewidth = .5))
