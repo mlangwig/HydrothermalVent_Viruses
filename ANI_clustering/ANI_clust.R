@@ -216,6 +216,7 @@ ani_long_metadata$Site <- stri_replace_all_regex(ani_long_metadata$Site,
                                                 vectorize=FALSE)
 ani_long_metadata$Site <- gsub("*_M1[0-9]","",ani_long_metadata$Site)
 ani_long_metadata$Site <- gsub("*_M[0-9]","",ani_long_metadata$Site)
+ani_long_metadata$Site <- gsub("Bowl","Mariner",ani_long_metadata$Site)
 
 ########################## see clusters that have both deposit and plume viruses #######################################
 
@@ -254,8 +255,8 @@ ani_long_metadata$Site_gen <- gsub(".*MAR.*","Mid_Atlantic_Ridge",ani_long_metad
 ani_long_metadata$Site_gen <- gsub(".*EPR.*","EPR",ani_long_metadata$Site_gen)
 ani_long_metadata$Site_gen <- gsub(".*Axial.*","Axial_Seamount",ani_long_metadata$Site_gen) 
 
-# write.table(ani_long_metadata, file = "Output/ani_metadata.tsv", quote = FALSE, row.names = FALSE,
-#             col.names = TRUE, sep = "\t")
+write.table(ani_long_metadata, file = "Output/ani_metadata.tsv", quote = FALSE, row.names = FALSE,
+            col.names = TRUE, sep = "\t")
 
 #count occurrences of Site
 temp_count <- ani_long_metadata %>% group_by(id) %>% count(Site_gen)
@@ -270,23 +271,23 @@ ani_long_meta_gd <- ani_long_metadata %>% filter(ani_long_metadata$id %in% ids)
 length(unique(ani_long_meta_gd$vMAG))
 #152 viruses in clusters from geo distinct locations
 
-#separate tax on meta gd so can count with table
-ani_long_meta_gd <- ani_long_meta_gd %>%
-  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";")
+# #separate tax on meta gd so can count with table
+# ani_long_meta_gd <- ani_long_meta_gd %>%
+#   separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";")
 
-tst <- ani_long_meta_iv %>%
-  separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";") %>%
-  drop_na(p) #%>%
-  filter(d == "d__Archaea") %>%
-  drop_na(r)
+# tst <- ani_long_meta_iv %>%
+#   separate(Host.genus, c('d', 'p', 'c', 'o', 'f', 'g'), sep= ";") %>%
+#   drop_na(p) #%>%
+#   filter(d == "d__Archaea") %>%
+#   drop_na(r)
 
 #remove undetermined from ani_long_meta_gd
 # test <- ani_long_meta_gd %>% filter(checkv_quality != "Not-determined")
 # ani_long_meta_gd <- ani_long_meta_gd %>% filter(taxonomy != "NA") %>%
 #   filter(taxonomy != "Unclassified")
 
-# write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
-#             col.names = TRUE, sep = "\t")
+write.table(ani_long_meta_gd, file = "Output/ani_metadata_GeoDistinct.tsv", quote = FALSE, row.names = FALSE,
+            col.names = TRUE, sep = "\t")
 
 ############################ visualize counts across sites ###########################
 temp_count$id <- as.character(temp_count$id)
@@ -338,8 +339,10 @@ iv_ids <- unique(temp_count$id)
 #note will have issues if you reordered it in CircosPlot.R
 ani_long_meta_iv <- ani_long_meta_iv %>% filter(ani_long_meta_iv$id %in% iv_ids)
 length(unique(ani_long_meta_iv$id))
-# 462 clusters with intra vent related viruses
+# 417 clusters with intra vent related viruses
 
+length(unique(ani_long_meta_iv$vMAG))
+# 992 viruses in intra vent related clusters
 
 #HERE FOR FILT VERSION to do counts
 # #remove viruses that are Unclassified or NA
@@ -348,15 +351,15 @@ ani_long_meta_iv_filt <- ani_long_meta_iv %>%
   #filter(taxonomy != "Unclassified") %>%
   #filter(checkv_quality != "Low-quality") %>%
   #filter(checkv_quality != "Not-determined") %>%
-  filter(grepl("Lau", Site)) #%>%
+  filter(grepl("Brothers", Site)) #%>%
   #filter(ANI_mean > 0.85)
   # filter(grepl("Lau_Basin_Kilo_Moana", Site)) %>%
   # filter(grepl("Lau_Basin_Abe", Site))
   
 
 #write the table
-# write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
-#             col.names = TRUE, sep = "\t")
+write.table(ani_long_meta_iv, file = "Output/ani_metadata_IntraVent.tsv", quote = FALSE, row.names = FALSE,
+            col.names = TRUE, sep = "\t")
 
 ################################## calculate num of times combos of sites occur ################################################
 
