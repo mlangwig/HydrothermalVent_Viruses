@@ -247,12 +247,12 @@ master_table_iphop_filt$Locat <- gsub(".*Guaymas.*","Deposit", master_table_ipho
 master_table_iphop_filt$Locat <- gsub(".*MAR.*","Deposit", master_table_iphop_filt$Locat)
 
 master_table_iphop_filt3 <- master_table_iphop_filt %>%
-  filter(str_detect(Locat, "Plume")) #%>%
   #filter(str_detect(Locat, "Plume")) #%>%
-  #filter(str_detect(d, "Archaea")) %>%
+  filter(str_detect(Locat, "Deposit")) #%>%
+  filter(str_detect(d, "Archaea")) %>%
   #filter(str_detect(p, "p__Pseudomonadota")) #%>%
   #filter(str_detect(p, "p__Methanobacteriota_B")) #%>%
-  #filter(str_detect(p, "p__Nanoarchaeota"))
+  #filter(str_detect(o, "o__Sulfolobales"))
   #filter(str_detect(p, "p__Bacteroidota"))
   #filter(str_detect(c, "c__Gammaproteobacteria"))
   #filter(str_detect(c, "c__Alphaproteobacteria"))
@@ -261,8 +261,8 @@ master_table_iphop_filt3 <- master_table_iphop_filt %>%
 
 #check how many viruses have >1 host prediction
 master_table_iphop_filt3 <- iphop %>%
-  group_by(Virus) %>% 
-  filter(n()>1) #%>%
+  dplyr::group_by(Virus) %>% 
+  dplyr::filter(n()>1) #%>%
 length(unique(master_table_iphop_filt3$Virus)) #614 viruses
 
 ####################################### vMAGs >4 seqs #############################################
@@ -363,7 +363,7 @@ master_table_fig <- master_table_noProtein %>%
   mutate(r = gsub("r__", "", r)) %>%
   mutate(c = gsub("c__", "", c)) %>%
   #filter(!(c %in% c("Caudoviricetes"))) %>% #remove Caudos?
-  #filter(!(c %in% c("Unknown Class"))) %>% #remove unknown class predictions
+  filter(!(c %in% c("Unknown Class"))) %>% #remove unknown class predictions
   arrange(r) %>%
   mutate(log_n = log(n) + 1)
 
@@ -384,7 +384,7 @@ p <- ggplot(master_table_fig, aes(x = log_n, y = c, fill = r)) +
   #geom_bar(data = subset(master_table_fig, caudo == "Unknown"), stat = "identity", position = "dodge", width = 1) +  # Custom thickness for the facet where caudo == "Unknown"
   xlab(expression(paste("Number of genomes ", (log[10]+1))))  +
   ylab("Class") +
-  ggtitle("Virus geNomad Taxonomy") +
+  ggtitle("Virus Taxonomy") +
   scale_fill_viridis_d(name = "Viral Realm", direction = -1) +
   scale_x_continuous(expand = c(0, 0), limits = c(0, 12), 
                      breaks = seq(0, 12, by = 3)) +

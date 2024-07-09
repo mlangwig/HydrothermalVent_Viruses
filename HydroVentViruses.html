@@ -1632,7 +1632,12 @@ margin-left: 0 !important;
             <li><a href="#virsorter-run-again" id="toc-virsorter-run-again">Virsorter run again</a></li>
             </ul></li>
             <li><a href="#comparing-regions-of-overlap-of-viruses-in-ani-clusters" id="toc-comparing-regions-of-overlap-of-viruses-in-ani-clusters">Comparing
-            regions of overlap of viruses in ANI clusters</a></li>
+            regions of overlap of viruses in ANI clusters</a>
+            <ul>
+            <li><a href="#take-2-comparing-regions-of-overlap-with-final-49962-set" id="toc-take-2-comparing-regions-of-overlap-with-final-49962-set">Take
+            2 comparing regions of overlap with final 49,962
+            set</a></li>
+            </ul></li>
             <li><a href="#running-coverm-to-obtain-virus-abundance" id="toc-running-coverm-to-obtain-virus-abundance">Running
             coverm to obtain virus abundance</a>
             <ul>
@@ -3373,6 +3378,50 @@ cat query_results.txt subj_results.txt &gt; all_VirusClust_blastn_filtered.txt</
 
 bedtools intersect -a bed_GeoDistinct_VirusClusts.tsv -b bed_PlumeVent_viruses.tsv -wa -wb &gt; result.txt</code></pre>
 <p>-f 0.50 option for 50% overlap. Or -F?</p>
+<div id="take-2-comparing-regions-of-overlap-with-final-49962-set" class="section level2">
+<h2>Take 2 comparing regions of overlap with final 49,962 set</h2>
+<ol style="list-style-type: decimal">
+<li>Trying with all the viruses from geo distinct clusters in one file -
+then can I parse the output for just what I want? Nucleotide-Nucleotide
+BLAST 2.14.1+</li>
+</ol>
+<pre class="bash"><code>pwd
+/scratch/langwig/Projects/VentPlumeViruses/skani/blastn_skani_clusts
+
+mamba activate
+
+nano GeoDistinct_clust_viruses.txt
+
+perl /scratch/langwig/scripts/screen_list_new.pl GeoDistinct_clust_viruses.txt /scratch/langwig/Projects/VentPlumeViruses/Virus_Genomes/49962_final_VentViruses_Nlinked.fna keep &gt; GeoDistinct_clust_Viruses.fna</code></pre>
+<p><strong>If you don’t want to do the vRhyme ones manually in the
+future at the end for adding annotations, don’t do the N-linked option,
+instead using the separate scaffold file</strong></p>
+<ol start="2" style="list-style-type: decimal">
+<li>Makeblastdb and run blastn</li>
+</ol>
+<pre class="bash"><code>makeblastdb -in GeoDistinct_clust_Viruses.fna -out GeoDistinct_clust_Viruses -dbtype nucl
+
+nohup blastn -query GeoDistinct_clust_Viruses.fna -db GeoDistinct_clust_Viruses -out GeoDistinct_clust_Viruses_output.txt -outfmt &quot;6 qseqid sseqid evalue bitscore length pident qstart qend sstart send&quot; -max_target_seqs 2 -max_hsps 1 &amp;
+
+mamba activate R
+Rscript parse_blastn_2.R</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Get coordinates and run bedtools</li>
+</ol>
+<pre class="bash"><code>cut -f1,7,8 filtered_GeoDistinctViruses_blastn_results.txt &gt; query_results.txt
+cut -f2,9,10 filtered_GeoDistinctViruses_blastn_results.txt &gt; subj_results.txt
+
+cat query_results.txt subj_results.txt &gt; VirusClust_blastn_bed_coords.txt
+
+bedtools intersect -a VirusClust_blastn_bed_coords.txt -b bed_PlumeVent_viruses.tsv -wa -wb &gt; bedtools_result_GeoDistinct_VirusClusts.txt</code></pre>
+<p><strong>Remember, bedtools wants coords in the right direction aka 1
+10100 instead of 10100 1. If you get the invalid record in file
+error</strong></p>
+<ol start="9" style="list-style-type: decimal">
+<li>Grabbing some missing annotations</li>
+</ol>
+<pre class="bash"><code>perl /scratch/langwig/scripts/screen_list_new.pl missing_annos_list.txt bed_PlumeVent_viruses.tsv keep &gt; bed_PlumeVent_viruses_missing.tsv</code></pre>
+</div>
 </div>
 <div id="running-coverm-to-obtain-virus-abundance" class="section level1">
 <h1>Running coverm to obtain virus abundance</h1>

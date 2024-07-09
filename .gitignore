@@ -2,6 +2,21 @@
 VentVirus_Analysis/input/PlumeVentVirus-vs-Reads-CoverM.tsv
 ANCOMbc/*
 ANI_clustering/border_links.R
+ANI_clustering/ANI_clustering.R
+ANI_clustering/ANI_Heatmap.R
+ANI_clustering/Protein_clustering.R
+ANI_clustering/Input/sulfur/*
+ANI_clustering/Input/skani_v2/*
+VentVirus_Analysis/Abundance.R
+VentVirus_Analysis/Diversity.R
+VentVirus_Analysis/VentVirus_Analysis.R
+VentVirus_Analysis/VirusGenes.R
+VentVirus_Analysis/input/old/*
+VentVirus_Analysis/.RDataTmp
+VentVirus_Analysis/.RDataTmp1
+iPHoP/*
+HydroVentViruses.Rmd
+HydroVentViruses.html
 
 # R #
 ######
