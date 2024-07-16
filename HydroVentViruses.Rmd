@@ -2932,15 +2932,32 @@ Git rm --cached to remove things from the website. Online, can go to previous co
 
 1. Git rm cached what you want
 ```{bash, eval = FALSE}
-git rm --cached HydroVentViruses.html
+git rm --cached ANI_clustering/ANI_clustering.R
 ```
 
-4. Git commit, push
+2. Git commit, push
 ```{bash, eval = FALSE}
-git commit -m "rm html"
+git commit -m "remove ANI_clustering.R"
 
 git push
 ```
+
+And a directory:
+
+1. Git rm cached what you want
+```{bash, eval = FALSE}
+git rm -r --cached ANI_clustering/Input/sulfur/
+```
+
+2. Git commit, push
+```{bash, eval = FALSE}
+git commit -m "remove cached clust input sulfur"
+
+git push
+```
+
+
+
 
 ### Unused
 
