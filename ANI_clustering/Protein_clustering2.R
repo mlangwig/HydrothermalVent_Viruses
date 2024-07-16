@@ -336,8 +336,10 @@ p <- ComplexUpset::upset(mmseqs_PD_GD_plot,
         list(
           'Intersection size'=theme(axis.text = element_text(size = 16),
                                     axis.title = element_text(size = 16)), #changing the main barplot
-          'intersections_matrix'=theme(text=element_text(size=16)), #axis.text.y -> changing the intersections plot
-          'overall_sizes'=theme(axis.text.x = element_text(size = 16, angle = 90)))), #changing the lower left bar plot
+          'intersections_matrix'=theme(text = element_text(size=16),
+                                       axis.text.y = element_text(size = 16)), #axis.text.y -> changing the intersections plot
+          'overall_sizes'=theme(axis.text.x = element_text(size = 16, angle = 90),
+                                axis.title = element_text(size = 16)))), #changing the lower left bar plot
       matrix = (
         intersection_matrix(geom=geom_point(shape='circle filled', size=5)) +
           scale_color_manual(values=c("Axial Seamount" = "#4F508C", "Guaymas Basin Plume" = "#63c2ba",
@@ -359,8 +361,8 @@ p <- ComplexUpset::upset(mmseqs_PD_GD_plot,
       )
 p
 
-#ggsave(p, filename = "Output/protein_clust_UpSet.svg", width = 15, height = 7)
-#ggsave(p, filename = "Output/protein_clust_UpSet.png", width = 15, height = 7)
+ggsave(p, filename = "Output/protein_clust_UpSet.svg", width = 16, height = 7)
+ggsave(p, filename = "Output/protein_clust_UpSet.png", width = 16, height = 7)
 
 ################################# Creating a modified bar plot above UpSet ################################################
 
@@ -378,23 +380,23 @@ df <- df %>%
 dev.off()
 p2<-ggplot(data=df, aes(x=factor(order),y=values_norm)) +
   geom_bar(stat="identity")+
-  geom_text(aes(label=values_norm), vjust=-0.25, size = 10)+
+  geom_text(aes(label=values_norm), vjust=-0.25, size = 8)+
   scale_y_continuous(limits = c(0,100))+
   scale_x_discrete(expand = c(0,0))+
   ylab("Percent of shared protein clusters")+
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.title.y = element_text(size = 26),
-        axis.text.y = element_text(size = 26),
+        axis.title.y = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
         axis.ticks.y = element_line(colour = "lightgrey"),
         panel.background = element_blank(),
         panel.grid.minor = element_line(color = "lightgrey"), 
         panel.grid.major = element_line(color = "lightgrey"))
 p2
 
-ggsave(p2, filename = "Output/Figure3_protein_clust_UpSet_barplot_norm.svg", width = 14, height = 5)
-ggsave(p2, filename = "Output/Figure3_protein_clust_UpSet_barplot_norm.png", width = 16, height = 7)
+ggsave(p2, filename = "Output/UpSet_barplot_norm.svg", width = 15, height = 5)
+ggsave(p2, filename = "Output/UpSet_barplot_norm.png", width = 16, height = 7)
 
 ################### unused
 
