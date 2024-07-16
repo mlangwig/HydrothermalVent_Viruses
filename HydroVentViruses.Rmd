@@ -2925,6 +2925,23 @@ sed 's/=/_/g' 49962_VentViruses.faa > 49962_VentViruses_renamed.faa
 
 595,416 proteins in the 49,962 viruses
 
+
+# Modifying github repo
+
+Git rm --cached to remove things from the website. Online, can go to previous commits where file was still there and you can still check the history. Here is an example:
+
+1. Git rm cached what you want
+```{bash, eval = FALSE}
+git rm --cached HydroVentViruses.html
+```
+
+4. Git commit, push
+```{bash, eval = FALSE}
+git commit -m "rm html"
+
+git push
+```
+
 ### Unused
 
 Generate scores of vMAGs?
@@ -2939,3 +2956,5 @@ Need -i and -n, tab-separated bin membership file (e.g., scaffold
 \t bin) and number of original scaffolds before binning (binned +
 unbinned). The redundancy score seems to already be reported in best
 bins summary file in each VIBRANT folder?
+
+
