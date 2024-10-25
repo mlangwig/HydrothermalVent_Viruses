@@ -27,6 +27,7 @@ metadata <- read.delim2(file = "../VentVirus_Analysis/output/master_table_VentPl
 metadata <- metadata %>%
   select(c(vMAG, type:f)) %>%
   unique()
+gov_clusters <- read.delim2(file = "Input/GOV/dereplicated_virus_49962_GOV.clusters", sep = "\t", header = FALSE)
 
 #################################### skani preprocessed ################################################
 # # After running skani, create the processed file here:
@@ -610,6 +611,102 @@ plot <- ani_long_metadata_all %>%
   coord_flip() +
   geom_hline(yintercept = 0.70, linetype = 3)
 plot
+
+
+######################################### gov clusters ################################################
+
+#add id number to rows
+gov_clusters <- gov_clusters %>% mutate(id = row_number())
+#melt by id
+gov_clusters <- reshape2::melt(gov_clusters, id.vars = "id")
+#drop variable column
+gov_clusters <- select(gov_clusters, -variable)
+#remove NAs introduced after melting
+gov_clusters <- gov_clusters %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
+  na.omit()
+#rename column
+gov_clusters <- rename(gov_clusters, "Site" = "value")
+
+#remove singleton clusters
+gov_clusters <- gov_clusters %>%
+  group_by(id) %>%
+  mutate(count=n()) %>%
+  filter(count >= 2) %>%
+  select(-count) %>%
+  #filter(id!="1") %>% #remove Pseudomonas virus cluster
+  ungroup()
+
+#write the gov table in this format
+# write.table(gov_clusters,
+#             file = "Output/gov_VentViruses_clusters.tsv", sep = "\t", quote = FALSE,
+#             row.names = FALSE, col.names = TRUE)
+
+################################ only retain clusters with gov and vent viruses ##########################################
+
+#gov viruses have Station and Malaspina in the names
+#21027 example cluster
+
+#first remove all clusters where just GOV2 viruses
+gov_clusters_filt <- gov_clusters %>%
+  group_by(id) %>%
+  filter(!all(grepl("Station|Malaspina", Site))) %>%
+  ungroup()
+
+#next remove all clusters where just GOV2 viruses
+gov_clusters_filt <- gov_clusters %>%
+  group_by(id) %>%
+  filter(!all(grepl("Station|Malaspina", Site))) %>%
+  ungroup()
+
+
+################################ calculate average ANI per cluster ##########################################
+
+#remove rows where comparing self to self
+ani = subset(ani, ani$Ref_name != ani$Query_name)
+
+#remove duplicate rows when comparing same thing but in different order
+ani <- ani %>% 
+  mutate(nv1 = paste0(Ref_name, ANI_norm),
+         nv2 = paste0(Query_name, ANI_norm)) %>% 
+  unique_pairs("nv1", "nv2") %>% 
+  select(-nv1, -nv2)
+
+#map cluster number to ANI table
+#CREATE ani_perClust_filter_map and map ID to Ref_name
+ani <- mcl_clusters %>%
+  dplyr::select("id", "Site") %>%
+  left_join(ani, by = c("Site" = "Ref_name")) %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
+  na.omit() %>%
+  rename("Ref_name" = "Site")
+
+#temporarily change col name for mapping
+mcl_clusters <- mcl_clusters %>%
+  rename("id_Q" = "id")
+
+#map onto Query now instead of Ref
+ani <- mcl_clusters %>%
+  dplyr::select("id_Q", "Site") %>%
+  left_join(ani, by = c("Site" = "Query_name")) %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>%
+  na.omit() %>%
+  rename("Query_name" = "Site")
+#change col name back
+mcl_clusters <- mcl_clusters %>%
+  rename("id" = "id_Q")
+
+#filter out IDs that aren't the same
+ani <- subset(ani, id_Q == id)
+
+#get average ANI per cluster
+ani$ANI_norm <- as.numeric(ani$ANI_norm)
+ani <- ani %>% 
+  group_by(id) %>% 
+  mutate(ANI_mean = mean(ANI_norm)) %>%
+  ungroup()
+
+
 
 
 ########################### unused
