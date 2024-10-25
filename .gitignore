@@ -7,6 +7,7 @@ ANI_clustering/ANI_Heatmap.R
 ANI_clustering/Protein_clustering.R
 ANI_clustering/Input/sulfur/*
 ANI_clustering/Input/skani_v2/*
+ANI_clustering/Input/GOV/*
 VentVirus_Analysis/Abundance.R
 VentVirus_Analysis/Diversity.R
 VentVirus_Analysis/VentVirus_Analysis.R

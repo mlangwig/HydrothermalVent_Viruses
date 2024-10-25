@@ -270,7 +270,10 @@ plot_v
 #        height = 12, width = 15,
 #        bg = "transparent")
 
+############################## Create Figure 1B of the Manuscript ################################
+
 ############################## Bubble plot of virus abundance summed by taxa by site ################################
+
 ## Shows distribution of different viral taxa at different sites
 
 #Add genome quality info to remove viruses based on length or quality/both?
@@ -361,13 +364,17 @@ abund_long_norm_tax$Virus_Realm <- gsub("Resentoviricetes","Riboviria", abund_lo
 abund_long_norm_tax$Virus_Realm <- gsub("Vidaverviricetes","Riboviria", abund_long_norm_tax$Virus_Realm)
 abund_long_norm_tax$Virus_Realm <- gsub("Polintoviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
 abund_long_norm_tax$Virus_Realm <- gsub("Maveriviricetes","Varidnaviria", abund_long_norm_tax$Virus_Realm)
+abund_long_norm_tax$Virus_Realm <- gsub("Revtraviricetes","Riboviria", abund_long_norm_tax$Virus_Realm)
 
 #Change ELSC to Lau Basin for clarity
 abund_long_norm_tax$Site_Gen <- gsub("ELSC","Lau Basin", abund_long_norm_tax$Site_Gen)
 abund_long_norm_tax$Site_Gen <- gsub("Abe","ABE", abund_long_norm_tax$Site_Gen)
-
 # write.table(abund_long_norm_tax, file = "output/abund_long_norm_tax.tsv", quote = FALSE,
 #             row.names = FALSE, sep = "\t")
+
+#set the Unknown column as last
+abund_long_norm_tax$Virus_Realm <- factor(abund_long_norm_tax$Virus_Realm, 
+                                          levels = c(setdiff(unique(abund_long_norm_tax$Virus_Realm), "Unknown"), "Unknown"))
 
 dev.off()
 p <- ggplot(abund_long_norm_tax, aes(y=c, x=Site_Gen))+
@@ -405,8 +412,8 @@ p <- ggplot(abund_long_norm_tax, aes(y=c, x=Site_Gen))+
 p  
 
 
-ggsave("output/Figure2B_VirusAbundance_byTaxa2.png", p, dpi = 500, width = 15, height = 8) #, width = 12, height = 6,
-ggsave("output/Figure2B_VirusAbundance_byTaxa2.pdf", p, dpi = 500, width = 12, height = 7)
+#ggsave("output/Figure2B_VirusAbundance_byTaxa2.png", p, dpi = 500, width = 15, height = 8) #, width = 12, height = 6,
+#ggsave("output/Figure2B_VirusAbundance_byTaxa2.pdf", p, dpi = 500, width = 12, height = 7)
 
 
 ########################## Compiling and parsing microbial MAG CoverM abundance ############################
