@@ -21,6 +21,8 @@ table(checkv$checkv_quality)
 #lifestyle, VIBRANT predicted
 vib_type <- read.delim(file = "input/52samples_VIBRANT_type.tsv", header = TRUE)
 vib_type$scaffold <- gsub("=","_",vib_type$scaffold)
+#lifestyle, DeePhage predicted
+vib_type_deephage <- read.csv2(file = "../../Deephage/result_49962_0.7.csv", header = TRUE, sep = ",")
 
 #genome size, Seqkit
 gensize <- read.table(file = "input/PlumeVentVirus_Seqkit_final.txt", sep = " ", header = TRUE)
@@ -141,6 +143,36 @@ vib_type <- rbind(vib_type_vMAG, vib_type_vUnbinned)
 table(vib_type$type)
 #2,391 lysogenic viruses, 47,571 lytic
 
+####################################### Lytic vs lysogenic, DeePhage #############################################
+
+table(vib_type_deephage$possible_lifestyle)
+vib_type_deephage <- read.csv2(file = "../../Deephage/result_49962_0.7.csv", header = TRUE, sep = ",")
+
+#add vMAG name for vMAG scaffolds
+vib_type_deephage$scaffold <- vib_type_deephage$Header
+#remove vRhyme from name of scaffold - check if separator present, if not separate it
+vib_type_deephage <- vib_type_deephage %>% 
+  mutate(scaffold = if_else(str_detect(scaffold, "__"),
+                            scaffold, 
+                            paste0("__", scaffold))) %>%
+  separate(scaffold, c(NA, "scaffold"), sep = "__")
+
+#use join to add vMAG name and other metadata to virus scaffolds
+vib_type_deephage <- master_table %>%
+  select(c("scaffold", "vMAG", "total_hallmarks", "type", "checkv_quality")) %>%
+  right_join(vib_type_deephage, by = c("scaffold" = "scaffold")) %>%
+  unique()
+
+#remove uncertain lifestyles
+vib_type_deephage <- vib_type_deephage %>%
+  filter(!str_detect(possible_lifestyle, "uncertain_temperate")) %>% 
+  filter(!str_detect(possible_lifestyle, "uncertain_virulent"))
+
+#med quality and above
+vib_type_deephage_mq <- vib_type_deephage %>%
+  filter(!str_detect(checkv_quality, "Low-quality")) %>%
+  filter(!str_detect(checkv_quality, "Not-determined"))
+
 ####################################### Create the master tables #############################################
 
 #get vMAG names in vib_annos
@@ -202,6 +234,14 @@ master_table_noProtein_hq <- master_table %>%
 table(master_table_noProtein_hq$type)
 #328 lysogenic, 1,505 lytic for med quality and better viruses
 
+#master table no proteins of complete only
+master_table_noProtein_c <- master_table %>%
+  select(vMAG, type, gene_count:f) %>%
+  unique() %>%
+  filter((checkv_quality == "Complete"))
+table(master_table_noProtein_c$type)
+#4 lysogenic, 109 lytic for med quality and better viruses
+
 #create a master table reduced info for easier viewing
 master_table_simple <- master_table %>%
   select(vMAG, scaffold, protein, KO, AMG, KO.name, Pfam, 
@@ -249,7 +289,7 @@ master_table_iphop_filt$Locat <- gsub(".*MAR.*","Deposit", master_table_iphop_fi
 master_table_iphop_filt3 <- master_table_iphop_filt %>%
   #filter(str_detect(Locat, "Plume")) #%>%
   filter(str_detect(Locat, "Deposit")) #%>%
-  filter(str_detect(d, "Archaea")) %>%
+  filter(str_detect(d, "Archaea")) #%>%
   #filter(str_detect(p, "p__Pseudomonadota")) #%>%
   #filter(str_detect(p, "p__Methanobacteriota_B")) #%>%
   #filter(str_detect(o, "o__Sulfolobales"))
@@ -260,10 +300,15 @@ master_table_iphop_filt3 <- master_table_iphop_filt %>%
   #filter(str_detect(g, "g__Colwellia"))
 
 #check how many viruses have >1 host prediction
-master_table_iphop_filt3 <- iphop %>%
-  dplyr::group_by(Virus) %>% 
-  dplyr::filter(n()>1) #%>%
-length(unique(master_table_iphop_filt3$Virus)) #614 viruses
+master_table_iphop_filt3 <- master_table_iphop_filt %>%
+  group_by(vMAG) %>% 
+  filter(n() > 1) %>%
+  ungroup()
+    
+length(unique(master_table_iphop_filt3$vMAG)) #614 viruses with >1 host
+table(master_table_iphop_filt3$Locat) #1,176 deposit, 255 plume
+table(master_table_iphop_filt3$Site)
+table(master_table_iphop_filt3$p)
 
 ####################################### vMAGs >4 seqs #############################################
 

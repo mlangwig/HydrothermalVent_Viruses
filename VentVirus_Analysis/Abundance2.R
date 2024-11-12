@@ -372,12 +372,12 @@ abund_long_norm_tax$Site_Gen <- gsub("Abe","ABE", abund_long_norm_tax$Site_Gen)
 # write.table(abund_long_norm_tax, file = "output/abund_long_norm_tax.tsv", quote = FALSE,
 #             row.names = FALSE, sep = "\t")
 
-#set the Unknown column as last
-abund_long_norm_tax$Virus_Realm <- factor(abund_long_norm_tax$Virus_Realm, 
-                                          levels = c(setdiff(unique(abund_long_norm_tax$Virus_Realm), "Unknown"), "Unknown"))
+abund_long_norm_tax_factor <- abund_long_norm_tax
+abund_long_norm_tax_factor$Virus_Realm <- factor(abund_long_norm_tax_factor$Virus_Realm, 
+                                          levels = c("Adnaviria", "Duplodnaviria", "Monodnaviria", "Riboviria", "Varidnaviria", "Unknown"))
 
 dev.off()
-p <- ggplot(abund_long_norm_tax, aes(y=c, x=Site_Gen))+
+p <- ggplot(abund_long_norm_tax_factor, aes(y=c, x=Site_Gen))+
   geom_point(aes(size=log_n_plus1, color = log_n_plus1))+ 
   #scale_size_continuous(breaks = c(-8, -4, 0, 4))+
   #scale_color_continuous(guide="legend", 

@@ -28,6 +28,12 @@ metadata <- metadata %>%
   select(c(vMAG, type:f)) %>%
   unique()
 gov_clusters <- read.delim2(file = "Input/GOV/dereplicated_virus_49962_GOV.clusters", sep = "\t", header = FALSE)
+gov_ani <- read.delim2(file = "Input/GOV/skani_v2_ANI_VentVirus_200m30cm_3kb_49962_GOV_50AF_processed.tsv",
+                       header = FALSE)
+gov_ani <- gov_ani %>%
+  rename("Ref_name" = "V1",
+         "Query_name" = "V2",
+         "ANI_norm" = "V3")
 
 #################################### skani preprocessed ################################################
 # # After running skani, create the processed file here:
@@ -653,61 +659,104 @@ gov_clusters_filt <- gov_clusters %>%
   filter(!all(grepl("Station|Malaspina", Site))) %>%
   ungroup()
 
-#next remove all clusters where just GOV2 viruses
-gov_clusters_filt <- gov_clusters %>%
+#next remove all clusters where just vent viruses
+gov_clusters_filt <- gov_clusters_filt %>%
   group_by(id) %>%
-  filter(!all(grepl("Station|Malaspina", Site))) %>%
+  filter(!all(grepl("k95", Site))) %>%
   ungroup()
 
+#keep removing clusters where just vent viruses
+gov_clusters_filt <- gov_clusters_filt %>%
+  group_by(id) %>%
+  filter(!all(grepl("Brothers|ELSC|Guaymas|Lau|MAR|EPR|Axial", Site))) %>%
+  ungroup()
 
-################################ calculate average ANI per cluster ##########################################
+################################ calculate average ANI per gov cluster ##########################################
 
 #remove rows where comparing self to self
-ani = subset(ani, ani$Ref_name != ani$Query_name)
+gov_ani = subset(gov_ani, gov_ani$Ref_name != gov_ani$Query_name)
 
 #remove duplicate rows when comparing same thing but in different order
-ani <- ani %>% 
+gov_ani <- gov_ani %>% 
   mutate(nv1 = paste0(Ref_name, ANI_norm),
          nv2 = paste0(Query_name, ANI_norm)) %>% 
   unique_pairs("nv1", "nv2") %>% 
   select(-nv1, -nv2)
 
-#map cluster number to ANI table
+#map cluster number to gov_ani table
 #CREATE ani_perClust_filter_map and map ID to Ref_name
-ani <- mcl_clusters %>%
+gov_ani <- gov_clusters_filt %>%
   dplyr::select("id", "Site") %>%
-  left_join(ani, by = c("Site" = "Ref_name")) %>%
+  left_join(gov_ani, by = c("Site" = "Ref_name")) %>%
   mutate_if(is.character, list(~na_if(.,""))) %>%
   na.omit() %>%
   rename("Ref_name" = "Site")
 
 #temporarily change col name for mapping
-mcl_clusters <- mcl_clusters %>%
+gov_clusters_filt <- gov_clusters_filt %>%
   rename("id_Q" = "id")
 
 #map onto Query now instead of Ref
-ani <- mcl_clusters %>%
+gov_ani <- gov_clusters_filt %>%
   dplyr::select("id_Q", "Site") %>%
-  left_join(ani, by = c("Site" = "Query_name")) %>%
+  left_join(gov_ani, by = c("Site" = "Query_name")) %>%
   mutate_if(is.character, list(~na_if(.,""))) %>%
   na.omit() %>%
   rename("Query_name" = "Site")
 #change col name back
-mcl_clusters <- mcl_clusters %>%
+gov_clusters_filt <- gov_clusters_filt %>%
   rename("id" = "id_Q")
 
 #filter out IDs that aren't the same
-ani <- subset(ani, id_Q == id)
+gov_ani <- subset(gov_ani, id_Q == id)
 
 #get average ANI per cluster
-ani$ANI_norm <- as.numeric(ani$ANI_norm)
-ani <- ani %>% 
+gov_ani$ANI_norm <- as.numeric(gov_ani$ANI_norm)
+gov_ani <- gov_ani %>% 
   group_by(id) %>% 
   mutate(ANI_mean = mean(ANI_norm)) %>%
   ungroup()
 
+################################ map virus metadata to gov clusters ##########################################
 
+#melt the ani file so can do vlookups
+gov_ani_long <- gov_ani %>% select(c('id', 'ANI_mean', 'Ref_name', 'Query_name'))
+gov_ani_long <- melt(gov_ani_long, id = c('id', 'ANI_mean')) %>%
+  select(-'variable') %>%
+  unique()
 
+#vlookup
+gov_ani_long_metadata <- metadata %>%
+  right_join(gov_ani_long, by = c("vMAG" = "value"))
+
+#NOTE THAT MAPPING IPHOP DUPLICATES SOME VIRUSES BC SOME VIRUSES HAVE 1+ HOST PREDICTION
+#add iphop-predicted hosts
+gov_ani_long_metadata <- iphop %>%
+  dplyr::select('Virus', 'Host.genus', 'List.of.methods') %>%
+  right_join(gov_ani_long_metadata, by = c("Virus" = "vMAG"))
+
+#add site column for ani_long_metadata
+gov_ani_long_metadata$Site <- gov_ani_long_metadata$Virus 
+gov_ani_long_metadata <- gov_ani_long_metadata %>%
+  separate(Site, c("Site", NA), sep= "_NODE|_scaffold|_vRhyme|_k95")
+
+#clean up site names
+#faster replace all the naming patterns
+gov_ani_long_metadata$Site <- stri_replace_all_regex(gov_ani_long_metadata$Site,
+                                                 pattern=c("_A[0-9]",
+                                                           "_T[0-9][0-9]", "_T[0-9]", "_S0[0-9][0-9]",
+                                                           "_S1[0-9][0-9]", "_[0-9][0-9][0-9]-[0-9][0-9][0-9]",
+                                                           "-38[0-9]"),
+                                                 replacement='',
+                                                 vectorize=FALSE)
+gov_ani_long_metadata$Site <- gsub("*_M1[0-9]","",gov_ani_long_metadata$Site)
+gov_ani_long_metadata$Site <- gsub("*_M[0-9]","",gov_ani_long_metadata$Site)
+gov_ani_long_metadata$Site <- gsub("Bowl","Mariner",gov_ani_long_metadata$Site)
+gov_ani_long_metadata$Site <- stri_replace_all_regex(gov_ani_long_metadata$Site,
+                                                     pattern=c("_ALL_assembly", "_DO_NOT_POOL",
+                                                               "_COMBINED_FINAL", "_COMBINED_FINAL"),
+                                                     replacement='',
+                                                     vectorize=FALSE)
 
 ########################### unused
 # library(RColorBrewer)
