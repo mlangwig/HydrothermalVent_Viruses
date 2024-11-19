@@ -34,6 +34,14 @@ gov_ani <- gov_ani %>%
   rename("Ref_name" = "V1",
          "Query_name" = "V2",
          "ANI_norm" = "V3")
+mp_names <- read.delim2(file = "~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/GOV2.0/GOV_Read_me.txt", 
+                                  row.names = NULL)
+mp_names <- mp_names %>%
+  select(c("Malaspina_IDs", "Site"))
+
+gov_sites_metadata <- read.delim2(file = "~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/GOV2.0/Site_Metadata.txt")
+
+vent_metadata <- read.delim2(file = "~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/GOV2.0/Vent_Metadata.txt")
 
 #################################### skani preprocessed ################################################
 # # After running skani, create the processed file here:
@@ -740,6 +748,7 @@ gov_ani_long_metadata$Site <- gov_ani_long_metadata$Virus
 gov_ani_long_metadata <- gov_ani_long_metadata %>%
   separate(Site, c("Site", NA), sep= "_NODE|_scaffold|_vRhyme|_k95")
 
+library(stringi)
 #clean up site names
 #faster replace all the naming patterns
 gov_ani_long_metadata$Site <- stri_replace_all_regex(gov_ani_long_metadata$Site,
@@ -758,7 +767,50 @@ gov_ani_long_metadata$Site <- stri_replace_all_regex(gov_ani_long_metadata$Site,
                                                      replacement='',
                                                      vectorize=FALSE)
 
-########################### unused
+################################ map site metadata to gov clusters ##########################################
+#I'm interested in the lat long and depth of the sites
+
+#remove Malaspina from name
+gov_ani_long_metadata$Site <- gsub("_Malaspina", "", gov_ani_long_metadata$Site)
+#remove Station from name
+gov_ani_long_metadata$Site <- gsub("Station", "", gov_ani_long_metadata$Site)
+
+#search table, if match to string, replace with other column, if not keep the same
+gov_ani_long_metadata <- gov_ani_long_metadata %>%
+  left_join(mp_names, by = c("Site" = "Malaspina_IDs")) %>%
+  mutate(Site = ifelse(!is.na(Site.y), Site.y, Site)) %>%
+  select(-Site.y)
+
+#add metadata info of GOV viruses
+gov_ani_long_metadata <- gov_sites_metadata %>%
+  dplyr::select(c("Sample_label", "depth_m", "latitude_decimal_degree_N", "longitude_decimal_degree_E")) %>%
+  right_join(gov_ani_long_metadata, by = c("Sample_label" = "Site"))
+
+gov_ani_long_metadata <- gov_ani_long_metadata %>%
+  select(c("id", "ANI_mean", "Sample_label", "depth_m", 
+           "latitude_decimal_degree_N", "longitude_decimal_degree_E", Virus:f))
+
+#combine site metadata vent and GOV
+gov_sites_metadata <- gov_sites_metadata %>%
+  select(c("Sample_label", "depth_m", "latitude_decimal_degree_N", "longitude_decimal_degree_E")) %>%
+  rename("latitude_dd" = "latitude_decimal_degree_N",
+         "longitude_dd" = "longitude_decimal_degree_E")
+gov_sites_metadata <- gov_sites_metadata %>%
+  rename("Site" = "Sample_label")
+
+all_sites_metadata <- rbind(gov_sites_metadata, vent_metadata)
+
+#remove first round metadata
+gov_ani_long_metadata <- gov_ani_long_metadata %>%
+  rename("Site" = "Sample_label") %>%
+  select(-c("depth_m", "latitude_decimal_degree_N", "longitude_decimal_degree_E"))
+
+#add metadata info of GOV viruses
+gov_ani_long_metadata <- all_sites_metadata %>%
+  right_join(gov_ani_long_metadata, by = c("Site" = "Site"))
+
+################################ unused ##########################################
+
 # library(RColorBrewer)
 # n <- 61
 # qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]

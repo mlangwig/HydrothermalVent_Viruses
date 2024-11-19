@@ -90,16 +90,105 @@ colnames(mic_abun_sum) <- gsub(" Relative Abundance \\(\\%)", "", colnames(mic_a
 #fix abun_names
 read_mapping <- abun_names %>%
   select(c("Reads", "Site"))
+read_mapping$Site <- gsub("_metaspades_scaffolds.min1000.fasta","", read_mapping$Site)
+read_mapping$Site <- gsub(".fasta","", read_mapping$Site)
+read_mapping$Site <- gsub("min1000","Plume", read_mapping$Site)
+read_mapping$Site <- gsub("_scaffolds_Plume","", read_mapping$Site) 
+read_mapping$Site <- gsub("Bowl","Mariner", read_mapping$Site)
+read_mapping$Site <- gsub("ELSC","Lau Basin Deposit",read_mapping$Site)
+read_mapping$Site <- gsub("Abe","ABE",read_mapping$Site)
+
+#replace . with -
+read_mapping$Reads <- gsub("\\.fastq\\.gz$", "", read_mapping$Reads)  # Remove .fastq.gz
+read_mapping$Reads <- gsub("\\.", "-", read_mapping$Reads)  # Replace periods with hyphens
+read_mapping$Reads <- paste0(read_mapping$Reads, ".fastq.gz")  # Add .fastq.gz back
+
+#create a named vector
+name_mapping <- setNames(read_mapping$Site, read_mapping$Reads)
 
 #map
-colnames(vir_abun_sum) <- ifelse(colnames(vir_abun_sum) %in% names(abun_names),
-                        name_mapping[colnames(vir_abun_sum)], 
-                        colnames(vir_abun_sum))
+#tst <- mic_abun_sum
+
+# Replace the column names in df2 with the simpler names based on matching
+
+#virus
+colnames(vir_abun_sum) <- sapply(colnames(vir_abun_sum), function(x) ifelse(x %in% names(name_mapping), 
+                                                          name_mapping[x], 
+                                                          x))
+#microbe
+colnames(mic_abun_sum) <- sapply(colnames(mic_abun_sum), function(x) ifelse(x %in% names(name_mapping), 
+                                                                            name_mapping[x], 
+                                                                            x))
 
 #write output
 write_csv(vir_abun_sum, file = "output/class_VentVirus_abundance_GamCamp.csv")
 write_csv(mic_abun_sum, file = "output/class_VentMicrobe_abundance_GamCamp.csv")
 
 ########################### Grabbing reads mapped normalized by # reads in sample ###########################
+
+
+########################### propr corr analysis with example data ###########################
+
+#https://github.com/tpq/propr
+
+#counts <- matrix(rpois(20*50, 100), 20, 50)
+#group <- sample(c("A", "B"), size = 20, replace = TRUE)
+devtools::install_github("tpq/propr")
+library(propr)
+
+# example
+# Sample input count data
+data <- matrix(c(10, 5, 15, 20, 30, 25), nrow = 2, byrow = TRUE)
+# Calculate Propr matrix using correlation coefficient
+result_cor <- propr(data, metric = "cor", ivar = "clr")
+getMatrix(result_cor)
+# Calculate Propr matrix using variance of log-ratio (VLR)
+result_vlr <- propr(data, metric = "vlr", ivar = "clr")
+getMatrix(result_vlr)
+# Calculate Propr matrix using partial correlation coefficient
+result_pcor <- propr(data, metric = "pcor", ivar = "clr")
+getMatrix(result_pcor)
+# Calculate Propr matrix using phi
+result_phi <- propr(data, metric = "phi", ivar = "clr")
+getMatrix(result_phi)
+
+
+########################### propr corr analysis with my data ###########################
+# my data
+# from the github documentation: 
+#"counts,  # rows as samples, like it should be" aka input data rows are samples
+
+#virus
+data_virus <- vir_abun_sum
+#transpose data
+data_virus_tr <- as.data.frame(t(data_virus))
+# Set the first row as column names
+colnames(data_virus_tr) <- data_virus_tr[1, ]
+# Remove the first row
+data_virus_tr <- data_virus_tr[-1, ]
+
+#microbe
+data_microbe <- mic_abun_sum
+#transpose data
+data_microbe_tr <- as.data.frame(t(data_microbe))
+# Set the first row as column names
+colnames(data_microbe_tr) <- data_microbe_tr[1, ]
+# Remove the first row
+data_microbe_tr <- data_microbe_tr[-1, ]
+
+#put together
+data_mic_vir <- cbind(data_microbe_tr, data_virus_tr)
+
+#sum cols? o.o
+data_mic_vir_col_sum <- ...
+
+
+
+
+
+
+
+
+
 
 
