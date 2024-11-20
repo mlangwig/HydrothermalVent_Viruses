@@ -297,6 +297,8 @@ check <- mmseqs_PD_GD %>%
   ungroup()
 length(unique(check$id)) #1,007
 
+################################# Figure 3 lower half, dot plot ################################################
+
 ######################################## UpSet plot ################################################
 
 #based on tutorial here: https://github.com/const-ae/ggupset
@@ -364,7 +366,13 @@ p
 ggsave(p, filename = "Output/protein_clust_UpSet.svg", width = 16, height = 7)
 ggsave(p, filename = "Output/protein_clust_UpSet.png", width = 16, height = 7)
 
+################################# Figure 3 top half, bar plot ################################################
+
 ################################# Creating a modified bar plot above UpSet ################################################
+
+# Please note I am cheating and making the bar plot normalized separately from the ComplexUpset::upset function. This is something
+# you can do with that function but I had too much weirdness going on and decided to make it manually, then put the bottom part
+# of the above figure with the top part of the below figure in Inkscape.
 
 #values taken straight from UpSet barplot (don't judge me) + col of smallest total number of proteins for that cluster
 df <- data.frame(value=c(15874,1007,900,779,639,610,539,481,463,444,184,154,141,127,119,116,113,91,81,60,
@@ -397,6 +405,14 @@ p2
 
 ggsave(p2, filename = "Output/UpSet_barplot_norm.svg", width = 15, height = 5)
 ggsave(p2, filename = "Output/UpSet_barplot_norm.png", width = 16, height = 7)
+
+
+################################# Figure 3 Part B ################################################
+
+################################# Protein annotations ################################################
+
+
+
 
 ################### unused
 
