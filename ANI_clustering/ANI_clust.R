@@ -39,7 +39,7 @@ mp_names <- read.delim2(file = "~/Google Drive/My Drive/PhD_Manuscripts/VentViru
 mp_names <- mp_names %>%
   select(c("Malaspina_IDs", "Site"))
 
-gov_sites_metadata <- read.delim2(file = "~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/GOV2.0/Site_Metadata.txt")
+gov_sites_metadata <- read.delim2(file = "~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/GOV2.0/GOV_Metadata.txt")
 
 vent_metadata <- read.delim2(file = "~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/GOV2.0/Vent_Metadata.txt")
 
@@ -781,14 +781,14 @@ gov_ani_long_metadata <- gov_ani_long_metadata %>%
   mutate(Site = ifelse(!is.na(Site.y), Site.y, Site)) %>%
   select(-Site.y)
 
-#add metadata info of GOV viruses
-gov_ani_long_metadata <- gov_sites_metadata %>%
-  dplyr::select(c("Sample_label", "depth_m", "latitude_decimal_degree_N", "longitude_decimal_degree_E")) %>%
-  right_join(gov_ani_long_metadata, by = c("Sample_label" = "Site"))
-
-gov_ani_long_metadata <- gov_ani_long_metadata %>%
-  select(c("id", "ANI_mean", "Sample_label", "depth_m", 
-           "latitude_decimal_degree_N", "longitude_decimal_degree_E", Virus:f))
+# #add metadata info of GOV viruses
+# gov_ani_long_metadata <- gov_sites_metadata %>%
+#   dplyr::select(c("Sample_label", "depth_m", "latitude_decimal_degree_N", "longitude_decimal_degree_E")) %>%
+#   right_join(gov_ani_long_metadata, by = c("Sample_label" = "Site"))
+# 
+# gov_ani_long_metadata <- gov_ani_long_metadata %>%
+#   select(c("id", "ANI_mean", "Sample_label", "depth_m", 
+#            "latitude_decimal_degree_N", "longitude_decimal_degree_E", Virus:f))
 
 #combine site metadata vent and GOV
 gov_sites_metadata <- gov_sites_metadata %>%
@@ -800,14 +800,31 @@ gov_sites_metadata <- gov_sites_metadata %>%
 
 all_sites_metadata <- rbind(gov_sites_metadata, vent_metadata)
 
-#remove first round metadata
-gov_ani_long_metadata <- gov_ani_long_metadata %>%
-  rename("Site" = "Sample_label") %>%
-  select(-c("depth_m", "latitude_decimal_degree_N", "longitude_decimal_degree_E"))
-
 #add metadata info of GOV viruses
 gov_ani_long_metadata <- all_sites_metadata %>%
   right_join(gov_ani_long_metadata, by = c("Site" = "Site"))
+
+gov_ani_long_metadata <- gov_ani_long_metadata %>%
+  select(c("id", "ANI_mean", Site:f))
+
+#I think there are errors in the GOV contig names based on supplementary table 1 from "Marine DNA Viral Macro- and Microdiversity from Pole to Pole"
+#Fixing here
+
+gov_ani_long_metadata$Site <- gsub("MXL","MIX",gov_ani_long_metadata$Site)
+gov_ani_long_metadata$Site <- gsub("IZZ","ZZZ",gov_ani_long_metadata$Site)
+gov_ani_long_metadata$Site <- gsub("SUR","SRF",gov_ani_long_metadata$Site)
+
+# #remove first round metadata
+gov_ani_long_metadata <- gov_ani_long_metadata %>%
+  select(-c("depth_m", "latitude_dd", "longitude_dd"))
+
+#add metadata info of GOV viruses
+gov_ani_long_metadata <- all_sites_metadata %>%
+  right_join(gov_ani_long_metadata, by = c("Site" = "Site")) %>%
+  select(c("id", "ANI_mean", Site:f))
+
+write_delim(gov_ani_long_metadata, file = "Output/ani_metadata_GOV2.tsv")
+  
 
 ################################ unused ##########################################
 
