@@ -407,14 +407,131 @@ ggsave(p2, filename = "Output/UpSet_barplot_norm.svg", width = 15, height = 5)
 ggsave(p2, filename = "Output/UpSet_barplot_norm.png", width = 16, height = 7)
 
 
-################################# Figure 3 Part B ################################################
+################################################ Figure 3 Part B ##################################################################
 
-################################# Protein annotations ################################################
+################################# Protein annotations heatmap ################################################
+
+# First, the simpler task - create a plot of the annotations shared between deposit and plume
+
+# Guide: https://jokergoo.github.io/ComplexHeatmap-reference/book/index.html
+
+# if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+BiocManager::install("ComplexHeatmap")
+library(ComplexHeatmap)
+
+################# input matrix ###################
+
+#clean up protein names
+mmseqs_PD_annos_clean <- mmseqs_PD_annos
+mmseqs_PD_annos_clean$anno <- sub(" \\[EC.*", "", mmseqs_PD_annos_clean$anno)
+mmseqs_PD_annos_clean$anno <- sub("^.*?; ", "", mmseqs_PD_annos_clean$anno)
+mmseqs_PD_annos_clean$anno <- sub("sp\\|[^ ]+ ", "", mmseqs_PD_annos_clean$anno)
+mmseqs_PD_annos_clean$anno <- sub(", chromosome partitioning protein", "", mmseqs_PD_annos_clean$anno)
 
 
+# Find distinct pairs of SiteDetail where the same anno occurs
+# NOTE THIS REMOVES ANNOS THAT AREN'T THE SAME HAVE TO MANUALLY CHECK AND CHANGE IF DETERMINED SAME
+heatmap_pd <- mmseqs_PD_annos_clean %>%
+  group_by(id, anno) %>%
+  summarize(
+    SiteDetails = list(unique(SiteDetail)),
+    .groups = "drop"
+  ) %>%
+  filter(lengths(SiteDetails) > 1) %>% # Keep only entries with multiple distinct SiteDetails
+  unnest(SiteDetails) %>%
+  group_by(anno) %>%
+  mutate(Site1 = SiteDetails, Site2 = lead(SiteDetails)) %>%
+  filter(!is.na(Site2)) %>%
+  ungroup()
+
+# Get unique SiteDetails and annos
+site_details <- unique(mmseqs_PD_annos_clean$SiteDetail)
+annos <- unique(heatmap_pd$anno)
+
+# Create a matrix for the heatmap
+heatmap_pd_mat <- matrix(0, nrow = length(annos), ncol = length(site_details))
+rownames(heatmap_pd_mat) <- annos
+colnames(heatmap_pd_mat) <- site_details
+
+# Fill the matrix: 1 if anno is found across distinct SiteDetail combinations
+for (i in seq_len(nrow(heatmap_pd))) {
+  anno <- heatmap_pd$anno[i]
+  site1 <- heatmap_pd$Site1[i]
+  site2 <- heatmap_pd$Site2[i]
+  
+  # Fill the corresponding cells
+  heatmap_pd_mat[anno, site1] <- 1
+  heatmap_pd_mat[anno, site2] <- 1
+}
+
+# Set diagonal of matrix (site-to-itself) to NA for white cells
+for (site in site_details) {
+  heatmap_pd_mat[rownames(heatmap_pd_mat) %in% site, site] <- NA
+}
+
+################# heatmap ###################
+
+library(ComplexHeatmap)
+library(circlize)
+
+# Define the white-and-dark-blue color palette
+ocean_palette <- c("0" = "white", "1" = "#003f5c")
+
+# #as.character
+# heatmap_pd_mat_tst <- as.matrix(heatmap_pd_mat)
+# heatmap_pd_mat_tst <- apply(heatmap_pd_mat_tst, c(1, 2), as.character)
+
+# Reorder the rows and columns alphabetically
+heatmap_pd_mat <- heatmap_pd_mat[order(rownames(heatmap_pd_mat)), ]  # Order by row names (protein annotations)
+heatmap_pd_mat <- heatmap_pd_mat[, order(colnames(heatmap_pd_mat))]   # Order by column names (SiteDetail)
 
 
-################### unused
+# Plot the heatmap
+png(file="Output/mmseqs_prot_annos_PD.png", width=10, height=10, units = "in", res = 250)
+svg(file="Output/mmseqs_prot_annos_PD.svg", width = 10, height = 10)
+p3 <- Heatmap(
+  heatmap_pd_mat,
+  name = "Presence",
+  col = ocean_palette,
+  na_col = "white",       # White for diagonal cells (site-to-itself)
+  #row_title = "Protein Annotation",
+  row_names_side = "left",
+  #column_title = "Site",
+  column_names_side = "top",
+  column_names_rot = 45,
+  column_names_gp = gpar(fontsize = 10),  # Font size for column names
+  row_names_gp = gpar(fontsize = 10),     # Font size for row names
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    grid.rect(x, y, width, height, gp = gpar(fill = fill, col = "black", lwd = 0.5))
+  },                                     # Thin black outlines
+  width = unit(6, "cm"),                 # Adjust overall heatmap width
+  height = unit(22, "cm"),                # Adjust overall heatmap height
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_row_dend = FALSE,
+  show_column_dend = FALSE,
+  heatmap_legend_param = list(
+    at = c("0", "1"),                     # Discrete legend for 0 and 1
+    labels = c("Absent", "Present"),
+    title = "Presence",
+    title_gp = gpar(fontsize = 10),
+    labels_gp = gpar(fontsize = 8),
+    legend_gp = gpar(
+      col = "black",  # Set the border color to black
+      lwd = 0.5       # Line width for the border
+    )
+  )
+)
+#p3
+draw(p3)
+dev.off()
+
+########################### pd and gd proteins with functional group anno ################################################
+
+mmseqs_PD_GD_annos_func <- read.delim("~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/Figure3_heatmap/mmseqs_proteins_PD_GD_annos_funct.tsv")
+
+################################################# unused ########################################################################
 
 ################################## donut plot ############################################
 
