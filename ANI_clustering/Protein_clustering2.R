@@ -531,6 +531,140 @@ dev.off()
 
 mmseqs_PD_GD_annos_func <- read.delim("~/Google Drive/My Drive/PhD_Manuscripts/VentViruses/Post_Review/Figure3_heatmap/mmseqs_proteins_PD_GD_annos_funct.tsv")
 
+# tmp <- mmseqs_PD_GD_annos_func %>%
+#   filter(function. == "other")
+# 
+# top_5 <- head(sort(table(tmp$anno), decreasing = TRUE), 10)
+# # Print the top 5 occurrences
+# print(top_5)
+
+# Add SiteDetail
+mmseqs_PD_GD_annos_func <- mmseqs_PD_annos %>%
+  dplyr::select(c("Site", "SiteDetail")) %>%
+  right_join(mmseqs_PD_GD_annos_func, by = c("Site" = "Site"))
+
+#column with specific site name for counting
+mmseqs_PD_GD_annos_func$SiteDetail <- mmseqs_PD_GD_annos_func$protein
+mmseqs_PD_GD_annos_func <- mmseqs_PD_GD_annos_func %>%
+  mutate(SiteDetail = gsub(".*Lau_Basin.*", "Lau Basin Plume", SiteDetail),
+         SiteDetail = gsub(".*ELSC.*", "Lau Basin Deposit", SiteDetail), #not distinguishing Laus here bc PD will get at that
+         SiteDetail = gsub(".*Guaymas_Basin.*", "Guaymas Basin Plume", SiteDetail),
+         SiteDetail = gsub(".*Guaymas_[0-9].*", "Guaymas Basin Deposit", SiteDetail),
+         SiteDetail = gsub(".*Brothers.*", "Brothers Volcano", SiteDetail),
+         SiteDetail = gsub(".*Cayman.*", "Mid-Cayman Rise", SiteDetail), 
+         SiteDetail = gsub(".*EPR.*", "East Pacific Rise", SiteDetail),
+         SiteDetail = gsub(".*Axial.*", "Axial Seamount", SiteDetail),
+         SiteDetail = gsub(".*MAR.*", "Mid-Atlantic Ridge", SiteDetail)
+  )
+
+################# input matrix ###################
+
+# Find distinct pairs of SiteDetail where the same anno occurs
+# NOTE THIS REMOVES ANNOS THAT AREN'T THE SAME HAVE TO MANUALLY CHECK AND CHANGE IF DETERMINED SAME
+heatmap_pd_gd <- mmseqs_PD_GD_annos_func %>%
+  group_by(id, anno, function.) %>%
+  summarize(
+    SiteDetails = list(unique(SiteDetail)),
+    .groups = "drop"
+  ) %>%
+  filter(lengths(SiteDetails) > 1) %>% # Keep only entries with multiple distinct SiteDetails
+  unnest(SiteDetails) %>%
+  group_by(id, anno, function.) %>%
+  mutate(Site1 = SiteDetails, Site2 = lead(SiteDetails)) %>%
+  filter(!is.na(Site2)) %>%
+  ungroup()
+
+# Get unique SiteDetails and annos and functions
+site_details <- unique(mmseqs_PD_GD_annos_func$SiteDetail)
+annos <- unique(heatmap_pd_gd$anno)
+functions <- unique(mmseqs_PD_GD_annos_func$function.)
+
+# Create a matrix for the heatmap
+heatmap_pd_gd_mat <- matrix(0, nrow = length(annos), ncol = length(site_details))
+rownames(heatmap_pd_gd_mat) <- annos
+colnames(heatmap_pd_gd_mat) <- site_details
+
+# Fill the matrix: 1 if anno is found across distinct SiteDetail combinations
+for (i in seq_len(nrow(heatmap_pd_gd))) {
+  anno <- heatmap_pd_gd$anno[i]
+  site1 <- heatmap_pd_gd$Site1[i]
+  site2 <- heatmap_pd_gd$Site2[i]
+  
+  # Fill the corresponding cells
+  heatmap_pd_gd_mat[anno, site1] <- 1
+  heatmap_pd_gd_mat[anno, site2] <- 1
+}
+
+# Create a lookup table for `anno` and `function.`
+anno_function_order <- mmseqs_PD_GD_annos_func %>%
+  distinct(anno, function.) %>%
+  filter(anno %in% rownames(heatmap_pd_gd_mat)) %>%
+  arrange(function., anno)  # Order by `function.` first, then `anno`
+
+# Reorder the matrix rows based on the sorted order of `anno`
+heatmap_pd_gd_mat <- heatmap_pd_gd_mat[match(anno_function_order$anno, rownames(heatmap_pd_gd_mat)), ]
+
+# Reorder cols by site
+heatmap_pd_gd_mat <- heatmap_pd_gd_mat[, order(colnames(heatmap_pd_gd_mat))]
+
+row_annotation <- rowAnnotation(
+  "Function" = anno_function_order$function.,
+  col = list(Function = setNames(rainbow(length(unique(anno_function_order$function.))), 
+                                 unique(anno_function_order$function.))),
+  annotation_legend_param = list(
+    title = "Functional Categories",
+    title_gp = gpar(fontsize = 10),
+    labels_gp = gpar(fontsize = 8)
+  )
+)
+
+
+################# heatmap ###################
+
+# Define the white-and-dark-blue color palette
+ocean_palette <- c("0" = "white", "1" = "#003f5c")
+
+# #as.character
+# heatmap_pd_mat_tst <- as.matrix(heatmap_pd_mat)
+# heatmap_pd_mat_tst <- apply(heatmap_pd_mat_tst, c(1, 2), as.character)
+
+# Plot the heatmap
+#png(file="Output/mmseqs_prot_annos_PD.png", width=10, height=10, units = "in", res = 250)
+#svg(file="Output/mmseqs_prot_annos_PD.svg", width = 10, height = 10)
+# Step 4: Plot the heatmap
+dev.off()
+Heatmap(
+  heatmap_pd_gd_mat,
+  name = "Presence",
+  col = ocean_palette,
+  na_col = "white",
+  show_row_names = FALSE,  # Suppress anno names
+  #row_split = anno_function$function.,  # Split rows by functional categories
+  row_title = NULL,
+  row_title_gp = gpar(fontsize = 10),
+  column_names_side = "top",
+  column_names_rot = 45,
+  column_names_gp = gpar(fontsize = 10),
+  row_dend_side = "left",
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  width = unit(6, "cm"),                 # Adjust overall heatmap width
+  heatmap_legend_param = list(
+    at = c("0", "1"),
+    labels = c("Absent", "Present"),
+    title = "Presence",
+    title_gp = gpar(fontsize = 10),
+    labels_gp = gpar(fontsize = 8)
+  ),
+  left_annotation = row_annotation,
+)
+#p3
+#draw(p3)
+#dev.off()
+
+
+
+
 ################################################# unused ########################################################################
 
 ################################## donut plot ############################################
