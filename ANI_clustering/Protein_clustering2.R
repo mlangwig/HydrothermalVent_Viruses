@@ -708,6 +708,138 @@ Heatmap(
   top_annotation = column_annotation  # Apply the column annotation for functions
 )
 
+#################### Heatmap version 2 input matrix normalized #########################
+
+# Calculate total proteins per site
+site_totals_norm <- mmseqs_PD_GD_annos_func %>%
+  group_by(SiteDetail) %>%
+  summarize(total_proteins = n_distinct(protein), .groups = "drop")
+
+# Merge total proteins into the main dataframe
+mmseqs_PD_GD_annos_func_norm <- mmseqs_PD_GD_annos_func %>%
+  left_join(site_totals_norm, by = "SiteDetail")
+
+# Create the heatmap data (to be normalized)
+heatmap_pd_gd_norm <- mmseqs_PD_GD_annos_func_norm %>%
+  group_by(id, anno, function.) %>%
+  summarize(
+    SiteDetails = list(unique(SiteDetail)),
+    .groups = "drop"
+  ) %>%
+  filter(lengths(SiteDetails) > 1) %>% # Keep only entries with multiple distinct SiteDetails
+  unnest(SiteDetails) %>%
+  group_by(id, anno, function.) %>%
+  mutate(Site1 = SiteDetails, Site2 = lead(SiteDetails)) %>%
+  filter(!is.na(Site2)) %>%
+  ungroup()
+
+# Get unique SiteDetails and annotations
+site_details_norm <- unique(mmseqs_PD_GD_annos_func_norm$SiteDetail)
+annos_norm <- unique(heatmap_pd_gd_norm$anno)
+functions_norm <- unique(mmseqs_PD_GD_annos_func_norm$function.)
+
+# Create a matrix for the normalized heatmap
+heatmap_pd_gd_norm_mat <- matrix(0, nrow = length(annos_norm), ncol = length(site_details_norm))
+rownames(heatmap_pd_gd_norm_mat) <- annos_norm
+colnames(heatmap_pd_gd_norm_mat) <- site_details_norm
+
+# Fill the matrix with normalized values
+for (i in seq_len(nrow(heatmap_pd_gd_norm))) {
+  anno <- heatmap_pd_gd_norm$anno[i]
+  site1 <- heatmap_pd_gd_norm$Site1[i]
+  site2 <- heatmap_pd_gd_norm$Site2[i]
+  
+  # Normalize by total proteins at each site
+  total_site1 <- site_totals_norm$total_proteins[site_totals_norm$SiteDetail == site1]
+  total_site2 <- site_totals_norm$total_proteins[site_totals_norm$SiteDetail == site2]
+  
+  heatmap_pd_gd_norm_mat[anno, site1] <- heatmap_pd_gd_norm_mat[anno, site1] + 1 / total_site1
+  heatmap_pd_gd_norm_mat[anno, site2] <- heatmap_pd_gd_norm_mat[anno, site2] + 1 / total_site2
+}
+
+# Create a lookup table for `anno` and `function.`
+anno_function_order_norm <- mmseqs_PD_GD_annos_func_norm %>%
+  distinct(anno, function.) %>%
+  filter(anno %in% rownames(heatmap_pd_gd_norm_mat)) %>%
+  arrange(function., anno)  # Order by `function.` first, then `anno`
+
+# Reorder the matrix rows based on the sorted order of `anno`
+heatmap_pd_gd_norm_mat <- heatmap_pd_gd_norm_mat[match(anno_function_order_norm$anno, rownames(heatmap_pd_gd_norm_mat)), ]
+
+# Reorder columns by site
+heatmap_pd_gd_norm_mat <- heatmap_pd_gd_norm_mat[, order(colnames(heatmap_pd_gd_norm_mat))]
+
+# Create a new normalized version of row annotation
+row_annotation_norm <- rowAnnotation(
+  "Function" = anno_function_order_norm$function.,
+  col = list(Function = setNames(rainbow(length(unique(anno_function_order_norm$function.))), 
+                                 unique(anno_function_order_norm$function.))),
+  annotation_legend_param = list(
+    title = "Functional Categories",
+    title_gp = gpar(fontsize = 10),
+    labels_gp = gpar(fontsize = 8)
+  )
+)
+
+# Reorder the matrix rows based on the sorted order of `anno`
+heatmap_pd_gd_norm_mat <- heatmap_pd_gd_norm_mat[match(anno_function_order$anno, rownames(heatmap_pd_gd_norm_mat)), ]
+
+# Reorder cols by site
+heatmap_pd_gd_norm_mat <- heatmap_pd_gd_norm_mat[, order(colnames(heatmap_pd_gd_norm_mat))]
+
+library(RColorBrewer)
+library(viridis)
+
+# Generate a color palette with 9 distinct colors
+colors <- c("#fb9a99", "#e31a1c", "#2A9D8F", "#999999", "#8E44AD", 
+            "#a65628", "#bebada", "#457B9D", "#1D3557")
+
+column_annotation <- HeatmapAnnotation(
+  "Function" = anno_function_order_norm$function.,
+  col = list(Function = setNames(colors, unique(anno_function_order_norm$function.))),
+  annotation_legend_param = list(
+    title = "Functional Categories",
+    title_gp = gpar(fontsize = 10),
+    labels_gp = gpar(fontsize = 8)
+  )
+)
+
+########################## Transposed, normalized heatmap
+
+#transform for plotting
+# Apply a log10 transformation, adding a small constant to avoid log(0)
+heatmap_pd_gd_norm_mat_log <- log10(heatmap_pd_gd_norm_mat + 1)
+
+# Define a diverging color palette with your chosen colors
+col_fun <- colorRamp2(
+  c(0, 0.002, 0.004, 0.006, 0.008),  # Match the default value scale
+  c("white", "#a8c8c8", "#72abb3", "#4897a9", "#044e84")  # Replace with your chosen colors
+)
+
+dev.off()
+Heatmap(
+  t(heatmap_pd_gd_norm_mat), # Transpose the matrix
+  name = "Normalized Counts",
+  col = col_fun,
+  na_col = "white",
+  show_column_names = FALSE,  # Suppress protein names (now columns)
+  column_title = NULL,
+  column_title_gp = gpar(fontsize = 10),
+  row_names_side = "right",   # Sites on the right
+  row_names_gp = gpar(fontsize = 10),
+  column_dend_side = "top",   # Functions on the top
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  height = unit(6, "cm"),     # Adjust overall heatmap height
+  # heatmap_legend_param = list(
+  #   at = c("0", "1"),
+  #   labels = c("Absent", "Present"),
+  #   title = "Presence",
+  #   title_gp = gpar(fontsize = 10),
+  #   labels_gp = gpar(fontsize = 8)
+  # ),
+  top_annotation = column_annotation  # Apply the column annotation for functions
+)
 
 
 
