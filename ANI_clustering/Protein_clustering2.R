@@ -607,10 +607,29 @@ heatmap_pd_gd_mat <- heatmap_pd_gd_mat[match(anno_function_order$anno, rownames(
 # Reorder cols by site
 heatmap_pd_gd_mat <- heatmap_pd_gd_mat[, order(colnames(heatmap_pd_gd_mat))]
 
+
+library(RColorBrewer)
+library(viridis)
+
+# Generate a color palette with 9 distinct colors
+#colors <- brewer.pal(9, "Set3")
+#colors <- viridis(9, option = "plasma")
+colors <- c("#fb9a99", "#e31a1c", "#2A9D8F", "#999999", "#8E44AD", 
+            "#a65628", "#bebada", "#457B9D", "#1D3557")
+
 row_annotation <- rowAnnotation(
   "Function" = anno_function_order$function.,
-  col = list(Function = setNames(rainbow(length(unique(anno_function_order$function.))), 
-                                 unique(anno_function_order$function.))),
+  col = list(Function = setNames(colors, unique(anno_function_order$function.))),
+  annotation_legend_param = list(
+    title = "Functional Categories",
+    title_gp = gpar(fontsize = 10),
+    labels_gp = gpar(fontsize = 8)
+  )
+)
+
+column_annotation <- HeatmapAnnotation(
+  "Function" = anno_function_order$function.,
+  col = list(Function = setNames(colors, unique(anno_function_order$function.))),
   annotation_legend_param = list(
     title = "Functional Categories",
     title_gp = gpar(fontsize = 10),
@@ -661,6 +680,33 @@ Heatmap(
 #p3
 #draw(p3)
 #dev.off()
+
+################# transposed heatmap ###################
+
+dev.off()
+Heatmap(
+  t(heatmap_pd_gd_mat), # Transpose the matrix
+  name = "Presence",
+  col = ocean_palette,
+  na_col = "white",
+  show_column_names = FALSE,  # Suppress protein names (now columns)
+  column_title = NULL,
+  column_title_gp = gpar(fontsize = 10),
+  row_names_side = "right",   # Sites on the right
+  row_names_gp = gpar(fontsize = 10),
+  column_dend_side = "top",   # Functions on the top
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  height = unit(6, "cm"),     # Adjust overall heatmap height
+  heatmap_legend_param = list(
+    at = c("0", "1"),
+    labels = c("Absent", "Present"),
+    title = "Presence",
+    title_gp = gpar(fontsize = 10),
+    labels_gp = gpar(fontsize = 8)
+  ),
+  top_annotation = column_annotation  # Apply the column annotation for functions
+)
 
 
 
