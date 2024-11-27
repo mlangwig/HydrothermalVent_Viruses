@@ -9,6 +9,12 @@ library(textshape)
 library(magrittr)
 library(readr)
 library(data.table)
+library(RColorBrewer)
+library(viridis)
+library(ComplexUpset)
+library(widyr)
+BiocManager::install("ComplexHeatmap")
+library(ComplexHeatmap)
 
 ################################# get protein annotations  ####################################
 
@@ -265,7 +271,6 @@ prot_totals <- mmseqs_PD_GD %>%
   group_by(SiteDetail) %>%
   count()
 
-library(widyr)
 #pairwise_count to get counts of pairs within a group! 
 mmseqs_PD_GD_counts <- pairwise_count(mmseqs_PD_GD, SiteDetail, id, sort = TRUE) 
 
@@ -303,7 +308,6 @@ length(unique(check$id)) #1,007
 
 #based on tutorial here: https://github.com/const-ae/ggupset
 #install.packages("ComplexUpset")
-library(ComplexUpset)
 
 dev.off()
 mmseqs_PD_GD_plot <- mmseqs_PD_GD
@@ -406,6 +410,9 @@ p2
 ggsave(p2, filename = "Output/UpSet_barplot_norm.svg", width = 15, height = 5)
 ggsave(p2, filename = "Output/UpSet_barplot_norm.png", width = 16, height = 7)
 
+#################################### Post Manuscript Review Edits ##################################################################
+
+#Reviewer asked for a part B of Figure 3 with protein annotations from the UpSet plot
 
 ################################################ Figure 3 Part B ##################################################################
 
@@ -417,8 +424,7 @@ ggsave(p2, filename = "Output/UpSet_barplot_norm.png", width = 16, height = 7)
 
 # if (!require("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
-BiocManager::install("ComplexHeatmap")
-library(ComplexHeatmap)
+
 
 ################# input matrix ###################
 
@@ -470,7 +476,7 @@ for (site in site_details) {
   heatmap_pd_mat[rownames(heatmap_pd_mat) %in% site, site] <- NA
 }
 
-################# heatmap ###################
+################# heatmap PD only ###################
 
 library(ComplexHeatmap)
 library(circlize)
@@ -559,156 +565,7 @@ mmseqs_PD_GD_annos_func <- mmseqs_PD_GD_annos_func %>%
 
 ################# input matrix ###################
 
-# Find distinct pairs of SiteDetail where the same anno occurs
-# NOTE THIS REMOVES ANNOS THAT AREN'T THE SAME HAVE TO MANUALLY CHECK AND CHANGE IF DETERMINED SAME
-heatmap_pd_gd <- mmseqs_PD_GD_annos_func %>%
-  group_by(id, anno, function.) %>%
-  summarize(
-    SiteDetails = list(unique(SiteDetail)),
-    .groups = "drop"
-  ) %>%
-  filter(lengths(SiteDetails) > 1) %>% # Keep only entries with multiple distinct SiteDetails
-  unnest(SiteDetails) %>%
-  group_by(id, anno, function.) %>%
-  mutate(Site1 = SiteDetails, Site2 = lead(SiteDetails)) %>%
-  filter(!is.na(Site2)) %>%
-  ungroup()
-
-# Get unique SiteDetails and annos and functions
-site_details <- unique(mmseqs_PD_GD_annos_func$SiteDetail)
-annos <- unique(heatmap_pd_gd$anno)
-functions <- unique(mmseqs_PD_GD_annos_func$function.)
-
-# Create a matrix for the heatmap
-heatmap_pd_gd_mat <- matrix(0, nrow = length(annos), ncol = length(site_details))
-rownames(heatmap_pd_gd_mat) <- annos
-colnames(heatmap_pd_gd_mat) <- site_details
-
-# Fill the matrix: 1 if anno is found across distinct SiteDetail combinations
-for (i in seq_len(nrow(heatmap_pd_gd))) {
-  anno <- heatmap_pd_gd$anno[i]
-  site1 <- heatmap_pd_gd$Site1[i]
-  site2 <- heatmap_pd_gd$Site2[i]
-  
-  # Fill the corresponding cells
-  heatmap_pd_gd_mat[anno, site1] <- 1
-  heatmap_pd_gd_mat[anno, site2] <- 1
-}
-
-# Create a lookup table for `anno` and `function.`
-anno_function_order <- mmseqs_PD_GD_annos_func %>%
-  distinct(anno, function.) %>%
-  filter(anno %in% rownames(heatmap_pd_gd_mat)) %>%
-  arrange(function., anno)  # Order by `function.` first, then `anno`
-
-# Reorder the matrix rows based on the sorted order of `anno`
-heatmap_pd_gd_mat <- heatmap_pd_gd_mat[match(anno_function_order$anno, rownames(heatmap_pd_gd_mat)), ]
-
-# Reorder cols by site
-heatmap_pd_gd_mat <- heatmap_pd_gd_mat[, order(colnames(heatmap_pd_gd_mat))]
-
-
-library(RColorBrewer)
-library(viridis)
-
-# Generate a color palette with 9 distinct colors
-#colors <- brewer.pal(9, "Set3")
-#colors <- viridis(9, option = "plasma")
-colors <- c("#fb9a99", "#e31a1c", "#2A9D8F", "#999999", "#8E44AD", 
-            "#a65628", "#bebada", "#457B9D", "#1D3557")
-
-row_annotation <- rowAnnotation(
-  "Function" = anno_function_order$function.,
-  col = list(Function = setNames(colors, unique(anno_function_order$function.))),
-  annotation_legend_param = list(
-    title = "Functional Categories",
-    title_gp = gpar(fontsize = 10),
-    labels_gp = gpar(fontsize = 8)
-  )
-)
-
-column_annotation <- HeatmapAnnotation(
-  "Function" = anno_function_order$function.,
-  col = list(Function = setNames(colors, unique(anno_function_order$function.))),
-  annotation_legend_param = list(
-    title = "Functional Categories",
-    title_gp = gpar(fontsize = 10),
-    labels_gp = gpar(fontsize = 8)
-  )
-)
-
-
-################# heatmap ###################
-
-# Define the white-and-dark-blue color palette
-ocean_palette <- c("0" = "white", "1" = "#003f5c")
-
-# #as.character
-# heatmap_pd_mat_tst <- as.matrix(heatmap_pd_mat)
-# heatmap_pd_mat_tst <- apply(heatmap_pd_mat_tst, c(1, 2), as.character)
-
-# Plot the heatmap
-#png(file="Output/mmseqs_prot_annos_PD.png", width=10, height=10, units = "in", res = 250)
-#svg(file="Output/mmseqs_prot_annos_PD.svg", width = 10, height = 10)
-# Step 4: Plot the heatmap
-dev.off()
-Heatmap(
-  heatmap_pd_gd_mat,
-  name = "Presence",
-  col = ocean_palette,
-  na_col = "white",
-  show_row_names = FALSE,  # Suppress anno names
-  #row_split = anno_function$function.,  # Split rows by functional categories
-  row_title = NULL,
-  row_title_gp = gpar(fontsize = 10),
-  column_names_side = "top",
-  column_names_rot = 45,
-  column_names_gp = gpar(fontsize = 10),
-  row_dend_side = "left",
-  cluster_rows = FALSE,
-  cluster_columns = FALSE,
-  width = unit(6, "cm"),                 # Adjust overall heatmap width
-  heatmap_legend_param = list(
-    at = c("0", "1"),
-    labels = c("Absent", "Present"),
-    title = "Presence",
-    title_gp = gpar(fontsize = 10),
-    labels_gp = gpar(fontsize = 8)
-  ),
-  left_annotation = row_annotation,
-)
-#p3
-#draw(p3)
-#dev.off()
-
-################# transposed heatmap ###################
-
-dev.off()
-Heatmap(
-  t(heatmap_pd_gd_mat), # Transpose the matrix
-  name = "Presence",
-  col = ocean_palette,
-  na_col = "white",
-  show_column_names = FALSE,  # Suppress protein names (now columns)
-  column_title = NULL,
-  column_title_gp = gpar(fontsize = 10),
-  row_names_side = "right",   # Sites on the right
-  row_names_gp = gpar(fontsize = 10),
-  column_dend_side = "top",   # Functions on the top
-  cluster_rows = FALSE,
-  cluster_columns = FALSE,
-  height = unit(6, "cm"),     # Adjust overall heatmap height
-  heatmap_legend_param = list(
-    at = c("0", "1"),
-    labels = c("Absent", "Present"),
-    title = "Presence",
-    title_gp = gpar(fontsize = 10),
-    labels_gp = gpar(fontsize = 8)
-  ),
-  top_annotation = column_annotation  # Apply the column annotation for functions
-)
-
-#################### Heatmap version 2 input matrix normalized #########################
+############################### Heatmap version 2 input matrix normalized ###################################
 
 # Calculate total proteins per site
 site_totals_norm <- mmseqs_PD_GD_annos_func %>%
@@ -718,6 +575,15 @@ site_totals_norm <- mmseqs_PD_GD_annos_func %>%
 # Merge total proteins into the main dataframe
 mmseqs_PD_GD_annos_func_norm <- mmseqs_PD_GD_annos_func %>%
   left_join(site_totals_norm, by = "SiteDetail")
+
+# #################### create df where names are reduced? #############
+# 
+# mmseqs_PD_GD_annos_reduc <- mmseqs_PD_GD_annos_func_norm
+# mmseqs_PD_GD_annos_reduc$anno <- sub(" \\[EC.*", "", mmseqs_PD_GD_annos_reduc$anno)
+# mmseqs_PD_GD_annos_reduc$anno <- sub("^.*?; ", "", mmseqs_PD_GD_annos_reduc$anno)
+# mmseqs_PD_GD_annos_reduc$anno <- sub("sp\\|[^ ]+ ", "", mmseqs_PD_GD_annos_reduc$anno)
+
+
 
 # Create the heatmap data (to be normalized)
 heatmap_pd_gd_norm <- mmseqs_PD_GD_annos_func_norm %>%
@@ -787,8 +653,6 @@ heatmap_pd_gd_norm_mat <- heatmap_pd_gd_norm_mat[match(anno_function_order$anno,
 # Reorder cols by site
 heatmap_pd_gd_norm_mat <- heatmap_pd_gd_norm_mat[, order(colnames(heatmap_pd_gd_norm_mat))]
 
-library(RColorBrewer)
-library(viridis)
 
 # Generate a color palette with 9 distinct colors
 colors <- c("#fb9a99", "#e31a1c", "#2A9D8F", "#999999", "#8E44AD", 
@@ -804,20 +668,23 @@ column_annotation <- HeatmapAnnotation(
   )
 )
 
-########################## Transposed, normalized heatmap
+#################################### heatmap PD and GD, normalized ########################################################################
 
 #transform for plotting
 # Apply a log10 transformation, adding a small constant to avoid log(0)
-heatmap_pd_gd_norm_mat_log <- log10(heatmap_pd_gd_norm_mat + 1)
+#heatmap_pd_gd_norm_mat_log <- log10(heatmap_pd_gd_norm_mat + 1)
 
+library(circlize)
 # Define a diverging color palette with your chosen colors
 col_fun <- colorRamp2(
   c(0, 0.002, 0.004, 0.006, 0.008),  # Match the default value scale
   c("white", "#a8c8c8", "#72abb3", "#4897a9", "#044e84")  # Replace with your chosen colors
 )
 
-dev.off()
-Heatmap(
+png(file="Output/mmseqs_prot_annos_PD_GD_norm.png", width=10, height=10, units = "in", res = 250) #
+svg(file="Output/mmseqs_prot_annos_PD_GD_norm.svg", width = 10, height = 10)
+#dev.off()
+p4 <- Heatmap(
   t(heatmap_pd_gd_norm_mat), # Transpose the matrix
   name = "Normalized Counts",
   col = col_fun,
@@ -828,7 +695,10 @@ Heatmap(
   row_names_side = "right",   # Sites on the right
   row_names_gp = gpar(fontsize = 10),
   column_dend_side = "top",   # Functions on the top
-  cluster_rows = FALSE,
+  #cluster_rows = TRUE,
+  clustering_distance_rows = "spearman",
+  row_dend_side = "right",
+  row_dend_width = unit(2, "cm"),
   cluster_columns = FALSE,
   height = unit(6, "cm"),     # Adjust overall heatmap height
   # heatmap_legend_param = list(
@@ -838,14 +708,89 @@ Heatmap(
   #   title_gp = gpar(fontsize = 10),
   #   labels_gp = gpar(fontsize = 8)
   # ),
+  #border_gp = gpar(col = "black", lwd = 0.5),
+  #rect_gp = gpar(col = "black", lwd = 0.05),
   top_annotation = column_annotation  # Apply the column annotation for functions
 )
+p4
+draw(p4)
+dev.off()
 
 
 
-################################################# unused ########################################################################
+######################################### Parsing PHROGS annotations ###############################################
 
-################################## donut plot ############################################
+#Reviewer asked for PHROGS annotations to be incorporated
+
+#phrogs results - I used awk on the server to filter the output for ≥80% coverage and ≥75% percent identity
+phrogs <- read.delim2(file = "../../PHROGs/convert_alis_80cov_75pi.tsv", header = TRUE, sep = "\t")
+#mapping file
+phrogs_map <- read.delim2(file = "../../PHROGs/phrog_annot_v4.tsv", header = TRUE, sep = "\t")
+
+#remove phrogs string
+phrogs$query <- gsub("phrog_", "", phrogs$query)
+phrogs$query <- as.integer(phrogs$query)
+phrogs$evalue <- as.numeric(phrogs$evalue)
+#choose best phrogs annotation based on e value so 1 anno per scaffold
+phrogs <- phrogs %>%
+  group_by(target) %>%
+  filter(evalue == min(evalue))
+
+#filter for better hit based on bitscore
+phrogs$bits <- as.numeric(phrogs$bits)
+#make filtered file
+phrogs_best <- phrogs %>%
+  group_by(target) %>%
+  filter(bits == max(bits))
+#confirm now no duplicate names
+#length(unique(phrogs_best$target)) #353,067 unique proteins, 353,143 total so still some dups, prob have the same bit score and e value
+
+#add function to phrogs so can see how the dups look
+#vlookup
+phrogs_best_map <- phrogs_map %>%
+  dplyr::select("phrog", "color", "annot", "category") %>%
+  right_join(phrogs_best, by = c("phrog" = "query"))
+
+#get the annos with the higher percent identity
+phrogs_best_map <- phrogs_best_map %>%
+  group_by(target) %>%
+  filter(pident == max(pident))
+
+#get the annos with the higher aln length
+phrogs_best_map <- phrogs_best_map %>%
+  group_by(target) %>%
+  filter(alnlen == max(alnlen))
+
+#get the annos with the higher qcov
+phrogs_best_map <- phrogs_best_map %>%
+  group_by(target) %>%
+  filter(qcov == max(qcov))
+
+#get the annos with the higher tcov
+phrogs_best_map <- phrogs_best_map %>%
+  group_by(target) %>%
+  filter(tcov == max(tcov))
+
+#print the uniques
+# Filter rows where target occurs more than once
+phrogs_best_tmp <- phrogs_best_map %>%
+  group_by(target) %>%
+  filter(n() > 1) %>%
+  ungroup()
+#152 dups originally just filtering by bits
+#eventually 0 when filter everything
+
+###### add on PD and GD mmseqs clusters so can see how that aligns
+phrogs_best_pd_gd <- mmseqs_PD_GD %>%
+  #dplyr::select(c("")) %>%
+  left_join(phrogs_best_map, by = c("genome" = "target"))
+
+write_delim(phrogs_best_map, file = "Output/phrogs_best_annotations_49962.tsv", delim = "\t")
+write_delim(phrogs_best_pd_gd, file = "Output/phrogs_best_annotations_49962_pd_gd_clusts.tsv", delim = "\t")
+
+
+########################################## UNUSED ##############################################################
+##################### donut plot ########################
 
 
 # colors <- c("Axial Seamount" = "#4F508C", "Brothers Volcano" = "#B56478", "East Pacific Rise" = "#CE9A28",
@@ -987,3 +932,156 @@ Heatmap(
 # test4 <- setdiff(test2, test) 
 
 #test3 <- as.data.frame(setdiff(vibrant_best$id, vib_annos$id))
+
+# ################### heatmap before normalizing ##################################
+# 
+# # Find distinct pairs of SiteDetail where the same anno occurs
+# # NOTE THIS REMOVES ANNOS THAT AREN'T THE SAME HAVE TO MANUALLY CHECK AND CHANGE IF DETERMINED SAME
+# heatmap_pd_gd <- mmseqs_PD_GD_annos_func %>%
+#   group_by(id, anno, function.) %>%
+#   summarize(
+#     SiteDetails = list(unique(SiteDetail)),
+#     .groups = "drop"
+#   ) %>%
+#   filter(lengths(SiteDetails) > 1) %>% # Keep only entries with multiple distinct SiteDetails
+#   unnest(SiteDetails) %>%
+#   group_by(id, anno, function.) %>%
+#   mutate(Site1 = SiteDetails, Site2 = lead(SiteDetails)) %>%
+#   filter(!is.na(Site2)) %>%
+#   ungroup()
+# 
+# # Get unique SiteDetails and annos and functions
+# site_details <- unique(mmseqs_PD_GD_annos_func$SiteDetail)
+# annos <- unique(heatmap_pd_gd$anno)
+# functions <- unique(mmseqs_PD_GD_annos_func$function.)
+# 
+# # Create a matrix for the heatmap
+# heatmap_pd_gd_mat <- matrix(0, nrow = length(annos), ncol = length(site_details))
+# rownames(heatmap_pd_gd_mat) <- annos
+# colnames(heatmap_pd_gd_mat) <- site_details
+# 
+# # Fill the matrix: 1 if anno is found across distinct SiteDetail combinations
+# for (i in seq_len(nrow(heatmap_pd_gd))) {
+#   anno <- heatmap_pd_gd$anno[i]
+#   site1 <- heatmap_pd_gd$Site1[i]
+#   site2 <- heatmap_pd_gd$Site2[i]
+#   
+#   # Fill the corresponding cells
+#   heatmap_pd_gd_mat[anno, site1] <- 1
+#   heatmap_pd_gd_mat[anno, site2] <- 1
+# }
+# 
+# # Create a lookup table for `anno` and `function.`
+# anno_function_order <- mmseqs_PD_GD_annos_func %>%
+#   distinct(anno, function.) %>%
+#   filter(anno %in% rownames(heatmap_pd_gd_mat)) %>%
+#   arrange(function., anno)  # Order by `function.` first, then `anno`
+# 
+# # Reorder the matrix rows based on the sorted order of `anno`
+# heatmap_pd_gd_mat <- heatmap_pd_gd_mat[match(anno_function_order$anno, rownames(heatmap_pd_gd_mat)), ]
+# 
+# # Reorder cols by site
+# heatmap_pd_gd_mat <- heatmap_pd_gd_mat[, order(colnames(heatmap_pd_gd_mat))]
+# 
+# 
+# library(RColorBrewer)
+# library(viridis)
+# 
+# # Generate a color palette with 9 distinct colors
+# #colors <- brewer.pal(9, "Set3")
+# #colors <- viridis(9, option = "plasma")
+# colors <- c("#fb9a99", "#e31a1c", "#2A9D8F", "#999999", "#8E44AD", 
+#             "#a65628", "#bebada", "#457B9D", "#1D3557")
+# 
+# row_annotation <- rowAnnotation(
+#   "Function" = anno_function_order$function.,
+#   col = list(Function = setNames(colors, unique(anno_function_order$function.))),
+#   annotation_legend_param = list(
+#     title = "Functional Categories",
+#     title_gp = gpar(fontsize = 10),
+#     labels_gp = gpar(fontsize = 8)
+#   )
+# )
+# 
+# column_annotation <- HeatmapAnnotation(
+#   "Function" = anno_function_order$function.,
+#   col = list(Function = setNames(colors, unique(anno_function_order$function.))),
+#   annotation_legend_param = list(
+#     title = "Functional Categories",
+#     title_gp = gpar(fontsize = 10),
+#     labels_gp = gpar(fontsize = 8)
+#   )
+# )
+# 
+# 
+# ################# heatmap ###################
+# 
+# # Define the white-and-dark-blue color palette
+# ocean_palette <- c("0" = "white", "1" = "#003f5c")
+# 
+# # #as.character
+# # heatmap_pd_mat_tst <- as.matrix(heatmap_pd_mat)
+# # heatmap_pd_mat_tst <- apply(heatmap_pd_mat_tst, c(1, 2), as.character)
+# 
+# # Plot the heatmap
+# #png(file="Output/mmseqs_prot_annos_PD.png", width=10, height=10, units = "in", res = 250)
+# #svg(file="Output/mmseqs_prot_annos_PD.svg", width = 10, height = 10)
+# # Step 4: Plot the heatmap
+# dev.off()
+# Heatmap(
+#   heatmap_pd_gd_mat,
+#   name = "Presence",
+#   col = ocean_palette,
+#   na_col = "white",
+#   show_row_names = FALSE,  # Suppress anno names
+#   #row_split = anno_function$function.,  # Split rows by functional categories
+#   row_title = NULL,
+#   row_title_gp = gpar(fontsize = 10),
+#   column_names_side = "top",
+#   column_names_rot = 45,
+#   column_names_gp = gpar(fontsize = 10),
+#   row_dend_side = "left",
+#   cluster_rows = FALSE,
+#   cluster_columns = FALSE,
+#   width = unit(6, "cm"),                 # Adjust overall heatmap width
+#   heatmap_legend_param = list(
+#     at = c("0", "1"),
+#     labels = c("Absent", "Present"),
+#     title = "Presence",
+#     title_gp = gpar(fontsize = 10),
+#     labels_gp = gpar(fontsize = 8)
+#   ),
+#   left_annotation = row_annotation,
+# )
+# #p3
+# #draw(p3)
+# #dev.off()
+# 
+# ################# transposed heatmap ###################
+# 
+# dev.off()
+# Heatmap(
+#   t(heatmap_pd_gd_mat), # Transpose the matrix
+#   name = "Presence",
+#   col = ocean_palette,
+#   na_col = "white",
+#   show_column_names = FALSE,  # Suppress protein names (now columns)
+#   column_title = NULL,
+#   column_title_gp = gpar(fontsize = 10),
+#   row_names_side = "right",   # Sites on the right
+#   row_names_gp = gpar(fontsize = 10),
+#   column_dend_side = "top",   # Functions on the top
+#   cluster_rows = FALSE,
+#   cluster_columns = FALSE,
+#   height = unit(6, "cm"),     # Adjust overall heatmap height
+#   heatmap_legend_param = list(
+#     at = c("0", "1"),
+#     labels = c("Absent", "Present"),
+#     title = "Presence",
+#     title_gp = gpar(fontsize = 10),
+#     labels_gp = gpar(fontsize = 8)
+#   ),
+#   top_annotation = column_annotation  # Apply the column annotation for functions
+# )
+
+
