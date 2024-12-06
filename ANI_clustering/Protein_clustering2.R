@@ -141,8 +141,8 @@ mmseqs_long_meta <- mmseqs_long_meta %>%
          Site = gsub(".*Axial.*","Axial", Site)
   )
 
-# write.table(mmseqs_long_meta, file = "Output/mmseqs_long_meta.tsv", quote = FALSE, row.names = FALSE,
-#                          col.names = TRUE, sep = "\t")
+write.table(mmseqs_long_meta, file = "Output/mmseqs_long_meta.tsv", quote = FALSE, row.names = FALSE,
+                         col.names = TRUE, sep = "\t")
 
 #add VIBRANT annotations to mmseqs meta
 vibrant_best_anno <- vibrant_best_anno %>%
@@ -193,12 +193,12 @@ mmseqs_PD_GD_ids <- unique(mmseqs_PD_GD_ids) #23,365 clusts = 138 clusts same be
 mmseqs_PD_GD <- mmseqs_long_meta %>%
   filter(id %in% mmseqs_PD_GD_ids$id)
 
-# write_delim(mmseqs_PD_GD, file = "Output/virus_proteins_mmseqsClusts_PD_GD.tsv", 
-#             col_names = TRUE, delim = "\t")
-# write_delim(mmseqs_GD, file = "Output/virus_proteins_mmseqsClusts_GD.tsv", 
-#             col_names = TRUE, delim = "\t")
-# write_delim(mmseqs_PD, file = "Output/virus_proteins_mmseqsClusts_PD.tsv", 
-#             col_names = TRUE, delim = "\t")
+write_delim(mmseqs_PD_GD, file = "Output/virus_proteins_mmseqsClusts_PD_GD.tsv",
+            col_names = TRUE, delim = "\t")
+write_delim(mmseqs_GD, file = "Output/virus_proteins_mmseqsClusts_GD.tsv",
+            col_names = TRUE, delim = "\t")
+write_delim(mmseqs_PD, file = "Output/virus_proteins_mmseqsClusts_PD.tsv",
+            col_names = TRUE, delim = "\t")
 
 ################################ mmseqs PD GD add annotations ###################################
 
@@ -206,10 +206,13 @@ mmseqs_PD_GD <- mmseqs_long_meta %>%
 mmseqs_PD_GD_annos <- mmseqs_long_meta_annos %>%
   dplyr::select(c("anno_id", "anno", "protein")) %>%
   right_join(mmseqs_PD_GD, by = c("protein" = "genome_vRhyme")) %>%
-  drop_na() %>%
+  #drop_na() %>%
   rename("protein_no_vRhyme" = "protein",
          "protein" = "genome") %>%
   select(c(id, protein, protein_no_vRhyme,PD, Site, anno_id, anno))
+
+write_delim(mmseqs_PD_GD_annos, file = "Output/virus_proteins_mmseqsClusts_PD_GD_annos.tsv",
+            col_names = TRUE, delim = "\t")
 
 #column with specific site name for counting
 mmseqs_PD_GD_annos$SiteDetail <- mmseqs_PD_GD_annos$protein
@@ -583,20 +586,30 @@ mmseqs_PD_GD_annos_func_norm <- mmseqs_PD_GD_annos_func %>%
 # mmseqs_PD_GD_annos_reduc$anno <- sub("^.*?; ", "", mmseqs_PD_GD_annos_reduc$anno)
 # mmseqs_PD_GD_annos_reduc$anno <- sub("sp\\|[^ ]+ ", "", mmseqs_PD_GD_annos_reduc$anno)
 
-
+# # Create the heatmap data (to be normalized)
+# heatmap_pd_gd_norm <- mmseqs_PD_GD_annos_func_norm %>%
+#   group_by(id, anno, function.) %>%
+#   summarize(
+#     SiteDetails = list(unique(SiteDetail)),
+#     .groups = "drop"
+#   ) %>%
+#   filter(lengths(SiteDetails) > 1) %>% # Keep only entries with multiple distinct SiteDetails
+#   unnest(SiteDetails) %>%
+#   group_by(id, anno, function.) %>%
+#   mutate(Site1 = SiteDetails, Site2 = lead(SiteDetails)) %>%
+#   filter(!is.na(Site2)) %>%
+#   ungroup()
 
 # Create the heatmap data (to be normalized)
 heatmap_pd_gd_norm <- mmseqs_PD_GD_annos_func_norm %>%
-  group_by(id, anno, function.) %>%
-  summarize(
-    SiteDetails = list(unique(SiteDetail)),
-    .groups = "drop"
+  group_by(anno, `function.`, SiteDetail) %>% 
+  summarise(
+    anno_count = n(),  # Count the occurrences of each anno at each SiteDetail
+    total_proteins = first(total_proteins)  # Retrieve the total_proteins value
   ) %>%
-  filter(lengths(SiteDetails) > 1) %>% # Keep only entries with multiple distinct SiteDetails
-  unnest(SiteDetails) %>%
-  group_by(id, anno, function.) %>%
-  mutate(Site1 = SiteDetails, Site2 = lead(SiteDetails)) %>%
-  filter(!is.na(Site2)) %>%
+  mutate(
+    normalized_count = anno_count / total_proteins  # Normalize by total_proteins
+  ) %>%
   ungroup()
 
 # Get unique SiteDetails and annotations
@@ -655,8 +668,8 @@ heatmap_pd_gd_norm_mat <- heatmap_pd_gd_norm_mat[, order(colnames(heatmap_pd_gd_
 
 
 # Generate a color palette with 9 distinct colors
-colors <- c("#fb9a99", "#e31a1c", "#2A9D8F", "#999999", "#8E44AD", 
-            "#a65628", "#bebada", "#457B9D", "#1D3557")
+colors <- c("#4d9221", "#b8e186", "#80cdc1", "#999999", "#8073ac", 
+            "#8c510a", "#bebada", "#457B9D", "#1D3557")
 
 column_annotation <- HeatmapAnnotation(
   "Function" = anno_function_order_norm$function.,
