@@ -61,6 +61,7 @@ abund_long_cov <- abund_long %>%
   group_by(Reads, Type) %>%
   mutate(Percentile_Rank=rank(as.numeric(value))/length(as.numeric(value))) %>% #add col with percentile rank per category
   ungroup()
+#note that Brothers_NWCB_S146_NODE_255717_length_1218_cov_0.416132 gets dropped because cov isn't above 70%
 
 #map number of reads
 abund_long_cov <- read_length %>%
@@ -92,9 +93,15 @@ abund_long_norm_iphop <- iphop %>%
 abund_long_norm_iphop <- abund_long_norm_iphop %>% separate("Host.genus", c("d", "p", "c", "o", "f", "g"), 
                                                             sep= ";")
 #select only phylum and class taxonomy
-abund_long_norm_iphop <- abund_long_norm_iphop %>% select(c("Virus", "Site", "Reads", "p", "c", "o", "f", "g","abun_norm"))
-abund_long_norm_iphop <- abund_long_norm_iphop %>% 
-  filter(str_detect(c, "c__Gammaproteobacteria") | str_detect(p, "p__Campylobacterota"))
+abund_long_norm_iphop <- abund_long_norm_iphop %>% dplyr::select(c("Virus", "Site", "Reads", "p", "c", "o", "f", "g","abun_norm"))
+
+#remove virus with weird abundance
+abund_long_norm_iphop <- abund_long_norm_iphop %>%
+  filter(Virus != "Lau_Basin_Tahi_Moana_vRhyme_bin_115")
+
+# select only Gamma and Camp
+# abund_long_norm_iphop <- abund_long_norm_iphop %>% 
+#   filter(str_detect(c, "c__Gammaproteobacteria") | str_detect(p, "p__Campylobacterota"))
 
 #abund_long_norm_iphop <- abund_long_norm_iphop %>% 
 #  filter(str_detect(c, "c__Gammaproteobacteria"))
@@ -115,10 +122,20 @@ abund_long_norm_iphop$Locat <- gsub(".*EPR.*","Vent", abund_long_norm_iphop$Loca
 abund_long_norm_iphop$Locat <- gsub(".*Guaymas.*","Vent", abund_long_norm_iphop$Locat)
 abund_long_norm_iphop$Locat <- gsub(".*MAR.*","Vent", abund_long_norm_iphop$Locat)
 
-#filter for viruses with viral hallmark
-abund_long_norm_iphop_vh <- master_table_iphop_filt %>%
-  dplyr::select(vMAG, total_hallmarks, d:g) %>%
-  right_join(abund_long_norm_iphop, by = c("vMAG" = "Virus"))
+#remove viruses with no host prediction
+abund_long_norm_iphop <- abund_long_norm_iphop %>%
+  filter(!is.na(p))
+
+write.table(abund_long_norm_iphop, file = "output/49962_virus_abund_hosts.tsv", sep = "\t", 
+            quote = FALSE, row.names = FALSE)
+#notice total of viruses is 6,966 - 35 dropped from original iphop output because I did not use
+#hosts with "unknown" designation (33 viruses), removed bin 115 because read mapping looked weird,
+#and Brothers_NWCB_S146_NODE_255717_length_1218_cov_0.416132 dropped because cov not over 70%
+
+# #filter for viruses with viral hallmark
+# abund_long_norm_iphop_vh <- master_table_iphop_filt %>%
+#   dplyr::select(vMAG, total_hallmarks, d:g) %>%
+#   right_join(abund_long_norm_iphop, by = c("vMAG" = "Virus"))
 
 #abun_long_iphop <- abun_long_iphop %>% 
 #  filter(str_detect(Locat, "Plume")) #%>%
