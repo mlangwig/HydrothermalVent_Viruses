@@ -143,36 +143,6 @@ vib_type <- rbind(vib_type_vMAG, vib_type_vUnbinned)
 table(vib_type$type)
 #2,391 lysogenic viruses, 47,571 lytic
 
-####################################### Lytic vs lysogenic, DeePhage #############################################
-
-table(vib_type_deephage$possible_lifestyle)
-vib_type_deephage <- read.csv2(file = "../../Deephage/result_49962_0.7.csv", header = TRUE, sep = ",")
-
-#add vMAG name for vMAG scaffolds
-vib_type_deephage$scaffold <- vib_type_deephage$Header
-#remove vRhyme from name of scaffold - check if separator present, if not separate it
-vib_type_deephage <- vib_type_deephage %>% 
-  mutate(scaffold = if_else(str_detect(scaffold, "__"),
-                            scaffold, 
-                            paste0("__", scaffold))) %>%
-  separate(scaffold, c(NA, "scaffold"), sep = "__")
-
-#use join to add vMAG name and other metadata to virus scaffolds
-vib_type_deephage <- master_table %>%
-  select(c("scaffold", "vMAG", "total_hallmarks", "type", "checkv_quality")) %>%
-  right_join(vib_type_deephage, by = c("scaffold" = "scaffold")) %>%
-  unique()
-
-#remove uncertain lifestyles
-vib_type_deephage <- vib_type_deephage %>%
-  filter(!str_detect(possible_lifestyle, "uncertain_temperate")) %>% 
-  filter(!str_detect(possible_lifestyle, "uncertain_virulent"))
-
-#med quality and above
-vib_type_deephage_mq <- vib_type_deephage %>%
-  filter(!str_detect(checkv_quality, "Low-quality")) %>%
-  filter(!str_detect(checkv_quality, "Not-determined"))
-
 ####################################### Create the master tables #############################################
 
 #get vMAG names in vib_annos
@@ -217,6 +187,10 @@ master_table <- virus_hallmarks %>%
 
 # write.table(master_table, file = "output/master_table_VentPlumeViruses.tsv", col.names = TRUE,
 #             quote = FALSE, row.names = FALSE, sep = "\t")
+
+## check integrases
+tst <- master_table %>%
+  filter(apply(., 1, function(row) any(grepl("integrase", row, ignore.case = TRUE))))
 
 #make master table without proteins for accurate counting
 master_table_noProtein <- master_table %>%
@@ -587,4 +561,46 @@ p
 #ggsave("output/iphop_hosts.png", p, dpi = 500, width = 10, height = 5) #, width = 12, height = 6,
 #ggsave("output/iphop_hosts.pdf", p, dpi = 500, width = 6, height = 4)
 
+################# unused
 
+# 
+# table(vib_type_deephage$possible_lifestyle)
+# vib_type_deephage <- read.csv2(file = "../../Deephage/result_49962_0.7.csv", header = TRUE, sep = ",")
+# 
+# #add vMAG name for vMAG scaffolds
+# vib_type_deephage$scaffold <- vib_type_deephage$Header
+# #remove vRhyme from name of scaffold - check if separator present, if not separate it
+# vib_type_deephage <- vib_type_deephage %>% 
+#   mutate(scaffold = if_else(str_detect(scaffold, "__"),
+#                             scaffold, 
+#                             paste0("__", scaffold))) %>%
+#   separate(scaffold, c(NA, "scaffold"), sep = "__")
+# 
+# #use join to add vMAG name and other metadata to virus scaffolds
+# vib_type_deephage <- master_table %>%
+#   dplyr::select(c("scaffold", "vMAG", "total_hallmarks", "type", "checkv_quality")) %>%
+#   right_join(vib_type_deephage, by = c("scaffold" = "scaffold")) %>%
+#   unique()
+# 
+# #remove uncertain lifestyles
+# vib_type_deephage <- vib_type_deephage %>%
+#   filter(!str_detect(possible_lifestyle, "uncertain_temperate")) %>% 
+#   filter(!str_detect(possible_lifestyle, "uncertain_virulent"))
+# 
+# #filter for prediction quality
+# vib_type_deephage$lifestyle_score <- as.numeric(vib_type_deephage$lifestyle_score)
+# vib_type_deephage <- vib_type_deephage %>%
+#   filter(lifestyle_score > 0.7)
+# 
+# #med quality and above
+# vib_type_deephage_mq <- vib_type_deephage %>%
+#   filter(!str_detect(checkv_quality, "Low-quality")) %>%
+#   filter(!str_detect(checkv_quality, "Not-determined"))
+# # 
+# # vib_type_deephage_mq <- vib_type_deephage_mq %>%
+# #   filter(possible_lifestyle == "temperate")
+# 
+# #map presense of integrase
+# vib_type_deephage_mq <- tst %>%
+#   dplyr::select(c(scaffold, KO:VOG.v.score)) %>%
+#   right_join(vib_type_deephage_mq, by = c("scaffold" = "scaffold"))
