@@ -7,4 +7,4 @@ The work is published as a [journal article](https://www.nature.com/articles/s41
 
 ## Genome Information
 
-The viral genomes are publicly available on [Figshare](https://figshare.com/articles/dataset/Hydrothermal_Vent_Viruses/25968037). If you use these data, please cite us!
+This viral genomes are publicly available on [Figshare](https://figshare.com/articles/dataset/Hydrothermal_Vent_Viruses/25968037). If you use these data, please cite us!

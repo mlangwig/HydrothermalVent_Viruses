@@ -22,6 +22,7 @@ HydroVentViruses.html
 # R #
 ######
 *.RData*
+.DS_Store*
 
 # Compiled source #
 ###################
