@@ -200,7 +200,7 @@ getResults(result_rho)
 getRatios(result_rho)
 rho_result_CampGam <- getMatrix(result_rho)
 rho_result_CampGam <- as.data.frame(rho_result_CampGam)
-write.table(rho_result_CampGam, file = "output/propr_result_rho_CampGam.csv", sep = "\t", row.names = TRUE)
+write.table(rho_result_CampGam, file = "output/propr_result_rho_CampGam.tsv", sep = "\t", row.names = TRUE)
 
 result_rho <- updateCutoffs(result_rho, 
                             number_of_cutoffs = 1000#,

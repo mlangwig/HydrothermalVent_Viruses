@@ -1195,6 +1195,76 @@ ggsave("output/Figure4_Abundance_symbols.svg", p,
        bg = "transparent", height = 13, width = 14)
 
 
+####################### NCBI cov calculation ################################
+
+#read in NCBI viruses that are med quality above, have genomad tax
+ncbi_viruses <- read.delim2("input/ncbi_viruses.txt")
+#1,781 viruses that match this criteria
+
+#get just coverm read count
+abund_long_rc <- abund_long %>%
+  filter(Type == "Read.Count")
+
+#make sure col of interest is numeric
+abund_long_rc$value <- as.numeric(abund_long_rc$value)
+
+#filter for largest number of reads mapped per virus
+abund_long_rc <- abund_long_rc %>%
+  group_by(Genome) %>%
+  filter(value == max(value)) %>%
+  ungroup()
+
+#show viruses that occur 1+
+abund_long_rc_dup <- abund_long_rc %>%
+  group_by(Genome) %>%
+  filter(n() > 1) %>%
+  ungroup()
+write.table(abund_long_rc_dup, file = "output/viruses_rc_dups", sep = "\t", 
+            quote = FALSE, row.names = FALSE)
+
+#the only relevant virus with 2 identical read mappings is Lau_Basin_Kilo_Moana_k95_344766_flag_0_multi_110.9952_len_2399
+#it doesn't matter which the reads come from
+
+#map read count
+ncbi_viruses <- abund_long_rc %>%
+  dplyr::select("Genome", "value", "Reads" ,"Site") %>%
+  right_join(ncbi_viruses, by = c("Genome" = "Virus"))
+
+#map relevant read stats
+ncbi_viruses <- read_length %>%
+  dplyr::select("file", "avg_len") %>%
+  right_join(ncbi_viruses, by = c("file" = "Reads"))
+
+#rename
+ncbi_viruses <- ncbi_viruses %>%
+  rename("Reads" = "file")
+
+#map genome length
+ncbi_viruses <- gensize %>%
+  dplyr::select("file", "sum_len") %>%
+  right_join(ncbi_viruses, by = c("file" = "Genome")) %>%
+  rename("Virus" = "file")
+
+#will have to correct value for vMAG Lau_Basin_Tahi_Moana_vRhyme_bin_115 because reads mapped
+#was suspiciously high - suspect uneven amplification in those reads
+
+#make sure numeric
+ncbi_viruses$avg_len <- as.numeric(ncbi_viruses$avg_len)
+
+#calculate coverage
+
+#(reads mapped*read length)/genome length
+
+ncbi_viruses <- ncbi_viruses %>%
+  mutate(cov = value*avg_len/sum_len)
+
+write.table(ncbi_viruses, file = "output/ncbi_viruses_cov.txt", sep = "\t", 
+            quote = FALSE, row.names = FALSE)
+
+#changed value for Lau_Basin_Tahi_Moana_vRhyme_bin_115 by replacing num of reads mapped
+#with next reasonably high number - 2256615. So, 2256615*97.4*2/46647 = 9423.727
+
+
 
 
 
